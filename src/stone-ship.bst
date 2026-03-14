@@ -154,10 +154,7 @@ FUNCTION {output.check}
 
 FUNCTION {output.bibitem}
 { newline$
-  "\bibitem[" write$
-  label write$
-  extra.label write$
-  ")]{" write$
+  "\bibitem{" write$
   cite$ write$
   "}" write$
   newline$
