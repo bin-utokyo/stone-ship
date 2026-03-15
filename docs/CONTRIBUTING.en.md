@@ -24,6 +24,7 @@ covering environment setup, adding chapters, building, and submitting pull reque
     - [How the build works](#how-the-build-works)
     - [Common errors](#common-errors)
   - [Submitting Changes](#submitting-changes)
+    - [Branch naming](#branch-naming)
     - [Commit message conventions](#commit-message-conventions)
   - [CI (Automated Build)](#ci-automated-build)
   - [Use of Generative AI](#use-of-generative-ai)
@@ -74,8 +75,10 @@ git clone https://github.com/bin-utokyo/stone-ship.git
 cd stone-ship
 
 # 2. Create a working branch (direct commits to main are not allowed)
-git checkout -b feature/your-chapter-name
+git checkout -b chapter/2
 ```
+
+> For branch naming rules, see [Branch naming](#branch-naming).
 
 ---
 
@@ -164,11 +167,11 @@ Add an `\include` entry in `src/main.tex`.
 
 ### Step 4 — Adding figures
 
-Place figure files (PNG / PDF / EPS recommended) in `src/assets/` and reference them
-with `\includegraphics` using a path relative to `src/`.
+Create a chapter-specific subdirectory under `src/assets/` (e.g. `src/assets/2/`) and place figure files (PNG / PDF / EPS recommended) there.
+Reference them with `\includegraphics` using a path relative to `src/`.
 
 ```latex
-\includegraphics[width=0.6\textwidth]{assets/my-figure.png}
+\includegraphics[width=0.6\textwidth]{assets/2/my-figure.png}
 ```
 
 See [style-guide.md](style-guide.md) and `src/chapters/sample.tex` for detailed markup conventions.
@@ -230,10 +233,46 @@ git add src/chapters/2.tex src/bibliography/2.bib src/main.tex
 git commit -m "Add chapter 2: Fundamentals of Demand Analysis"
 
 # Push to remote
-git push origin feature/your-chapter-name
+git push origin chapter/2
 ```
 
 Open a pull request on GitHub and request a review.
+
+> **Branch protection rules**: The `main` branch is protected.
+> - Merging into `main` requires a pull request — direct pushes are not allowed.
+> - At least **one approving review** is required before a pull request can be merged.
+>
+> Merging into `main` only after review by other members helps catch mistakes and prevent broken builds before they affect everyone.
+
+### Branch naming
+
+Create one branch **per chapter**.
+
+| Purpose | Branch name format | Examples |
+|---|---|---|
+| Writing or editing a chapter | `chapter/<number-or-name>` | `chapter/2`, `chapter/demand` |
+| A focused sub-task within a chapter | `chapter/<number>/<topic>` | `chapter/2/figures`, `chapter/2/fix-refs` |
+
+Rules:
+
+1. Never commit or push directly to `main` (the repository's branch protection enforces this technically as well).
+2. Create sub-branches off the chapter branch as needed.
+3. Merge sub-branches back into the chapter branch before opening a pull request to `main`.
+4. Always open a pull request to merge into `main` and obtain **at least one approving review**.
+
+```bash
+# Create and switch to a chapter branch
+git checkout -b chapter/2
+
+# Create a sub-branch from the chapter branch
+git checkout -b chapter/2/figures
+
+# ... work ...
+
+# Merge the sub-branch back into the chapter branch when done
+git checkout chapter/2
+git merge chapter/2/figures
+```
 
 ### Commit message conventions
 

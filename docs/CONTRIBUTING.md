@@ -24,6 +24,7 @@
     - [ビルドの仕組み](#ビルドの仕組み)
     - [よくあるエラー](#よくあるエラー)
   - [変更を提出する](#変更を提出する)
+    - [ブランチの切り方](#ブランチの切り方)
     - [コミットメッセージの規則](#コミットメッセージの規則)
   - [CI（自動ビルド）](#ci自動ビルド)
   - [生成AIの利用について](#生成aiの利用について)
@@ -74,8 +75,10 @@ git clone https://github.com/bin-utokyo/stone-ship.git
 cd stone-ship
 
 # 2. 作業ブランチを切る（mainへの直接コミットは禁止）
-git checkout -b feature/your-chapter-name
+git checkout -b chapter/2
 ```
+
+> ブランチの命名規則については[ブランチの切り方](#ブランチの切り方)を参照してください．
 
 ---
 
@@ -164,11 +167,11 @@ author = {{山田太郎} and {鈴木次郎}}
 
 ### Step 4 — 図を追加する場合
 
-図ファイル（PNG / PDF / EPS 推奨）を `src/assets/` に配置し，
-`\includegraphics` で参照します（パスは `src/` からの相対パス）．
+`src/assets/` 以下に章番号のサブフォルダ（例: `src/assets/2/`）を作成し，図ファイル（PNG / PDF / EPS 推奨）をその中に配置してください．
+`\includegraphics` での参照パスは `src/` からの相対パスになります．
 
 ```latex
-\includegraphics[width=0.6\textwidth]{assets/my-figure.png}
+\includegraphics[width=0.6\textwidth]{assets/2/my-figure.png}
 ```
 
 記法の詳細は [style-guide.md](style-guide.md) および `src/chapters/sample.tex` を参照してください．
@@ -229,10 +232,46 @@ git add src/chapters/2.tex src/bibliography/2.bib src/main.tex
 git commit -m "Add chapter 2: 需要分析の基礎"
 
 # リモートにプッシュ
-git push origin feature/your-chapter-name
+git push origin chapter/2
 ```
 
 GitHub 上でプルリクエストを作成し，レビューを依頼してください．
+
+> **ブランチ保護ルール**: `main` ブランチにはブランチ保護が設定されています．
+> - プルリクエストを経由しなければ `main` へのマージはできません（直接プッシュは禁止）．
+> - マージには **最低1人のレビュアーによる承認**（Approve）が必要です．
+>
+> プルリクエストにより他のメンバーのレビューを得てから `main` へマージすることで，誤記入・ビルドの問題を事前に防ぎます．
+
+### ブランチの切り方
+
+ブランチは **章単位** で作成します．
+
+| 目的 | ブランチ名の形式 | 例 |
+|---|---|---|
+| 章の執筆・編集 | `chapter/<章番号または章名>` | `chapter/2`，`chapter/demand` |
+| 章内の細かいサブタスク | `chapter/<章番号>/<サブトピック>` | `chapter/2/figures`，`chapter/2/fix-refs` |
+
+基本ルール:
+
+1. `main` へ直接コミット・プッシュしてはなりません（リポジトリのブランチ保護により技術的にもブロックされます）．
+2. 章ブランチを起点として，必要に応じてサブブランチを切ります．
+3. サブブランチの作業が完了したら，章ブランチにマージしてから `main` へのプルリクエストを送ります．
+4. `main` へのマージには必ずプルリクエストを作成し，**最低1人の承認**を得てください．
+
+```bash
+# 章ブランチを作成して移動
+git checkout -b chapter/2
+
+# 章ブランチからサブブランチを作成
+git checkout -b chapter/2/figures
+
+# ... 作業 ...
+
+# 完了後，章ブランチへマージ
+git checkout chapter/2
+git merge chapter/2/figures
+```
 
 ### コミットメッセージの規則
 
