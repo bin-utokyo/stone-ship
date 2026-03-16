@@ -15,6 +15,6 @@ Text book for fundamental transportation and behavior analysis.
 | 7 | 最適化 | 組合せ最適化と応用 | VRP，最短経路，Benders分解・列生成など |
 | 8 | 機械学習 | 時系列モデル・Transformer | LSTM，Transformerアーキテクチャ，RoutesFormer |
 | 9 | 機械学習 | Vision Transformer | ViT，マルチモーダルラーニング |
-| 10 | 機械学習 | 拡散モデル・生成モデル | Diffusion model，PINN |
+| 10 | 機械学習 | 拡散モデル・生成モデル | Diffusion model，PINN（交通流） |
 
 
