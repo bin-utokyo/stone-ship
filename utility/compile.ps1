@@ -27,7 +27,7 @@ New-Item -ItemType Directory -Force $chaptersDir | Out-Null
 
 # First pass
 Set-Location $srcDir
-& platex -interaction=nonstopmode -output-directory=$buildDir main.tex
+& platex -interaction=nonstopmode -output-directory="$buildDir" main.tex
 New-Item -ItemType Directory -Force $chaptersDir | Out-Null
 
 # Run BibTeX for each chapter that produced an .aux file
@@ -45,8 +45,8 @@ Remove-Item Env:BIBINPUTS -ErrorAction SilentlyContinue
 
 # Second and third passes (resolves cross-references, index, etc.)
 Set-Location $srcDir
-& platex -interaction=nonstopmode -output-directory=$buildDir main.tex
-& platex -interaction=nonstopmode -output-directory=$buildDir main.tex
+& platex -interaction=nonstopmode -output-directory="$buildDir" main.tex
+& platex -interaction=nonstopmode -output-directory="$buildDir" main.tex
 
 # Convert DVI to PDF
 & dvipdfmx -o (Join-Path $buildDir "main.pdf") (Join-Path $buildDir "main.dvi")
