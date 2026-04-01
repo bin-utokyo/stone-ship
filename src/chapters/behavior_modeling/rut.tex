@@ -32,17 +32,51 @@ U_{a} = \sum_{i} \beta_{i} x_{a, i} + \varepsilon_a
 \end{equation}
 $\varepsilon_a$ は選択肢 $a$ に特有のランダムな誤差項であり，上で述べた個人の選択行動に影響を与えるが分析者が観測できない要因を表す．
 なおこの誤差項に対し，従来の確定的な効用項 $V_a = \sum_i \beta_i x_{a, i}$ を確定項と呼ぶ．
-ランダム性の導入によって\eqref{eq:utility_max}は次のように書き換えられる．
+
+\subsection{誤差項の分布に関する仮定}
+誤差項によるランダム性の導入に伴い，\eqref{eq:utility_max}は次のように書き換えられる．
 \begin{equation}\label{eq:utility_max_random}
 y_k = \argmax_{a} \left( \sum_{i} \beta_{i} x_{a, i} + \varepsilon_a \right) = \argmax_{a} \left( V_a + \varepsilon_a \right)
 \end{equation}
-
-選択肢 $a$ の選択確率は次のように表される．
+よって選択肢 $a$ の選択確率は次のように表される．
 \begin{equation}
   \begin{aligned}
-    \text{Pr}(y_k = a) &= \text{Pr}\left( V_a + \varepsilon_a > V_{a'} + \varepsilon_{a'} \quad \forall a' \neq a \right)
+    \text{Pr}(y_k = a) &= \text{Pr}\left( V_a + \varepsilon_a > V_{a'} + \varepsilon_{a'} \quad \forall a' \neq a \right) \\
+    &= \text{Pr}\left( V_a - V_{a'} > \varepsilon_{a'} - \varepsilon_a \quad \forall a' \neq a \right) \\
+    &= \text{Pr}_{\varepsilon}\left( V_a - V_{a'} > \varepsilon \quad \forall a' \neq a \right) \\
+    &= \int_{-\infty}^{V_a - V_{a'}} f(\varepsilon) d\varepsilon \\
+    &= F_{\varepsilon}(V_a - V_{a'})
   \end{aligned}
 \end{equation}
+
+従って選択確率は誤差項 $\varepsilon$ の確率分布 $f(\varepsilon)$ および累積分布関数 $F_{\varepsilon}(\varepsilon)$ に明らかに依存する．
+
+では続いてこの誤差項 $\varepsilon$ の分布形状を具体的に考えてみよう．
+
+\subsubsection{正規分布の場合}
+最も一般的な分布は正規分布である．
+ここで標準正規分布の確率密度関数を $\phi(\cdot)$，その累積分布関数を $\Phi(\cdot)$ と表すと，選択確率 $\text{Pr}(y_k = a)$ は次のように表される．
+\begin{equation}
+  \text{Pr}(y_k = a) = \int_{-\infty}^{V_a - V_{a'}} \phi(\varepsilon) \, d\varepsilon = \Phi(V_a - V_{a'})
+\end{equation}
+この選択確率は一般に閉じた形で表すことができないため，数値的な積分が必要となる．
+このモデルは Probit Modelと呼ばれる．
+
+\subsubsection{Gumbel 分布の場合}
+Gumbel 分布は正規分布と類似の形状を持つが，累積分布関数がclosed-formで表されるという特徴がある．
+この分布を仮定すると，選択確率は次のように表される．
+\begin{equation}
+  \text{Pr}(y_k = a) = \frac{\exp(V_a)}
+\end{equation}
+
+\begin{figure}[hbtp]
+  \centering
+    \resizebox{.9\linewidth}{!}{%
+      \input{assets/behavior_modeling/fig_gumbel_pdf.tex}%
+    }
+  \caption{Gumbel 分布の確率密度関数(PDF)と，$\varepsilon \le 2$ の領域}
+  \label{fig:gumbel-pdf}
+\end{figure}
 
 以降の議論では $\varepsilon_a$ の形状および独立同一性に関する仮定が重要な役割を果たすが，ここではまずランダム性の導入の意義を理解することに留める．
 
