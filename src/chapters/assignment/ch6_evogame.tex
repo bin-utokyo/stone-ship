@@ -380,6 +380,17 @@ Day-to-day 調整過程の ODE が得られる．
 
 \subsubsection*{進化動学に課す条件}
 
+ここでは，経路フローの時間発展を記述する ODE
+\begin{equation}
+  \dot{\boldsymbol{f}} = \boldsymbol{V}(\boldsymbol{f})
+  \label{eq:evolutionary-dynamics-ode}
+\end{equation}
+を考える．
+$\boldsymbol{V}(\boldsymbol{f}) = \bigl(V_k^{rs}(\boldsymbol{f})\bigr)_{rs,k}$
+は各経路フローの変化率を与えるベクトル場であり，
+式\eqref{eq:mean-dynamics}の右辺に対応する（Smith ダイナミクスでは式\eqref{eq:smith-dynamics}，
+レプリケーター動学では式\eqref{eq:replicator} の右辺がこれにあたる）．
+
 Sandholm（2001, 2010）は，
 以下の5つの条件を満たす進化動学であれば，
 ポテンシャルゲームの Nash 均衡（＝UE）へ収束することを証明した
