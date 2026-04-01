@@ -1,0 +1,81 @@
+%% fig_fw_step.tex
+%% Frank-Wolfe 法の1ステップ（概念図）
+%% シャドウ付き多角形 = 実行可能領域 P（2次元単体，フロー保存条件を満たす
+%%                    フロー集合の模式的表現）
+%% 曲線 = 目的関数 Z(x) の等費用線（内側ほど小）
+%% x* = UE 最適解
+%% y^(n) = 現在のリンク旅行時間での All-or-Nothing 解（実行可能領域の頂点）
+%% x^(n+1) = 線探索後の更新点
+%%
+%% 使用座標:
+%%   実行可能領域（三角形）: V0=(0,0), V1=(5.5,0), V2=(0,4.5)
+%%   x*  = (1.5, 1.6)
+%%   x^(n) = (3.8, 0.4)
+%%   y^(n) = (0, 4.5) = V2
+%%   x^(n+1) = (1-0.44)*(3.8,0.4)+0.44*(0,4.5) = (2.13, 2.20)
+%%
+%% Usage: \input{assets/assignment/fig_fw_step.tex}
+
+\begin{tikzpicture}[
+    every node/.style={font=\small},
+    arr/.style={->, >=stealth, thick}
+]
+
+%% ===== 実行可能領域 P（2次元単体 = 三角形；フロー保存制約の模式） =====
+\fill[gray!18] (0,0) -- (5.5,0) -- (0,4.5) -- cycle;
+\draw[gray!55, thick] (0,0) -- (5.5,0) -- (0,4.5) -- cycle;
+\node[font=\footnotesize, gray!70!black] at (1.0, 0.35)
+    {実行可能領域 $P$};
+
+%% ===== 等費用線（Z(x) の等高線; 中心 x*=(1.5,1.6), 傾き 15°）=====
+\begin{scope}[rotate around={15:(1.5,1.6)}]
+    \draw[gray!50, thin] (1.5, 1.6) ellipse [x radius=0.50, y radius=0.35];
+    \draw[gray!50, thin] (1.5, 1.6) ellipse [x radius=1.20, y radius=0.84];
+    \draw[gray!50, thin] (1.5, 1.6) ellipse [x radius=2.10, y radius=1.47];
+    \draw[gray!50, thin] (1.5, 1.6) ellipse [x radius=3.30, y radius=2.31];
+\end{scope}
+\node[font=\scriptsize, gray, align=center] at (4.3, 3.5)
+    {等費用線\\（内側ほど小）};
+
+%% ===== 特徴点 =====
+
+%% UE 最適解 x*（黒丸）
+\filldraw[black] (1.5, 1.6) circle (2pt);
+\node[font=\small, above=12.5pt, left=-15.5pt] at (1.5, 1.6)
+    {$\boldsymbol{x}^*$（UE 解）};
+
+%% 現在の解 x^(n)（青丸）
+\filldraw[blue!70!black] (3.8, 0.4) circle (2.5pt);
+\node[font=\small, right=3pt, text=blue!70!black] at (3.8, 0.4)
+    {$\boldsymbol{x}^{(n)}$};
+
+%% 補助解 y^(n) = AoN 解（頂点，赤丸）
+\filldraw[red!70!black] (0, 4.5) circle (2.5pt);
+\node[font=\small, right=3pt, text=red!70!black] at (0, 4.5)
+    {$\boldsymbol{y}^{(n)}$（AoN 解・頂点）};
+
+%% 更新解 x^(n+1)（緑丸）
+\filldraw[green!50!black] (2.13, 2.20) circle (2.5pt);
+\node[font=\small, right=3pt, text=green!50!black] at (2.13, 2.20)
+    {$\boldsymbol{x}^{(n+1)}$};
+
+%% ===== FW 探索方向：x^(n) → y^(n) の線分（赤破線） =====
+\draw[red!65, dashed, semithick, shorten >=4pt, shorten <=4pt]
+    (3.8, 0.4) -- (0, 4.5)
+    node[midway, above left=0pt, font=\scriptsize, red!65, sloped]
+        {FW 方向};
+
+%% ===== 実際の更新：x^(n) → x^(n+1)（太実線矢印） =====
+\draw[arr, blue!40!green!80!black, very thick, shorten >=4pt, shorten <=4pt]
+    (3.8, 0.4) -- (2.13, 2.20)
+    node[midway, right=3pt, font=\scriptsize, align=left]
+        {線探索\\$\alpha^{\!*}\!\approx\!0.44$};
+
+%% ===== 参考：非制約降下方向 -∇Z(x^(n))（灰色破線矢印） =====
+%% 方向：x* - x^(n) = (-2.3, 1.2)，正規化 ×1.4 → (-1.24, 0.65)
+\draw[->, >=stealth, gray!55, dashed, thin, shorten >=2pt, shorten <=2pt]
+    (3.8, 0.4) -- (2.56, 1.05)
+    node[above=-2pt, left=-2pt, font=\scriptsize, gray!70!black, align=left]
+        {$-\nabla Z(\boldsymbol{x}^{(n)})$\\（非制約降下方向）};
+
+\end{tikzpicture}
