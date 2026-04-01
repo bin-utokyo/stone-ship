@@ -252,34 +252,36 @@ SUE 解の計算アルゴリズムは，
 UEの Frank-Wolfe 法（\sref{sec:ch3-ue} \ssref{subsec:frank-wolfe}）からラインサーチを除いた
 構造に対応する．
 
-\begin{description}
-  \item[Step 0（初期化）]
-    任意の実行可能解 $\boldsymbol{f}^{(0)} \in \mathcal{F}$ を設定する
-    （例：$\theta = 0$ のランダム配分）．反復回数 $n = 1$．
-
-  \item[Step 1（補助解の計算）]
-    現在のリンク旅行時間 $t_a(x_a^{(n-1)})$ を固定し，
-    ロジット配分（フロー非依存）を実施して補助解 $\hat{\boldsymbol{f}}$ を求める：
-    \[
-      \hat{f}_k^{rs} = q_{rs}\,
-        \frac{\exp\!\bigl(-\theta\, c_k^{rs}(\boldsymbol{f}^{(n-1)})\bigr)}
-             {\displaystyle\sum_{k'} \exp\!\bigl(-\theta\, c_{k'}^{rs}(\boldsymbol{f}^{(n-1)})\bigr)}
-    \]
-
-  \item[Step 2（更新）]
-    ステップサイズ $1/n$ を用いた荷重平均で経路交通量を更新する：
-    \begin{equation}
-      \boldsymbol{f}^{(n)}
-        = \boldsymbol{f}^{(n-1)}
-          + \frac{1}{n}\Bigl[\hat{\boldsymbol{f}} - \boldsymbol{f}^{(n-1)}\Bigr]
-      \label{eq:msa-update}
-    \end{equation}
-
-  \item[Step 3（収束判定）]
-    $\|\boldsymbol{f}^{(n)} - \boldsymbol{f}^{(n-1)}\|\,/\,\|\boldsymbol{f}^{(n-1)}\| \leq \epsilon$
-    であれば収束として終了；
-    そうでなければ $n \leftarrow n+1$ として Step~1 へ戻る．
-\end{description}
+\begin{table}[hbtp]
+  \centering
+  \caption{逐次平均法（MSA）のアルゴリズム}
+  \label{tab:msa-algorithm}
+  \begin{tabular}{cp{0.82\linewidth}}
+    \toprule
+    Step & 内容 \\
+    \midrule
+    0 & \textbf{初期化}：任意の実行可能解 $\boldsymbol{f}^{(0)} \in \mathcal{F}$ を設定する
+        （例：$\theta = 0$ のランダム配分）．反復回数 $n = 1$．
+        \\[4pt]
+    1 & \textbf{補助解の計算}：現在のリンク旅行時間 $t_a(x_a^{(n-1)})$ を固定し，
+        ロジット配分（フロー非依存）を実施して補助解 $\hat{\boldsymbol{f}}$ を求める：\\
+      & \quad $\displaystyle\hat{f}_k^{rs} = q_{rs}\,
+          \frac{\exp\!\bigl(-\theta\, c_k^{rs}(\boldsymbol{f}^{(n-1)})\bigr)}
+               {\displaystyle\sum_{k'} \exp\!\bigl(-\theta\, c_{k'}^{rs}(\boldsymbol{f}^{(n-1)})\bigr)}$
+        \\[4pt]
+    2 & \textbf{更新}：ステップサイズ $1/n$ を用いた荷重平均で経路交通量を更新する：\\
+      & \quad $\displaystyle\boldsymbol{f}^{(n)}
+          = \boldsymbol{f}^{(n-1)}
+            + \frac{1}{n}\Bigl[\hat{\boldsymbol{f}} - \boldsymbol{f}^{(n-1)}\Bigr]$
+        \\[4pt]
+    3 & \textbf{収束判定}：
+        $\|\boldsymbol{f}^{(n)} - \boldsymbol{f}^{(n-1)}\|\,/\,\|\boldsymbol{f}^{(n-1)}\| \leq \epsilon$
+        であれば収束として終了；
+        そうでなければ $n \leftarrow n+1$ として Step~1 へ戻る．
+        \\
+    \bottomrule
+  \end{tabular}
+\end{table}
 
 MSA はステップサイズの探索を必要とせず実装が容易である．
 一方，$1/n \to 0$ のペースで縮小するステップサイズは
@@ -320,16 +322,25 @@ Simplicial Decomposition 法では，
 均衡解 $\boldsymbol{f}^*$ を過去のロジット補助解（\textbf{極点解}）の
 凸結合として表現し，その結合重みを反復的に最適化する\cite{Sheffi1985}．
 
-各反復は次の2段階で構成される．
-\begin{description}
-  \item[外側反復（極点の追加）]
-    現在のリンク旅行時間に基づくロジット補助解 $\hat{\boldsymbol{f}}^{(n)}$ を
-    新たな極点として保持集合 $\mathcal{S}^{(n)}$ に追加する．
+各反復は次の2段階で構成される（表\ref{tab:sd-algorithm}）．
 
-  \item[内側反復（制限最短化）]
-    $\mathcal{S}^{(n)}$ に含まれる極点解の凸包上で目的関数\eqref{eq:sue-opt}を
-    最小化する制限凸最適化問題を解き，結合重みを更新する．
-\end{description}
+\begin{table}[hbtp]
+  \centering
+  \caption{Simplicial Decomposition 法の各反復における手順}
+  \label{tab:sd-algorithm}
+  \begin{tabular}{cp{0.82\linewidth}}
+    \toprule
+    Step & 内容 \\
+    \midrule
+    1 & \textbf{外側反復}（極点の追加）：現在のリンク旅行時間に基づくロジット補助解
+        $\hat{\boldsymbol{f}}^{(n)}$ を新たな極点として保持集合 $\mathcal{S}^{(n)}$ に追加する．
+        \\[4pt]
+    2 & \textbf{内側反復}（制限最短化）：$\mathcal{S}^{(n)}$ に含まれる極点解の凸包上で
+        目的関数\eqref{eq:sue-opt}を最小化する制限凸最適化問題を解き，結合重みを更新する．
+        \\
+    \bottomrule
+  \end{tabular}
+\end{table}
 
 内側反復は低次元の凸最適化問題であるため効率的に解ける．
 この方法の長所は，少数の極点解で均衡解をよく近似できる点と，
