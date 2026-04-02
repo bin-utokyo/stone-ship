@@ -6,7 +6,45 @@
 具体的には，選択肢集合の定義の難しさと列挙型モデルの限界を説明した上で，Recursive LogitやDynamic Decision Modelなどの経路非列挙型の経路選択モデルを紹介する．
 
 \subsection{選択肢集合の爆発}
+経路選択肢集合は簡単に爆発する．
+例えば，$n \times n$のグリッドネットワーク（図 \ref{fig:grid-paths}）における単純なODペアに対して，単純経路の数は表 \ref{tab:simple-paths}のように $n$ に対して急激に増加する．
+MNLモデルのような選択肢集合を前列挙するモデル（選択肢列挙型モデル）では，このような爆発する選択肢集合を扱うことが困難である．
 
+この様な課題に対処するために，経路非列挙型の経路選択モデルが提案されてきた．
+
+\begin{figure}[htb]
+  \centering
+  \resizebox{.4\linewidth}{!}{\input{assets/behavior_modeling/fig_grid_paths.tex}}
+  \caption{Examples of grid networks and the number of simple paths.}
+  \label{fig:grid-paths}
+\end{figure}
+
+\begin{table}[tb]
+\centering
+\caption{Number of simple paths in the grid network}
+\label{tab:simple-paths}
+\begin{tabular}{r r}
+\toprule
+$n$ & simple paths \\
+\midrule
+1  & 2 \\
+2  & 12 \\
+3  & 184 \\
+4  & 8,512 \\
+5  & 1,262,816 \\
+6  & 575,780,564 \\
+7  & 789,360,053,252 \\
+8  & 3,266,598,486,981,640 \\
+9  & 41,044,208,702,632,496,804 \\
+10 & 1,568,758,030,464,750,013,214,100 \\
+11 & 182,413,291,514,248,049,241,470,885,236 \\
+12 & 64,528,039,343,270,018,963,357,185,158,482,118 \\
+13 & 69,450,664,761,521,361,664,274,701,548,907,358,996,488 \\
+14 & 227,449,714,676,812,739,631,826,459,327,989,863,387,613,323,440 \\
+15 & 2,266,745,568,862,672,746,374,567,396,713,098,934,866,324,885,408,319,028 \\
+\bottomrule
+\end{tabular}
+\end{table}
 
 % 4.1 選択肢集合列挙問題
 % 経路は膨大
