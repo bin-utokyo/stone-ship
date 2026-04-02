@@ -203,6 +203,20 @@ UE の非効率性の顕著な例でもある．
 SO 配分においてこのような逆説は生じない：最適化が社会全体の視点から行われるため，
 新設リンクが実際に有益な場合にのみそれが積極的に利用される\cite{Braess1968}．
 
+\begin{example}[title={クイズ 7：日本の渋滞損失——年間いくら？}]
+国土交通省の推計（H27 年道路交通センサスベース）によると，
+日本全国の渋滞による時間損失は年間約 \textbf{38 億人時間}，
+経済損失換算で年間約 \textbf{12 兆円}に相当します．
+UE 配分の総旅行費用が SO 配分より大きい理由として最も正確なものはどれでしょうか？
+\begin{itemize}
+  \item[(ア)] UE では交通量が多すぎるので，単純に $x \times t$ が大きくなる
+  \item[(イ)] UE では各ドライバーが他者への影響（限界外部費用
+             $\mathrm{MEC}=x_a t_a'(x_a)$）を無視して参入するため，社会的に過剰な交通量が発生する
+  \item[(ウ)] SO はコンピュータが最適化するので，当然 UE より良い
+\end{itemize}
+\hyperref[ans:q7]{$\rightarrow$ 正解・解説は節末を参照}
+\end{example}
+
 % ---------------------------------------------------------------
 \subsection{混雑課金（限界費用課金）}
 \label{subsec:congestion-toll}
@@ -263,6 +277,19 @@ BPR 関数 $t_a(x_a) = t_{a0}\left\{1 + \alpha(x_a/C_a)^\beta\right\}$（\ssref{
   \label{eq:bpr-toll}
 \end{equation}
 となる．混雑が激しく $x_a^{SO}/C_a$ が大きいリンクほど高い料金が設定されることがわかる．
+
+\begin{example}[title={クイズ 8：首都高の「深夜割引」は混雑課金の考え方か？}]
+首都高速道路は 2022 年 4 月から，深夜 0～4 時に入口を通過する ETC 車を対象に
+通行料金を一律 \textbf{20\% 割引}する深夜割引を導入しました．
+余剰分析の数値例（$\mathrm{PMC}(2)=2$，$\mathrm{SMC}(2)=3$）から最適課金額 $\tau^*$ はいくらで，深夜割引の方向性は理論と同じでしょうか？
+\begin{itemize}
+  \item[(ア)] $\tau^*=0.5$，深夜割引は理論と逆方向（値下げなので）
+  \item[(イ)] $\tau^*=1$，深夜割引は理論と同方向（需要の少ない時間帯を安くして，
+             ピーク需要を平準化する）
+  \item[(ウ)] $\tau^*=2$，深夜割引は理論とは無関係
+\end{itemize}
+\hyperref[ans:q8]{$\rightarrow$ 正解・解説は節末を参照}
+\end{example}
 
 % ---------------------------------------------------------------
 \subsection{余剰分析}
@@ -364,3 +391,30 @@ UE 点が $x_{UE}$ から $x_{SO}$ に移動する．
         課金収入の一括再配分によるパレート改善が原理的に可能である
         （\ssref{subsec:surplus-analysis}）．
 \end{enumerate}
+
+\begin{example}[title={クイズ 7 正解・解説}]
+\phantomsection\label{ans:q7}
+\textbf{正解：（イ）}
+
+（ア）は事実ですが「なぜ過剰になるのか」を答えていません．
+ドライバーは自分の旅行時間（PMC）だけを見て行動し，
+参入によって他全員に上乗せされる MEC を無視します——
+この「見えない費用の無視」が年間 38 億人時間・12 兆円の損失の根本原因です．
+
+\noindent\small\textbf{参考：}
+\href{https://www.mlit.go.jp/road/ir/ir-data/ir-data.html}{国土交通省 道路関係データ（渋滞損失時間）}；
+\href{https://www.mlit.go.jp/report/press/road01_hh_000848.html}{H27全国道路交通情勢調査プレスリリース（PDF）}
+\end{example}
+
+\begin{example}[title={クイズ 8 正解・解説}]
+\phantomsection\label{ans:q8}
+\textbf{正解：（イ）}
+
+$\tau^*=\mathrm{SMC}-\mathrm{PMC}=3-2=1$．
+混雑課金の本義は「ピーク帯に上乗せする」ことですが，「混雑しない時間帯を安くしてピークを分散させる」も同じ効果をねらいます．
+深夜割引は政治的受容性を優先した「次善の一手」と解釈できます．
+
+\noindent\small\textbf{参考：}
+\href{https://www.shutoko.jp/fee/discount/plan_12}{首都高速 深夜割引}；
+\href{https://www.shutoko.co.jp/company/press/2021/data/12/10_2022fee/}{首都高プレスリリース（2021年12月）}
+\end{example}
