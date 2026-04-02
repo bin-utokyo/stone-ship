@@ -19,6 +19,28 @@
 最後に，余剰分析の手法を用いて，
 UE における死荷重損失と混雑課金の効果を定量的に整理する（\ssref{subsec:surplus-analysis}）\cite{Pigou1920,Beckmann1956}．
 
+本節で新たに用いる主要記号を表\ref{tab:ch5-notation}にまとめる（基本記号は表\ref{tab:notation}参照）．
+
+\begin{table}[hbtp]
+  \centering
+  \caption{システム最適配分・混雑課金の主要記号}
+  \label{tab:ch5-notation}
+  \begin{tabular}{cll}
+    \toprule
+    記号 & 意味 & 単位（例） \\
+    \midrule
+    $Z_{SO}(\boldsymbol{x})$   & SO の目的関数（ネットワーク全体の総旅行時間） & 台・分 \\
+    $\mathrm{PMC}_a$           & 私的限界費用 $= t_a(x_a)$（ドライバー自身の旅行時間） & 分 \\
+    $\mathrm{SMC}_a$           & 社会的限界費用 $= t_a(x_a) + x_a\, t_a'(x_a)$ & 分 \\
+    $\mathrm{MEC}_a$           & 限界外部費用 $= x_a\, t_a'(x_a) = \mathrm{SMC}_a - \mathrm{PMC}_a$ & 分 \\
+    $\tau_a^*$                 & 最適混雑課金額（ピグー税；$\tau_a^* = x_a^{SO}\, t_a'(x_a^{SO})$） & 分 \\
+    $D(x_a)$                   & 需要曲線（交通量 $x_a$ 台目の移動への支払意思額） & 分 \\
+    $W(x_a)$                   & 社会的余剰（総便益 $-$ 総社会的費用） & 台・分 \\
+    $\Delta W$                 & 死荷重損失（UE 配分による社会的余剰の損失） & 台・分 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
 % ---------------------------------------------------------------
 \subsection{Wardropの第2原則と定式化}
 \label{subsec:wardrop2}
@@ -319,16 +341,26 @@ UE 点が $x_{UE}$ から $x_{SO}$ に移動する．
         （$x_{SO} < x_{UE}$ かつ $t_a$ 単調増加より）．
 \end{itemize}
 
-\begin{tcolorbox}[
-  colback=blue!4!white, colframe=blue!50!black,
-  title={\small まとめ：UE・SO・混雑課金の関係},
-  breakable, fonttitle=\bfseries\small
-]
-  \begin{itemize}\setlength{\itemsep}{2pt}
-    \item UE：各利用者が PMC を最小化 $\Rightarrow$ 外部コストを無視 $\Rightarrow$ 過剰交通量
-    \item SO：SMC を最小化する中央集権的配分 $\Rightarrow$ 社会的余剰最大
-    \item 限界費用課金 $\tau_a^* = x_a^{SO}\, t_a'(x_a^{SO})$：
-          外部コストを利用者に課すことで，UE 解を SO 解に一致させる
-    \item 死荷重損失（紫の三角形）は課金によって回収される社会的便益に対応する
-  \end{itemize}
-\end{tcolorbox}
+\subsubsection*{本節のまとめ}
+
+本節で示した主要な結果を整理する：
+\begin{enumerate}
+  \item \textbf{システム最適配分}（SO）は Wardrop の第2原則に基づき，
+        社会的限界費用 $\mathrm{SMC}_a = t_a + x_a t_a'$ を経路費用として扱った
+        均衡として定式化され，ネットワーク全体の総旅行時間を最小化する
+        中央集権的配分に対応する
+        （\ssref{subsec:wardrop2}）．
+  \item UE と SO を比較すると，UE では私的限界費用（PMC）のみを参照するため
+        過剰交通量と死荷重損失が生じる一方，SO は社会的余剰を最大化する；
+        また Braess のパラドックスは UE では生じるが SO では生じない
+        （\ssref{subsec:ue-so-comparison}）．
+  \item \textbf{限界費用課金}（混雑課金）$\tau_a^* = x_a^{SO} t_a'(x_a^{SO})$
+        を各リンクに設定することで，
+        利用者が直面する費用が PMC から SMC へシフトし，
+        UE 解を SO 解に一致させて外部費用を内部化できる
+        （\ssref{subsec:congestion-toll}）．
+  \item 余剰分析により，UE における死荷重損失（紫の三角形）が
+        混雑課金によって回収される社会的便益に対応することが示され，
+        課金収入の一括再配分によるパレート改善が原理的に可能である
+        （\ssref{subsec:surplus-analysis}）．
+\end{enumerate}

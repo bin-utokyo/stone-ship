@@ -223,3 +223,28 @@ $\alpha, \beta$ はパラメータである．
     および\textbf{マクロ・ミクロシミュレーション}（\sref{sec:ch8-simulation}\cite{Daganzo2007}）へと
     議論は展開していく．
 \end{description}
+
+\subsubsection*{本節のまとめ}
+
+本節で整理した主要な概念を振り返る：
+\begin{enumerate}
+  \item 交通ネットワークはノード集合 $N$・リンク集合 $A$・セントロイド・
+        ODペア集合 $\Omega$・経路集合 $K_{rs}$ の5要素で表現される有向グラフであり，
+        交通量配分問題の基本的な解空間を定義する
+        （\ssref{subsec:network-elements}）．
+  \item リンク交通量 $x_a$・経路交通量 $f_k^{rs}$・リンク–経路付替行列
+        $\delta_{a,k}^{rs}$ の3変数に加え，
+        リンク–経路関係式・流量保存条件・経路旅行時間の3式が基本関係式をなし，
+        配分計算ではリンク変数 $\{x_a\}$ を主要変数として扱う
+        （\ssref{subsec:basic-variables}）．
+  \item BPR 関数 $t_a(x_a) = t_{a0}\{1 + \alpha(x_a/C_a)^\beta\}$ は
+        自由流旅行時間・容量・混雑回帰係数を組み込んだ実務的な混雑関数であり，
+        $\beta > 1$ における狭義単調増加・狭義凸の性質が
+        UE 解の一意性の重要な十分条件となる
+        （\ssref{subsec:bpr}）．
+  \item 交通量配分モデルは「フロー依存性」と「経路選択の確定性・確率性」の
+        2軸で4象限に分類され，
+        本テキストの章構成（\sref{sec:ch2-uncongested}〜\sref{sec:ch8-simulation}）の
+        基本的な骨格をなす
+        （\ssref{subsec:model-overview}）．
+\end{enumerate}

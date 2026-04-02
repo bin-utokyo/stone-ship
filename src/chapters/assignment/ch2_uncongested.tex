@@ -30,6 +30,30 @@
     前進・後退の2パス処理によって計算量を大幅に削減する．
 \end{description}
 
+本節で新たに用いる主要記号を表\ref{tab:ch2-notation}にまとめる（基本記号は表\ref{tab:notation}参照）．
+
+\begin{table}[hbtp]
+  \centering
+  \caption{非混雑型配分の主要記号}
+  \label{tab:ch2-notation}
+  \begin{tabular}{cll}
+    \toprule
+    記号 & 意味 & 単位（例） \\
+    \midrule
+    $c(i)$          & ノード $i$ への最短経路費用（起点からの最小旅行時間） & 分 \\
+    $F_j$           & 先行ポインタ（最短経路ツリー上のノード $j$ の直前ノード） & — \\
+    $y_{ij}$        & AoN 集計補助フロー（起点からリンク $(i,j)$ に集計される交通量） & 台/時 \\
+    $P_{ij}$        & ノード $i$ からノード $j$ への遷移確率（マルコフ配分） & — \\
+    $\mathbf{N}$    & 基本行列 $(I-Q)^{-1}$（一時的状態間の平均通過回数を表す行列） & — \\
+    $v_j^*$         & 目的地までの最短残余費用（目的地考慮型ロジットで事前計算） & 分 \\
+    $\theta$        & ロジットの感度パラメータ（$\theta\to\infty$ で AoN 配分に収束） & 分$^{-1}$ \\
+    $P_k^{rs}$      & ODペア $rs$ の利用者が経路 $k$ を選択するロジット確率 & — \\
+    $L[i\to j]$    & Dial のアルゴリズムにおけるリンク尤度 & — \\
+    $W[i\to j]$    & Dial のアルゴリズムにおけるリンクウェイト & — \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
 % ---------------------------------------------------------------
 \subsection{All-or-Nothing 配分}
 \label{subsec:aon}
@@ -415,3 +439,33 @@ Dial のアルゴリズムは前進・後退の2パス処理で $O(|\mathcal{N}|
 この仮定により循環フローは排除され，有向非巡回グラフ（DAG）上の分析と等価になる．
 循環フローを考慮すべき状況では，\ssref{subsec:markov-assignment} の
 マルコフ過程配分が適切である\cite{Akamatsu1996}．
+
+\subsubsection*{本節のまとめ}
+
+本節で示した主要な結果を整理する：
+\begin{enumerate}
+  \item \textbf{AoN 配分}は，すべての交通量を最短経路1本に集中させる
+        最も単純な確定的配分モデルであり，
+        混雑を考慮した均衡配分（Frank-Wolfe 法）の補助解問題において
+        基本的な構成要素として繰り返し利用される
+        （\ssref{subsec:aon}）．
+  \item \textbf{吸収マルコフ過程配分}は，ネットワーク上の移動を
+        確率的ランダムウォークとして定式化し，
+        基本行列 $(I-Q)^{-1}$ によって経路を陽に列挙せずに
+        リンク流量を解析的に求める手法であり，
+        目的地考慮型ロジットを遷移確率として採用することで
+        循環フロー問題を緩和できる
+        （\ssref{subsec:markov-assignment}）．
+  \item \textbf{ロジット配分}は，知覚費用の誤差項がガンベル分布に従う仮定から
+        多項ロジット（MNL）モデルを導き，
+        パラメータ $\theta$ によって AoN 配分（$\theta \to \infty$）と
+        均等配分（$\theta \to 0$）の間を連続的に制御する；
+        IIA 特性が計算を容易にする一方，経路重複問題に注意が必要である
+        （\ssref{subsec:stochastic-assignment}）．
+  \item \textbf{Dial のアルゴリズム}は，
+        リンク尤度に基づく前進・後退の2パス処理によって，
+        経路を陽に列挙せず $O(|\mathcal{N}|+|\mathcal{A}|)$ の計算量で
+        ロジット配分を実現し，$\theta \to \infty$ の特殊例として
+        AoN 配分を包含する
+        （\ssref{subsec:dial-algorithm}）．
+\end{enumerate}

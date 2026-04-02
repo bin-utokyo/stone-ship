@@ -598,3 +598,29 @@ $(x_1,\, x_2,\, x_3,\, x_4,\, x_5) = (4,\, 2,\, 2,\, 4,\, 2)$ となる．
         個人の経路選択行動を明示的に考慮しなければ，
         投資が逆効果をもたらしうる．
 \end{itemize}
+
+\subsubsection*{本節のまとめ}
+
+本節で示した主要な結果を整理する：
+\begin{enumerate}
+  \item \textbf{Wardrop の第1原則}（「使用経路はすべて最短で等時間，
+        未使用経路はそれ以上」）が混雑ネットワークの Nash 均衡を定式化し，
+        利用者均衡（UE）の均衡条件を与える；
+        UE は完全情報・旅行時間最小化という2仮定のもとで定義される
+        （\ssref{subsec:wardrop}）．
+  \item \textbf{Beckmann 変換}により UE 条件は凸最適化問題（UE/FD-Primal）と
+        等価であることが示され，その KKT 条件が Wardrop 均衡条件に一致する；
+        BPR 関数のような狭義単調増加リンク費用のもとでは
+        目的関数が狭義凸となり，UE 解は一意に定まる
+        （\ssref{subsec:beckmann}）．
+  \item \textbf{Frank-Wolfe 法}は，補助解問題（AoN 配分）と
+        ステップサイズ最適化の反復を通じて相対ギャップが収束するまで
+        UE 解を逐次的に求める実用的アルゴリズムであり，
+        大規模ネットワークへの適用が現実的である
+        （\ssref{subsec:frank-wolfe}）．
+  \item \textbf{Braess のパラドックス}は，新規リンク追加後の Nash 均衡（UE）において
+        全利用者の旅行時間が悪化しうることを示す典型的な反例であり，
+        UE と社会最適配分（SO）との乖離が
+        混雑課金介入（\sref{sec:ch5-so}・\sref{sec:ch7-pigou}）の根拠となることを示唆する
+        （\ssref{subsec:braess}）．
+\end{enumerate}

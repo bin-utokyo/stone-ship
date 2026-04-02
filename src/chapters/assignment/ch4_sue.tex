@@ -356,3 +356,26 @@ Simplicial Decomposition 法では，
 その後はMSAや部分線形化法と同様の更新ステップを適用する．
 計算コストはロジット型より大幅に増大するが，
 経路重複問題への対応が求められるネットワークで有効である\cite{Daganzo1977,Sheffi1985}．
+
+\subsubsection*{本節のまとめ}
+
+本節で示した主要な結果を整理する：
+\begin{enumerate}
+  \item \textbf{SUE} はランダム効用理論
+        （知覚旅行時間 $=$ 客観的旅行時間 $+$ 誤差項）の枠組みで
+        完全情報仮定を緩和した配分モデルであり，
+        誤差分布としてガンベル分布を仮定するとロジット型（MNL），
+        正規分布を仮定するとプロビット型が導かれる
+        （\ssref{subsec:sue-relaxation}）．
+  \item ロジット型SUE の均衡条件は \textbf{Fisk の等価最適化問題}
+        （Beckmann 目的関数にエントロピー項 $-\theta^{-1}\sum_k f_k \log f_k$
+        を加えた凸問題）として定式化でき，
+        その KKT 条件からロジット選択確率が直接導出される
+        （\ssref{subsec:sue-optimization}）．
+  \item SUE の実用的な解法として，\textbf{逐次平均法}（MSA），
+        \textbf{部分線形化法}，および \textbf{Simplicial Decomposition 法}の
+        3手法があり，それぞれ実装容易性・収束速度・大規模化の観点で
+        トレードオフを持つ；
+        プロビット型 SUE にはモンテカルロ法が標準的に用いられる
+        （\ssref{subsec:sue-algorithms}）．
+\end{enumerate}

@@ -54,6 +54,37 @@
 \ssref{subsec:micro-sim} でミクロシミュレーションの基礎となる
 \textbf{車両追従モデル}（GHR モデル）をそれぞれ解説する．
 
+本節で用いる主要記号を表\ref{tab:ch8-notation}にまとめる．
+
+\begin{table}[hbtp]
+  \centering
+  \caption{シミュレーションの主要記号}
+  \label{tab:ch8-notation}
+  \begin{tabular}{cll}
+    \toprule
+    記号 & 意味 & 単位（例） \\
+    \midrule
+    \multicolumn{3}{l}{\textit{マクロシミュレーション（LWR モデル・MFD）}} \\
+    \midrule
+    $\rho(x,t)$      & 交通流密度 & 台/km \\
+    $q(x,t)$         & 交通流量（LWR モデル） & 台/時 \\
+    $Q(\rho)$        & 基本図（密度から流量を決める関数） & 台/時 \\
+    $n_i$            & ゾーン $i$ の Accumulation（ゾーン内車両台数） & 台 \\
+    $G_i(n_i)$       & ゾーン $i$ の Production（MFD；単位時間の走行距離総和） & 台·km/時 \\
+    $\bar{v}_i$      & ゾーン $i$ の平均速度 $= G_i(n_i)/n_i$ & km/時 \\
+    $n_i^*$          & 臨界 Accumulation（Production が最大となる車両台数） & 台 \\
+    $\phi_{ij}$      & ゾーン $i$ からゾーン $j$ への方向別流動シェア & — \\
+    \midrule
+    \multicolumn{3}{l}{\textit{ミクロシミュレーション（GHR 車両追従モデル）}} \\
+    \midrule
+    $v_i(t)$         & 時刻 $t$ における車両 $i$（後続車）の速度 & km/時 \\
+    $\Delta x_i$     & 車両 $i$ と前方車両の車間距離 & m \\
+    $\Delta v_i$     & 車両 $i$ と前方車両の相対速度 & km/時 \\
+    $\Delta t$       & ドライバーの反応遅れ時間（GHR モデル） & 秒 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
 % ---------------------------------------------------------------
 \subsection{マクロシミュレーション（MFD）}
 \label{subsec:mfd}
@@ -365,3 +396,26 @@ GHR モデルはパラメータ組 $(\alpha, \beta, \gamma)$ によって
 均衡配分理論（\sref{sec:ch3-ue}〜\sref{sec:ch5-so}）・進化ダイナミクス（\sref{sec:ch6-evogame}）・混雑課金（\sref{sec:ch7-pigou}）といった
 本テキストの理論的成果を現実のシステムで検証・活用する際に，
 シミュレーションは不可欠なブリッジとして機能する．
+
+\subsubsection*{本節のまとめ}
+
+本節で示した主要な結果を整理する：
+\begin{enumerate}
+  \item \textbf{マクロシミュレーション（MFD）}は，LWR モデルを理論的基礎として
+        交通流を密度・流量の集計量で記述し，
+        都市ネットワーク規模の MFD を利用したゾーンベースモデルによって
+        大規模シミュレーションとペリメーターコントロールなどの
+        交通管理政策評価が可能になる
+        （\ssref{subsec:mfd}）．
+  \item \textbf{ミクロシミュレーション}は，GHR モデルなどの車両追従モデルを用いて
+        個々の車両の加速・減速挙動をエージェントとして逐次シミュレートし，
+        信号・交差点制御や自動運転などの細粒度の交通現象を詳細に評価できる；
+        一方，計算コストの高さやパラメータキャリブレーションの工数が課題である
+        （\ssref{subsec:micro-sim}）．
+  \item マクロ・ミクロの2手法は相補的であり，
+        分析目的・スケール・利用可能データに応じて使い分けることが求められる；
+        均衡配分理論（\sref{sec:ch3-ue}〜\sref{sec:ch5-so}）・
+        進化ダイナミクス（\sref{sec:ch6-evogame}）・
+        混雑課金（\sref{sec:ch7-pigou}）といった理論的成果を
+        現実のシステムで検証・活用する際の不可欠なブリッジとして機能する．
+\end{enumerate}
