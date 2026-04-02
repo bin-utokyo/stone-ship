@@ -586,6 +586,19 @@ Day-to-day 進化動学の枠組みでは，次のような問いに対する分
         \cite{Sandholm2010,Braess1968}．
 \end{enumerate}
 
+\begin{example}[title={クイズ 9：毎朝の「昨日より速い道」探しは，どこへ収束する？}]
+山手通り周辺に通勤する多数のドライバーが，毎朝「昨日より旅行時間が短い経路があれば少しずつ乗り換える」という
+Smith ダイナミクス（改訂プロトコル $\rho_{ij}\propto[F_j-F_i]^+$）を繰り返しています．
+この「毎日の微修正」を長期間繰り返すと，最終的にどの状態に収束するでしょうか？
+\begin{itemize}
+  \item[(ア)] ランダムに変動し続け，安定した状態には到達しない
+  \item[(イ)] 利用者均衡（UE）——誰も旅行時間を短縮できる乗り換え先がない状態
+  \item[(ウ)] システム最適（SO）——総旅行時間が最小の状態
+  \item[(エ)] 全員が同じ経路に集中する
+\end{itemize}
+\hyperref[ans:q9]{$\rightarrow$ 正解・解説は節末を参照}
+\end{example}
+
 \subsubsection*{本節のまとめ}
 
 本節で示した主要な結果を整理する：
@@ -608,3 +621,12 @@ Day-to-day 進化動学の枠組みでは，次のような問いに対する分
         \textbf{動的評価}（収束速度・過渡状態への影響）が可能となる
         （\ssref{subsec:daytodaydyn}）．
 \end{enumerate}
+
+\begin{example}[title={クイズ 9 正解・解説}]
+\phantomsection\label{ans:q9}
+\textbf{正解：（イ）}
+
+ポテンシャルゲームとしての UE の構造から，
+Smith ダイナミクスはグローバルに UE に収束することが保証されます．
+毎朝の「賢い乗り換え」は最終的に，Wardrop が 1952 年に定義した均衡条件を動的に「発見」するプロセスです．
+\end{example}
