@@ -18,6 +18,34 @@
 Vickrey ボトルネックモデルと最適動的課金を説明する．
 最後に \ssref{subsec:redistribution} では，課金収入の再分配と公平性の問題を論じる．
 
+本節で新たに用いる主要記号を表\ref{tab:ch7-notation}にまとめる（基本記号は表\ref{tab:notation}，表\ref{tab:ch5-notation}参照）．
+
+\begin{table}[hbtp]
+  \centering
+  \caption{ピグー課金・ボトルネックモデルの主要記号}
+  \label{tab:ch7-notation}
+  \begin{tabular}{cll}
+    \toprule
+    記号 & 意味 & 単位（例） \\
+    \midrule
+    $V$                & 単一リンクの交通量（本節での連続変数表記） & 台/時 \\
+    $\mathrm{MEC}$     & 限界外部費用 $= V\,t'(V)$（単一リンク表記） & 分 \\
+    $A^T \subseteq A$  & 課金可能なリンクの集合（第二最善課金で $A^T \subsetneq A$） & — \\
+    $\tilde{t}_a$      & 課金後の一般化リンク費用 $= t_a(x_a) + \tau_a$ & 分 \\
+    $s$                & ボトルネックの処理容量（最大サービス率） & 台/時 \\
+    $q(t)$             & 時刻 $t$ における待ち行列長 & 台 \\
+    $w(t) = q(t)/s$    & 時刻 $t$ における待ち時間 & 時 \\
+    $N$                & 通勤者総数 & 人 \\
+    $t^*$              & 希望到着時刻（始業時刻） & — \\
+    $C(t)$             & 時刻 $t$ に出発する通勤者の一般化費用（$\alpha$-$\beta$-$\gamma$ 体系） & 円 \\
+    $\alpha$           & 待ち時間の価値（時間費用係数；表\ref{tab:notation}の $\alpha$ とは異なる） & 円/時 \\
+    $\beta$            & 早着スケジュール遅延費用係数（$\beta<\alpha$） & 円/時 \\
+    $\gamma$           & 遅着スケジュール遅延費用係数（$\gamma>\alpha$） & 円/時 \\
+    $\tau(t)$          & 時刻 $t$ における動的課金額 & 円 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
 % ---------------------------------------------------------------
 \subsection{外部性とピグー税の考え方}
 \label{subsec:pigou-externality}
@@ -226,7 +254,7 @@ $q(t)$（台）が形成される．単位時間あたりの待ち時間は $w(t
 
 \paragraph{希望到着時刻と通勤費用.}
 $N$（人）の同質な通勤者全員が，職場の始業時刻 $t^*$（例：午前9時）をちょうど ``希望到着時刻'' とする．
-通勤者の一般化費用は\textbf{$\alpha$-$\beta$-$\gamma$ 体系}\cite{Vickrey1969}：
+通勤者の一般化費用は\textbf{$\alpha$-$\beta$-$\gamma$ 体系}\cite{Small1982,ArnottdePalmaLindsey1990}:
 
 \begin{equation}
   C(t)
@@ -290,7 +318,7 @@ $\gamma > \alpha > \beta$ の仮定は，「遅刻は待ち時間より嫌」「
   \label{eq:optimal-dynamic-toll}
 \end{equation}
 
-料金プロファイルは「早着側は増加，遅着側は減少」という\textbf{台形型}に近い形状となる
+料金プロファイルは「早着側は増加，遅着側は減少」という\textbf{山型}（逆V字型）の形状となる
 （図\ref{fig:vickrey-bottleneck}）．
 
 \begin{figure}[hbtp]
@@ -299,7 +327,7 @@ $\gamma > \alpha > \beta$ の仮定は，「遅刻は待ち時間より嫌」「
   \caption{Vickrey ボトルネックモデルにおける出発時刻選択．
            縦軸は費用・待ち時間・課金額，横軸は出発時刻 $t$，$t^*$ は希望到着時刻．
            （a）無課金均衡：行列 $w(t) > 0$ が形成される（純粋な社会的損失）．
-           （b）最適動的課金：台形型の料金 $\tau(t)$ により行列が消滅
+           （b）最適動的課金：山型（逆V字型）の料金 $\tau(t)$ により行列が消滅
            （$w(t) = 0$）し，通勤費用は均衡値 $C^*$ のまま変化しない．}
   \label{fig:vickrey-bottleneck}
 \end{figure}
@@ -316,7 +344,7 @@ $\gamma > \alpha > \beta$ の仮定は，「遅刻は待ち時間より嫌」「
   \item
     \textbf{福祉改善の規模}：
     最適課金で解消できる社会的損失の割合は最大 50\%（ケースによる）であることが
-    Vickrey（1969）によって示されている\cite{Vickrey1969}．
+    Arnott, de Palma and Lindsey（1990）によって示されている\cite{ArnottdePalmaLindsey1990}．
     正確には，福祉改善率は $\beta/\alpha$ と $\gamma/\alpha$ の比率に依存し，
     $\beta \to 0$ かつ $\gamma \to \infty$ の極限で改善率が最大になる．
 
@@ -334,7 +362,7 @@ $\gamma > \alpha > \beta$ の仮定は，「遅刻は待ち時間より嫌」「
 例えば「ピーク前（やや高）→ピーク（最高）→ピーク後（やや高）→夜間（無料）」という
 3〜4段階の料金体系が実用的である．
 シンガポールの ERP（Electronic Road Pricing）は
-30分単位で料金を変動させる実装例として知られている\cite{Vickrey1969}．
+30分単位で料金を変動させる実装例として知られている．
 
 % ---------------------------------------------------------------
 \subsection{収入の再分配と公平性}
@@ -346,9 +374,9 @@ $\gamma > \alpha > \beta$ の仮定は，「遅刻は待ち時間より嫌」「
 最適課金を実施した場合の収入は実務的に相当な規模になりうる．
 
 \begin{itemize}
-  \item ロンドン中心部課金（2003年導入）：年間約 1.5 億ポンドの収入
-  \item ストックホルム中心部課金（2006年導入，2007年恒久化）：年間約 7 億クローナ
-  \item シンガポール ERP：道路整備・公共交通補助の主要財源の一つ
+  \item ロンドン中心部課金（2003年導入）：年間約 2.3 億ポンドの総収入（純収入は約 1.5 億ポンド，2018/19年度）
+  \item ストックホルム中心部課金（2006年導入，2007年恒久化）：年間約 15 億クローナ（2017年度，2016年の税率引上げ後）
+  \item シンガポール ERP：道路整備・公共交通補助の主要財源の一つ（収入額は詳細非公表）
 \end{itemize}
 
 \subsubsection*{収入の使途（再分配方式）}
@@ -431,26 +459,26 @@ $\gamma > \alpha > \beta$ の仮定は，「遅刻は待ち時間より嫌」「
 両配当が同時に実現するため，混雑課金はただの「税収確保策」ではなく，
 「経済政策」として正当化できるという論拠になる．
 
-\begin{tcolorbox}[
-  colback=blue!4!white, colframe=blue!50!black,
-  title={\small まとめ：ピグー課金と混雑課金の一般理論},
-  breakable, fonttitle=\bfseries\small
-]
-  \begin{itemize}\setlength{\itemsep}{2pt}
-    \item \textbf{外部性の内部化}（\ssref{subsec:pigou-externality}）：
-          ピグー税 $\tau^* = V^* t'(V^*)$ で PMC を SMC に引き上げ，
-          個人の私的最適化が社会最適と一致する
-    \item \textbf{第一最善課金}（\ssref{subsec:first-best}）：
-          全リンクに $\tau_a^* = x_a^{SO} t_a'(x_a^{SO})$ を設定することで，
-          UE 解が SO 解に一致し，死荷重損失が解消される
-    \item \textbf{第二最善課金}（\ssref{subsec:second-best}）：
-          課金可能リンクが限定される場合，バイレベル計画問題を解く必要があり，
-          単純な限界外部費用課金では不十分；迂回交通の考慮が不可欠
-    \item \textbf{動的課金}（\ssref{subsec:vickrey-bottleneck}）：
-          Vickrey ボトルネックモデルにおける台形型料金プロファイルにより
-          行列（キュー）が消滅し，最大 50\% の社会損失削減が可能
-    \item \textbf{収入の再分配}（\ssref{subsec:redistribution}）：
-          適切な再分配によりパレート改善が可能；
-          二重配当効果で経済政策としての根拠も生まれる
-  \end{itemize}
-\end{tcolorbox}
+\subsubsection*{本節のまとめ}
+
+本節で示した主要な結果を整理する：
+\begin{enumerate}
+  \item \textbf{外部性の内部化}：ピグー税 $\tau^* = V^* t'(V^*)$ で
+        私的限界費用（PMC）を社会的限界費用（SMC）に引き上げることで，
+        個人の私的最適化が社会最適と一致する
+        （\ssref{subsec:pigou-externality}）．
+  \item \textbf{第一最善課金}：全リンクに $\tau_a^* = x_a^{SO} t_a'(x_a^{SO})$
+        を設定することで UE 解が SO 解に一致し，死荷重損失が解消される
+        （\ssref{subsec:first-best}）．
+  \item \textbf{第二最善課金}：課金可能リンクが限定される場合，
+        バイレベル計画問題を解く必要があり，
+        迂回交通への対応を含む単純な限界外部費用課金では不十分である
+        （\ssref{subsec:second-best}）．
+  \item \textbf{動的課金}：Vickrey ボトルネックモデルにおける
+        台形型料金プロファイルにより行列（キュー）が消滅し，
+        最大 50\% の社会損失削減が可能である
+        （\ssref{subsec:vickrey-bottleneck}）．
+  \item \textbf{収入の再分配}：適切な再分配によりパレート改善が可能であり，
+        二重配当効果によって混雑課金を経済政策として正当化する論拠も生まれる
+        （\ssref{subsec:redistribution}）．
+\end{enumerate}
