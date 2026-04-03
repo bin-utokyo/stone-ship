@@ -225,7 +225,8 @@ Nash 均衡では，各利用者は自分の選択が他者に与える影響（
 \subsubsection*{2定義の対比と連続体極限}
 
 \begin{center}
-\begin{tabular}{lll}
+\small
+\begin{tabular}{lp{0.35\textwidth}p{0.37\textwidth}}
   \toprule
   & Wardrop 均衡 & Nash 均衡（$n$ 人） \\
   \midrule
@@ -281,7 +282,7 @@ Wardrop 均衡条件\eqref{eq:appendix-C-wardrop-def}と等価になる．
 
 \subsubsection*{証明}
 
-\paragraph{ゲームの定式化．}
+\paragraph*{ゲームの定式化．}
 利用者 $a$ ($a = 1, \ldots, n$) が各経路 $j \in K_{rs}$ を選択する確率を $\pi_{aj}$ とする．
 利用者の戦略は混合戦略 $(\pi_{a1}, \ldots, \pi_{aJ})$ であり，$\pi_{aj} \geq 0$，
 $\sum_j \pi_{aj} = 1$ を満たす．
@@ -299,7 +300,7 @@ $n$ が十分大の極限では，大数の法則より
 式\eqref{eq:appendix-C-lln} のもとで，経路 $j$ の期待旅行時間は確定的に
 $g_j(\boldsymbol{h}^*)$ で近似される（$h_j^* = n\pi_j$）．
 
-\paragraph{Nash 均衡条件．}
+\paragraph*{Nash 均衡条件．}
 利用者 $a$ が旅行時間を最小化する合理的エージェントであるとすると，
 混合戦略 Nash 均衡においては：
 \begin{equation}
@@ -310,7 +311,7 @@ $g_j(\boldsymbol{h}^*)$ で近似される（$h_j^* = n\pi_j$）．
 \end{equation}
 が成立しなければならない（最適反応条件）．
 
-\paragraph{等価性．}
+\paragraph*{等価性．}
 式\eqref{eq:appendix-C-lln}より $h_j^* = n\pi_j$ であるから，
 Nash 均衡条件\eqref{eq:appendix-C-nash}を $h_j^*$ で書き直せば，
 $h_j^* > 0 \Leftrightarrow \pi_j > 0$ および $h_j^* = 0 \Leftrightarrow \pi_j = 0$ より，
@@ -325,7 +326,7 @@ UE 条件\eqref{eq:appendix-C-ue}と完全に一致する．
 到達する均衡状態が，まさにWardrop 均衡に他ならない．
 
 また，UEがポテンシャルゲームの最小化問題（Beckmann 変換）と等価であることは
-\sref{sec:ch6-evogame}でも改めて論じる（\ssref{subsec:potential-game}参照）．
+\sref{sec:ch7-evogame}でも改めて論じる（\ssref{subsec:potential-game}参照）．
 
 % ===============================================================
 \section{補足D\quad 相補性条件と KKT 条件}
@@ -375,7 +376,8 @@ $\nu_j$ は\textbf{等式制約}に対応する Lagrange 乗数である．
 \subsubsection*{KKT 条件}
 
 \begin{center}
-\begin{tabular}{lll}
+\small
+\begin{tabular}{l p{0.24\textwidth} p{0.43\textwidth}}
   \toprule
   条件名 & 式 & 意味 \\
   \midrule
@@ -555,7 +557,8 @@ $e^{-1}e^{\theta u_{rs}}$ が消えて
 \subsubsection*{UE との対比}
 
 \begin{center}
-\begin{tabular}{lll}
+\small
+\begin{tabular}{l p{0.37\textwidth} p{0.40\textwidth}}
   \toprule
   & UE/FD-Primal & SUE/FD-path \\
   \midrule
