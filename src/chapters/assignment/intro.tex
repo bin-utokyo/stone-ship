@@ -69,7 +69,7 @@ $q_{rs}$（OD交通量）として記述される．
     （\sref{sec:ch3-ue} \ssref{subsec:braess}）は，モデルによる事前検討の重要性を示す典型例である\cite{Braess1968}．
   \item[混雑課金・需要管理]
     外部不経済（混雑の外部性）を内部化するための最適な課金額を算定する．
-    Pigouvian 税の概念を交通に適用した混雑課金（\sref{sec:ch5-so}・\sref{sec:ch7-pigou}）は，
+    Pigouvian 税の概念を交通に適用した混雑課金（\sref{sec:ch5-so}・\sref{sec:ch8-pigou}）は，
     ロンドン，ストックホルム，シンガポールなど世界の主要都市で実施されている\cite{Pigou1920,Vickrey1969}．
   \item[交通制御・情報提供]
     リアルタイムの交通情報や経路誘導が利用者行動に与える影響を分析し，
@@ -79,7 +79,7 @@ $q_{rs}$（OD交通量）として記述される．
     混雑分布や避難経路の脆弱性を評価する．
   \item[シミュレーションとの連携]
     マクロ基本図（MFD）に基づくゾーンシミュレーションや
-    ミクロシミュレーション（\sref{sec:ch8-simulation}）の初期条件・境界条件として配分結果が利用される\cite{Daganzo2007,Geroliminis2008}．
+    ミクロシミュレーション（\sref{sec:ch9-simulation}）の初期条件・境界条件として配分結果が利用される\cite{Daganzo2007,Geroliminis2008}．
 \end{description}
 
 \subsection*{交通量配分モデルの分類}
@@ -113,8 +113,8 @@ $q_{rs}$（OD交通量）として記述される．
 \end{description}
 
 さらに，社会全体の総旅行時間を最小化するシステム最適配分（\sref{sec:ch5-so}），
-均衡へ至る動的調整過程を記述する進化ゲーム理論的アプローチ（\sref{sec:ch6-evogame}），
-混雑課金の経済理論（\sref{sec:ch7-pigou}），そして各種シミュレーション手法（\sref{sec:ch8-simulation}）へと
+均衡へ至る動的調整過程を記述する進化ゲーム理論的アプローチ（\sref{sec:ch7-evogame}），
+混雑課金の経済理論（\sref{sec:ch8-pigou}），そして各種シミュレーション手法（\sref{sec:ch9-simulation}）へと
 議論は展開していく．
 
 \subsection*{交通量配分モデルの特長}
@@ -134,7 +134,7 @@ $q_{rs}$（OD交通量）として記述される．
 
   \item \textbf{ミクロ経済学との整合性}：
     消費者余剰・生産者余剰の概念を用いた余剰分析（\sref{sec:ch5-so} \ssref{subsec:surplus-analysis}）や，
-    混雑課金の最適設計（\sref{sec:ch7-pigou}）は，ミクロ経済理論と厳密に整合しており，
+    混雑課金の最適設計（\sref{sec:ch8-pigou}）は，ミクロ経済理論と厳密に整合しており，
     福祉評価・費用便益分析に直接応用できる．
 
   \item \textbf{複雑モデルの比較基準}：
@@ -143,46 +143,50 @@ $q_{rs}$（OD交通量）として記述される．
     均衡配分モデルの解は理論的な基準点（ベンチマーク）としての役割を果たす．
 \end{enumerate}
 
-\subsection*{本節の構成}
+\subsection*{本章の構成}
 
-本節は以下の8節から構成される．
+本章は以下の9節から構成される．
 
 \begin{description}
-  \item[第1節　交通ネットワークの記述]
+  \item[\sref{sec:ch1-network}　交通ネットワークの記述]
     ネットワークの構成要素（ノード，リンク，経路，ODペア）を定義し，
     基本変数と関係式，および旅行時間をリンク交通量の関数とするBPR関数を導入する．
 
-  \item[第2節　非混雑型配分（フロー非依存配分）]
+  \item[\sref{sec:ch2-uncongested}　非混雑型配分（フロー非依存配分）]
     All-or-Nothing 配分，吸収マルコフ過程配分，
     確率的配分（ロジット型），および Dial のアルゴリズムを解説する\cite{Dial1971}．
 
-  \item[第3節　利用者均衡配分（UE）]
+  \item[\sref{sec:ch3-ue}　利用者均衡配分（UE）]
     Wardropの第1原則，Beckmann 変換による等価最適化問題の導出，
     Frank-Wolfe 法，および Braess のパラドックスを扱う\cite{Beckmann1956,FrankWolfe1956,Wardrop1952}．
 
-  \item[第4節　確率的利用者均衡配分（SUE）]
+  \item[\sref{sec:ch4-sue}　確率的利用者均衡配分（SUE）]
     完全情報仮定を緩和したランダム効用モデルに基づく配分と，
     ロジット型SUEの等価最適化問題・解法を解説する\cite{Fisk1980,McFadden1974}．
 
-  \item[第5節　システム最適配分（SO）と混雑課金]
+  \item[\sref{sec:ch5-so}　システム最適配分（SO）と混雑課金]
     Wardropの第2原則，UEとSOの比較，限界費用課金の考え方，
     および余剰分析を扱う\cite{Pigou1920}．
 
-  \item[第6節　進化ゲーム理論と交通配分]
+  \item[\sref{sec:ch6-dta}　動的交通配分（DTA）]
+    静的UEとの対比を通じてDTAの位置づけを整理し，
+    変分不等式による動的利用者均衡（DUE）の定式化と解法の概要を解説する．
+
+  \item[\sref{sec:ch7-evogame}　進化ゲーム理論と交通配分]
     ポテンシャルゲームとしてのUE，集団ゲームの枠組み，
     代表的な進化動学（Smith ダイナミクス，レプリケーター動学等），
     およびDay-to-day ダイナミクスへの応用を解説する\cite{Sandholm2001,Sandholm2010}．
 
-  \item[第7節　ピグー課金と混雑課金の一般理論]
+  \item[\sref{sec:ch8-pigou}　ピグー課金と混雑課金の一般理論]
     外部性の経済学，第一最善・第二最善課金，
     Vickrey ボトルネックモデルによる動的課金，
     および課金収入の再分配・公平性について論じる\cite{Vickrey1969}．
 
-  \item[第8節　シミュレーション]
+  \item[\sref{sec:ch9-simulation}　シミュレーション]
     マクロ基本図（MFD）に基づくゾーンシミュレーションと
     ミクロシミュレーション（車両追従モデル）の基礎を紹介する\cite{Daganzo2007,Geroliminis2008,Gazis1961}．
 \end{description}
 
-また，本節末には補足として，黄金分割法（\sref{sec:appendix-A}），
+また，本章末には補足として，黄金分割法（\sref{sec:appendix-A}），
 All-or-Nothing 配分の効率的アルゴリズム（\sref{sec:appendix-B}），
 および利用者均衡と Nash 均衡の等価性の証明（\sref{sec:appendix-C}）を付す\cite{Nash1950,Nash1951}．
