@@ -1,0 +1,334 @@
+%% ============================================================
+%% vit.tex — 第9章 Vision Transformer
+%%
+%% 本章では，Transformerの画像処理への応用である
+%% Vision Transformer（ViT）とマルチモーダル学習を解説する．
+%% ============================================================
+
+\chapter{Vision Transformer}
+\label{chap:vit}
+
+本章では，第8章で学んだTransformerアーキテクチャを画像処理に適用する
+\textbf{Vision Transformer（ViT）}について学ぶ．
+従来，画像処理では畳み込みニューラルネットワーク（CNN）が主流であったが，
+ViTの登場により純粋なTransformerベースのアプローチが有効であることが示された．
+さらに，テキストと画像を統合的に扱うマルチモーダル学習への展開についても解説する．
+
+% ------------------------------------------------------------------
+\section{CNN から Transformer への転換}
+\label{sec:cnn-to-transformer}
+% ------------------------------------------------------------------
+
+\subsection{CNN の帰納バイアス}
+
+畳み込みニューラルネットワーク（CNN）は，以下の帰納バイアスを持つ：
+
+\begin{itemize}
+  \item \textbf{局所性（Locality）}：畳み込みカーネルは局所的な領域のみを処理
+  \item \textbf{並進等変性（Translation Equivariance）}：
+        入力が平行移動すると出力も同様に移動
+  \item \textbf{階層的な特徴抽出}：浅い層で局所特徴，深い層で大域特徴を抽出
+\end{itemize}
+
+これらの帰納バイアスは画像の性質に適合しており，
+限られたデータでも効率的な学習が可能である．
+しかし，\textbf{大域的な依存性}を捉えるには多くの層を積む必要がある．
+
+\subsection{Self-Attention の画像への適用}
+
+Self-Attentionは，入力の任意の位置ペア間の依存関係を直接モデル化できる．
+画像に適用すれば，離れた位置の画素間の関係も1層で捉えることができる．
+
+しかし，画像の画素数 $N = H \times W$ に対して，
+Self-Attentionの計算量は $O(N^2)$ となる．
+例えば $224 \times 224$ 画像では $N = 50176$ となり，
+画素単位のAttentionは現実的でない．
+
+この課題を解決するのが，\textbf{パッチベースのアプローチ}である．
+
+% ------------------------------------------------------------------
+\section{Vision Transformer（ViT）}
+\label{sec:vit}
+% ------------------------------------------------------------------
+
+\subsection{基本アーキテクチャ}
+
+\textbf{Vision Transformer（ViT）}\cite{Dosovitskiy2020}は，
+画像を固定サイズのパッチに分割し，
+パッチの系列としてTransformerに入力する（図\ref{fig:vit-arch}）．
+
+\begin{figure}[hbtp]
+  \centering
+  % TODO: ViTアーキテクチャ図を追加
+  \fbox{\parbox{0.8\textwidth}{\centering ViT アーキテクチャ概念図\\
+  （画像 → パッチ分割 → 埋め込み → Transformer → 分類）}}
+  \caption{Vision Transformer のアーキテクチャ．
+  画像をパッチに分割し，線形射影後にTransformerエンコーダで処理する．}
+  \label{fig:vit-arch}
+\end{figure}
+
+\subsubsection{パッチ埋め込み}
+
+画像 $\mathbf{x} \in \mathbb{R}^{H \times W \times C}$ を
+$P \times P$ サイズのパッチに分割する：
+\begin{equation}
+  N = \frac{HW}{P^2}.
+\end{equation}
+
+例えば，$224 \times 224$ 画像を $16 \times 16$ パッチで分割すると，
+$N = 196$ 個のパッチが得られる．
+
+各パッチを平坦化し，線形射影により埋め込みベクトルに変換する：
+\begin{equation}
+  \boldsymbol{z}_i^{(0)} = \mathbf{E} \boldsymbol{x}_i^{(p)} + \boldsymbol{e}_i^{(pos)},
+  \label{eq:patch-embed}
+\end{equation}
+ここで：
+\begin{itemize}
+  \item $\boldsymbol{x}_i^{(p)} \in \mathbb{R}^{P^2 C}$：平坦化された $i$ 番目のパッチ
+  \item $\mathbf{E} \in \mathbb{R}^{D \times P^2 C}$：埋め込み行列
+  \item $\boldsymbol{e}_i^{(pos)} \in \mathbb{R}^D$：位置埋め込み
+\end{itemize}
+
+\subsubsection{クラストークン}
+
+分類タスクでは，特別な\textbf{クラストークン} $[\mathrm{CLS}]$ を
+パッチ埋め込み系列の先頭に追加する：
+\begin{equation}
+  \mathbf{z}^{(0)} = [\boldsymbol{z}_{\mathrm{cls}}; \boldsymbol{z}_1^{(0)}; \boldsymbol{z}_2^{(0)}; \ldots; \boldsymbol{z}_N^{(0)}].
+\end{equation}
+
+Transformerエンコーダを通過した後，
+$[\mathrm{CLS}]$ トークンの最終層出力を分類ヘッドに入力する：
+\begin{equation}
+  \boldsymbol{y} = \mathrm{MLP}(\boldsymbol{z}_{\mathrm{cls}}^{(L)}).
+\end{equation}
+
+\subsection{Transformer エンコーダ}
+
+ViTは第8章で解説した標準的なTransformerエンコーダを使用する．
+$L$ 層のブロックを積み重ね，各ブロックは以下の構成を持つ：
+\begin{align}
+  \boldsymbol{z}'^{(l)} &= \mathrm{MSA}(\mathrm{LN}(\boldsymbol{z}^{(l-1)})) + \boldsymbol{z}^{(l-1)}, \\
+  \boldsymbol{z}^{(l)} &= \mathrm{MLP}(\mathrm{LN}(\boldsymbol{z}'^{(l)})) + \boldsymbol{z}'^{(l)}.
+\end{align}
+
+ここで，MSAはMulti-head Self-Attention，LNは層正規化，
+MLPは2層のフィードフォーワードネットワークである．
+
+\subsection{位置埋め込み}
+
+ViTでは，学習可能な位置埋め込み $\mathbf{E}_{pos} \in \mathbb{R}^{(N+1) \times D}$ を使用する．
+位置埋め込みにより，パッチの空間的な位置関係をモデルに伝える．
+
+\begin{column}{位置埋め込みの学習結果}
+  訓練済みViTの位置埋め込みを可視化すると，
+  空間的に近いパッチの埋め込みが類似していることが観察される．
+  これは，モデルが画像の2次元構造を自動的に学習していることを示唆する．
+\end{column}
+
+\subsection{計算量の分析}
+
+ViTの計算量を分析する．
+$N$ 個のパッチ（+ クラストークン）に対して：
+
+\textbf{Self-Attention}：
+\begin{equation}
+  O((N+1)^2 D) \approx O(N^2 D).
+\end{equation}
+
+\textbf{MLP}：
+\begin{equation}
+  O(N D^2).
+\end{equation}
+
+$N = (H/P)^2$ であるため，パッチサイズ $P$ を大きくすれば計算量を削減できる．
+一方，解像度が低下するため，細かい特徴の捕捉が困難になるトレードオフがある．
+
+\subsection{ViT のバリエーション}
+
+表\ref{tab:vit-variants}に代表的なViTモデルの構成を示す．
+
+\begin{table}[hbtp]
+  \centering
+  \caption{ViT モデルのバリエーション．}
+  \label{tab:vit-variants}
+  \begin{tabular}{lcccc}
+    \toprule
+    モデル & 層数 $L$ & 隠れ次元 $D$ & ヘッド数 & パラメータ数 \\
+    \midrule
+    ViT-Base  & 12 & 768  & 12 & 86M \\
+    ViT-Large & 24 & 1024 & 16 & 307M \\
+    ViT-Huge  & 32 & 1280 & 16 & 632M \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+% ------------------------------------------------------------------
+\section{事前学習とスケーリング}
+\label{sec:pretraining}
+% ------------------------------------------------------------------
+
+\subsection{データセット規模の重要性}
+
+ViTの元論文\cite{Dosovitskiy2020}では，
+ImageNet（1.3M画像）のみでの訓練ではCNNに劣るが，
+JFT-300M（300M画像）での事前学習後は優れた性能を示すことが報告された．
+
+これは，ViTがCNNと比較して帰納バイアスが弱いため，
+大量のデータから統計的規則性を学習する必要があることを示唆する．
+
+\subsection{自己教師あり学習}
+
+ラベルなしデータを活用する\textbf{自己教師あり学習}が注目されている．
+
+\subsubsection{マスク画像モデリング（MIM）}
+
+\textbf{MAE（Masked Autoencoder）}\cite{He2022}は，
+入力パッチの一部をマスクし，マスクされたパッチを再構成するタスクで事前学習する：
+\begin{equation}
+  \mathcal{L}_{\mathrm{MAE}} = \frac{1}{|M|} \sum_{i \in M} \|\boldsymbol{x}_i - \hat{\boldsymbol{x}}_i\|^2,
+\end{equation}
+ここで $M$ はマスクされたパッチのインデックス集合である．
+
+MAEは高いマスク率（75\%）でも有効であり，
+計算効率と学習効率の両面で優れている．
+
+\subsubsection{対照学習}
+
+\textbf{DINO}\cite{Caron2021}は，同じ画像の異なるビュー（データ拡張）間の
+表現の一貫性を学習する自己教師あり手法である．
+
+% ------------------------------------------------------------------
+\section{マルチモーダル学習}
+\label{sec:multimodal}
+% ------------------------------------------------------------------
+
+\subsection{Vision-Language モデル}
+
+テキストと画像を統合的に扱う\textbf{Vision-Language モデル}が発展している．
+代表的なアーキテクチャを紹介する．
+
+\subsubsection{CLIP}
+
+\textbf{CLIP（Contrastive Language-Image Pre-training）}\cite{Radford2021}は，
+画像とテキストのペアを対照学習により結び付ける：
+\begin{equation}
+  \mathcal{L}_{\mathrm{CLIP}} = -\frac{1}{2N} \sum_{i=1}^{N} \left[
+    \log \frac{\exp(\boldsymbol{v}_i^\top \boldsymbol{t}_i / \tau)}{\sum_{j=1}^{N} \exp(\boldsymbol{v}_i^\top \boldsymbol{t}_j / \tau)}
+    + \log \frac{\exp(\boldsymbol{t}_i^\top \boldsymbol{v}_i / \tau)}{\sum_{j=1}^{N} \exp(\boldsymbol{t}_i^\top \boldsymbol{v}_j / \tau)}
+  \right],
+  \label{eq:clip-loss}
+\end{equation}
+ここで $\boldsymbol{v}_i$, $\boldsymbol{t}_i$ はそれぞれ画像とテキストの埋め込み，
+$\tau$ は温度パラメータである．
+
+CLIPにより，画像分類を「画像-テキスト類似度」問題として定式化でき，
+\textbf{ゼロショット分類}が可能になる．
+
+\subsubsection{BLIP}
+
+\textbf{BLIP}\cite{Li2022}は，画像-テキスト対照学習，
+画像-テキストマッチング，画像条件付きテキスト生成を統合したモデルである．
+
+\subsection{クロスアテンション}
+
+異なるモダリティ間の情報統合には，\textbf{クロスアテンション}が有効である．
+画像特徴 $\mathbf{V}$ をキー・バリュー，テキスト特徴 $\mathbf{T}$ をクエリとして：
+\begin{equation}
+  \mathrm{CrossAttn}(\mathbf{T}, \mathbf{V}) = \mathrm{softmax}\left(\frac{\mathbf{T} \mathbf{W}^Q (\mathbf{V} \mathbf{W}^K)^\top}{\sqrt{d_k}}\right) \mathbf{V} \mathbf{W}^V.
+  \label{eq:cross-attention}
+\end{equation}
+
+これにより，テキストの各トークンが関連する画像領域に注目できる．
+
+% ------------------------------------------------------------------
+\section{効率的な Vision Transformer}
+\label{sec:efficient-vit}
+% ------------------------------------------------------------------
+
+\subsection{計算量削減の手法}
+
+ViTの計算量 $O(N^2)$ を削減する様々な手法が提案されている．
+
+\subsubsection{窓ベース Attention}
+
+\textbf{Swin Transformer}\cite{Liu2021}は，局所的な窓内でのみAttentionを計算し，
+窓をシフトすることで大域的な情報伝播を実現する：
+\begin{equation}
+  \mathrm{W\text{-}MSA}(\mathbf{z}) = \mathrm{Attention}(\mathbf{z}|_{W_1}) \oplus \mathrm{Attention}(\mathbf{z}|_{W_2}) \oplus \cdots
+\end{equation}
+
+計算量は $O(N \cdot M^2)$ に削減される（$M$ は窓サイズ）．
+
+\subsubsection{階層的アーキテクチャ}
+
+Swin TransformerやPVT\cite{Wang2021}は，
+CNNと同様の階層的な特徴マップを生成する．
+これにより，物体検出やセグメンテーションなどの密予測タスクへの適用が容易になる．
+
+\subsection{軽量モデル}
+
+モバイルデバイス向けの軽量ViTも開発されている．
+\textbf{MobileViT}\cite{Mehta2022}は，CNNとTransformerを組み合わせた
+効率的なアーキテクチャを提案している．
+
+% ------------------------------------------------------------------
+\section{交通・都市工学への応用}
+\label{sec:vit-traffic}
+% ------------------------------------------------------------------
+
+\subsection{航空画像からの交通解析}
+
+衛星画像やドローン画像から交通状況を解析する応用にViTが活用される．
+
+\begin{example}
+  航空画像から車両を検出・カウントする問題を考える．
+  ViTベースの物体検出モデル（DETR\cite{Carion2020}など）を用いて，
+  以下を予測するアーキテクチャを設計せよ：
+  \begin{enumerate}
+    \item 各車両のバウンディングボックス
+    \item 車両の種類（乗用車，トラック，バス等）
+    \item 交通密度の推定
+  \end{enumerate}
+\end{example}
+
+\subsection{地図画像の理解}
+
+地図画像や衛星画像から道路ネットワークを抽出する
+セグメンテーションタスクにもViTが応用される．
+
+\subsection{マルチモーダル交通データ}
+
+交通分野では，センサデータ（時系列），画像，テキスト（事故レポート等）など
+複数のモダリティが存在する．
+Vision-Languageモデルの技術を応用することで，
+これらを統合的に扱うことが可能になる．
+
+\begin{column}{交通シーン記述}
+  自動運転における応用として，
+  周囲の交通状況を自然言語で記述する「交通シーンキャプショニング」がある．
+  これにより，AIシステムの判断根拠を人間が理解しやすくなる．
+\end{column}
+
+% ------------------------------------------------------------------
+\section{まとめ}
+\label{sec:vit-summary}
+% ------------------------------------------------------------------
+
+本章では，Vision Transformerとその発展について学んだ．
+主要なポイントは以下の通りである：
+
+\begin{enumerate}
+  \item ViTは画像をパッチ系列として扱い，Transformerで処理する
+  \item 大規模データでの事前学習により，CNNを超える性能を達成
+  \item 自己教師あり学習（MAE, DINO等）により，
+        ラベルなしデータからの効率的な学習が可能
+  \item Vision-Languageモデル（CLIP, BLIP等）により，
+        マルチモーダルなタスクに対応
+  \item Swin Transformerなどの効率的なアーキテクチャにより，
+        実用的な応用が拡大
+\end{enumerate}
+
+次章では，生成モデルの一種である拡散モデルについて学び，
+画像生成やデータ拡張への応用を解説する．
