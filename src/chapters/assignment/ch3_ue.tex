@@ -365,7 +365,7 @@ UE/FD-Primal\eqref{eq:ue-primal}はこれらをすべて満たす
   \centering
   \input{assets/assignment/fig_fw_step.tex}
   \caption{Frank-Wolfe 法の1ステップ（概念図）．
-           シャドウ付き多角形が実行可能領域 $\Omega$
+           シャドウ付き多角形が実行可能領域 $P$
            （フロー保存条件を満たすフロー集合の模式的表現，2次元単体）．
            曲線は目的関数 $Z(\boldsymbol{x})$ の等費用線（内側ほど小）．
            $\boldsymbol{x}^*$ が UE 最適解，
@@ -565,7 +565,7 @@ Wardrop 条件（3経路すべての費用が等しい）を立てる：
   \label{eq:braess-after-ue}
 \end{equation}
 
-右辺の等式から $50 = 10 + 10 x_4$ より $x_4 = 4$，
+左辺と右辺の等式から $50 = 10 + 10 x_4$ より $x_4 = 4$，
 中辺と右辺の等式から $50 = 10 + 10 x_1$ より $x_1 = 4$．
 
 次に，経路交通量 $f_1,\,f_2,\,f_3$（それぞれ経路1・2・3）と
