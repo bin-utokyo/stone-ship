@@ -25,32 +25,34 @@
 
 %% 軸
 \draw[thick, ->] (-0.1, 0) -- (2.6, 0)
-  node[below right] {出発時刻 $t$};
+  node[below=0.2cm, right=-0.8cm] {出発時刻 $t$};
 \draw[thick, ->] (0, -0.1) -- (0, 2.2)
   node[above left, align=center] {費用・待ち\\時間・課金};
 
 %% 均衡費用（定数水平線）: C* = α·w + β·早着 or γ·遅着 が均等
-%% 正規化: C*=1 とする
+%% 正規化: C*=1.5 とする
 \draw[thick, blue!70!black, dashed]
-  (0, 1.0) -- (2.4, 1.0)
-  node[right] {$C^*$（均衡費用）};
+  (0, 1.5) -- (2.4, 1.5);
+\node[above, blue!70!black, font=\small] at (1.2, 1.5) {$C^*$（均衡費用）};
 
-%% 待ち時間 w(t)：出発時刻が早いほど待ち時間が長い（ラッシュ前半）
-%%   前半 t∈[0,1]: w(t) 増加（行列が積み上がる）→ 簡略化：直線 (0,0.8)→(1,0)
-%%   後半 t∈[1,2]: w(t) 減少
-%% 三角形キュー: ピーク t*=1 で最大
+%% 待ち時間 w(t)：ピークは t_p（定時到着の最後の出発者: t_p + w(t_p) = t*）
+%% 三角形キュー: ピーク t_p < t*
 \draw[thick, orange!80!black]
-  (0, 0) -- (1, 0.5) -- (2, 0)
-  node[right] {待ち時間 $w(t)$};
+  (0, 0) -- (0.7, 0.5) -- (2, 0)
+  node[above right, orange!80!black, font=\small] at (1.5, 0.1) {待ち時間 $w(t)$};
 
-%% スケジュール遅延費用（早着/遅着）：鏡像のV字
+%% スケジュール遅延費用（早着/遅着）：鏡像のV字，頂点も t_p
 \draw[thick, green!55!black]
-  (0, 1.0) -- (1, 0.5) -- (2, 1.0)
+  (0, 1.5) -- (0.7, 1.0) -- (2, 1.5)
   node[right, align=left, font=\footnotesize]
-      {早着$\beta(\cdot)$\\[-3pt]+遅着$\gamma(\cdot)$};
+      {早着$\beta(\cdot)$\\[-3pt]+遅着$\gamma(\cdot)$\\[-2pt]$=$スケジュール\\[-3pt]遅延費用};
 
-%% 希望到着時刻 t* の垂直破線
-\draw[gray, dashed, thin] (1, 0) -- (1, 1.1);
+%% t_p の垂直破線（待ち時間ピーク = 定時到着出発者の出発時刻）
+\draw[gray, densely dashed, thin] (0.7, 0) -- (0.7, 1.1);
+\node[below] at (0.7, 0) {$t_p$};
+
+%% 希望到着時刻 t* の垂直破線（t_p < t* に注意）
+\draw[gray, dashed, thin] (1, 0) -- (1, 1.6);
 \node[below] at (1, 0) {$t^*$};
 
 %% 軸ラベル
@@ -74,7 +76,7 @@
 
 %% 軸
 \draw[thick, ->] (-0.1, 0) -- (2.6, 0)
-  node[below right] {出発時刻 $t$};
+  node[below=0.2cm, right=-0.8cm] {出発時刻 $t$};
 \draw[thick, ->] (0, -0.1) -- (0, 2.2)
   node[above left, align=center] {費用・待ち\\時間・課金};
 
@@ -84,36 +86,32 @@
 \fill[red!15]
   (0, 0) -- (1, 0.5) -- (2, 0) -- cycle;
 \draw[thick, red!70!black]
-  (0, 0) -- (1, 0.5) -- (2, 0)
-  node[right] {$\tau(t)$（最適課金）};
+  (0, 0) -- (1, 0.5) -- (2, 0);
+\node[right, red!70!black, font=\small] at (1.5, 0.32) {$\tau(t)$（最適課金）};
 
-%% 最適課金後の費用（定数ライン = C* = 1）
+%% 最適課金後の費用（定数ライン = C* = 1.5）
 \draw[thick, blue!70!black, dashed]
-  (0, 1.0) -- (2.4, 1.0)
-  node[right] {$C^*$（均衡費用）};
+  (0, 1.5) -- (2.4, 1.5);
+\node[above, blue!70!black, font=\small] at (1.2, 1.5) {$C^*$（均衡費用）};
 
 %% 待ち時間 = 0（キュー消滅）
 \draw[thick, orange!80!black]
   (0, 0) -- (2, 0)
-  node[right] {$w(t)=0$（キュー消滅）};
+  node[right] at (2, 0.15) {$w(t)=0$（キュー消滅）};
 
 %% スケジュール遅延費用（V字，課金により C* に接する）
 \draw[thick, green!55!black]
-  (0, 1.0) -- (1, 0.5) -- (2, 1.0)
+  (0, 1.5) -- (1, 1.0) -- (2, 1.5)
   node[right, align=left, font=\footnotesize]
       {スケジュール\\[-3pt]遅延費用};
 
 %% 希望到着時刻 t*
-\draw[gray, dashed, thin] (1, 0) -- (1, 1.1);
+\draw[gray, dashed, thin] (1, 0) -- (1, 1.6);
 \node[below] at (1, 0) {$t^*$};
 
 %% 軸ラベル
 \node[below] at (0, 0) {$0$};
 \node[below] at (2, 0) {$T$};
-
-%% 課金収入領域ラベル
-\node[font=\footnotesize, red!60!black, align=center]
-  at (1.0, 0.18) {課金収入\\[-3pt]（三角形）};
 
 %% パネルタイトル
 \node[font=\small\bfseries] at (1.2, 2.1) {（b）最適動的課金 --- キュー消滅};

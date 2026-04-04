@@ -298,9 +298,9 @@ $\gamma > \alpha > \beta$ の仮定は，「遅刻は待ち時間より嫌」「
 この均衡では：
 \begin{itemize}
   \item $t^*$ より\textbf{前}に出発するほど行列が長く（待ち時間が大），到着が早い（早着費用が小）；
-        費用均等条件 $\alpha\, w(t) = \beta(t^* - t_{\text{arr}})$ が成立．
+        費用均等条件 $\alpha\, w(t) + \beta(t^* - t_{\text{arr}}) = C^*$ が成立．
   \item $t^*$ より\textbf{後}に出発するほど行列が短く，到着が遅い（遅着費用が大）；
-        費用均等条件 $\alpha\, w(t) = \gamma(t_{\text{arr}} - t^*)$ が成立．
+        費用均等条件 $\alpha\, w(t) + \gamma(t_{\text{arr}} - t^*) = C^*$ が成立．
   \item 結果として行列（キュー）が形成され，待ち時間 $w(t) > 0$ が発生する．
         この待ち時間は\textbf{純粋な社会的損失}（旅行時間が浪費され，誰も便益を得ない）である．
 \end{itemize}
@@ -322,8 +322,8 @@ $\gamma > \alpha > \beta$ の仮定は，「遅刻は待ち時間より嫌」「
 \begin{equation}
   \tau(t) =
   \begin{cases}
-    \beta\,(t^* - t_{\text{arr}}) & \text{早着側}\ (t < t^*) \\
-    \gamma\,(t_{\text{arr}} - t^*) & \text{遅着側}\ (t > t^*)
+    C^* - \beta\,(t^* - t_{\text{arr}}) & \text{早着側}\ (t \leq t^*) \\
+    C^* - \gamma\,(t_{\text{arr}} - t^*) & \text{遅着側}\ (t \geq t^*)
   \end{cases}
   \label{eq:optimal-dynamic-toll}
 \end{equation}
@@ -336,9 +336,14 @@ $\gamma > \alpha > \beta$ の仮定は，「遅刻は待ち時間より嫌」「
   \input{assets/assignment/fig_vickrey_bottleneck.tex}
   \caption{Vickrey ボトルネックモデルにおける出発時刻選択．
            縦軸は費用・待ち時間・課金額，横軸は出発時刻 $t$，$t^*$ は希望到着時刻．
+           $t_p$ は定時到着する最後の出発者の出発時刻（$t_p + w(t_p) = t^*$）であり，
+           待ち時間が正である限り $t_p < t^*$ となる．
            （a）無課金均衡：行列 $w(t) > 0$ が形成される（純粋な社会的損失）．
            （b）最適動的課金：山型（逆V字型）の料金 $\tau(t)$ により行列が消滅
-           （$w(t) = 0$）し，通勤費用は均衡値 $C^*$ のまま変化しない．}
+           （$w(t) = 0$）し，通勤費用は均衡値 $C^*$ のまま変化しない．
+           なお，非混雑時の旅行時間（フリーフロー所要時間）は $0$ と仮定している．
+           （b）の赤い三角形の面積は $\int\tau(t)\,dt$ であり，
+           ボトルネック容量 $s$ を乗じた $s\int\tau(t)\,dt$ が総課金収入に等しい．}
   \label{fig:vickrey-bottleneck}
 \end{figure}
 
