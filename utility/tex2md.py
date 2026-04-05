@@ -22,10 +22,13 @@
       例: gfm（GitHub Flavored Markdown）, markdown, commonmark
   --media-dir DIR, -m DIR
       画像等のメディアファイルを展開するディレクトリ（省略時: 展開しない）
+  --no-vscode-fix
+      VS Code向け後処理（数式変換・HTML参照除去等）を行わない
 """
 
 import argparse
 import pathlib
+import re
 import shutil
 import subprocess
 import sys
@@ -145,6 +148,46 @@ def run_pandoc(
     return result.returncode
 
 
+def postprocess_md_for_vscode(text: str) -> str:
+    """pandoc 出力を VS Code Markdown プレビュー向けに後処理する。
+
+    行う変換:
+    1. pandoc-crossref が生成する冗長な YAML フロントマターを削除する。
+    2. GFM 数式記法 (```math ... ```, $`...`$) を KaTeX 互換の $$...$$, $...$ に変換する。
+    3. $$ブロック内の \\label{...} を削除する（KaTeX 非対応のためパースエラーになる）。
+    4. HTML クロスリファレンスタグ (<a data-reference-type="...">) をアンカーテキストに変換する。
+    """
+    # 1. YAMLフロントマターを削除（本文のみ残す）
+    text = re.sub(r'\A---\n.*?\n---\n', '', text, flags=re.DOTALL)
+
+    # 2a. Display math: ```math\n...\n``` → $$\n...\n$$
+    text = re.sub(
+        r'``` ?math\n(.*?)```',
+        lambda m: '$$\n' + m.group(1) + '$$',
+        text,
+        flags=re.DOTALL,
+    )
+
+    # 2b. Inline math: $`...`$ → $...$
+    text = re.sub(r'\$`([^`]*?)`\$', r'$\1$', text)
+
+    # 3. $$ブロック内の \label{...} を削除（KaTeX 非対応）
+    def _strip_label(m: re.Match) -> str:
+        return re.sub(r'\\label\{[^}]*\}', '', m.group(0))
+
+    text = re.sub(r'\$\$.*?\$\$', _strip_label, text, flags=re.DOTALL)
+
+    # 4. HTML クロスリファレンスをアンカーテキストに変換
+    #    例: <a href="#eq:foo" data-reference-type="eqref" ...>[eq:foo]</a> → [eq:foo]
+    text = re.sub(
+        r'<a\s[^>]*data-reference-type="[^"]*"[^>]*>([^<]*)</a>',
+        r'\1',
+        text,
+    )
+
+    return text
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(
         description="src/main.tex をマークダウンに変換する。",
@@ -178,6 +221,12 @@ def main() -> None:
         default=None,
         metavar="DIR",
         help="画像等のメディアファイルを展開するディレクトリ（省略時: 展開しない）",
+    )
+    parser.add_argument(
+        "--no-vscode-fix",
+        action="store_true",
+        default=False,
+        help="VS Code向け後処理（数式変換・YAML除去・HTML参照除去）を無効化する",
     )
     args = parser.parse_args()
 
@@ -213,12 +262,15 @@ def main() -> None:
         rel_out = output_md
 
     crossref = locate_pandoc_crossref()
+    vscode_fix = not args.no_vscode_fix
     print(f"変換中: {rel_src} → {rel_out}  (フォーマット: {args.format})")
     print(f"  pandoc-crossref: {'有効 (' + crossref + ')' if crossref else '不使用（未インストール）'}")
     if bib_files:
         print(f"  参考文献: {', '.join(b.name for b in bib_files)}")
     if media_dir:
         print(f"  メディア出力先: {media_dir}")
+    if vscode_fix:
+        print("  VS Code後処理: 有効（数式変換・YAML除去・HTML参照除去）")
 
     with tempfile.TemporaryDirectory() as _tmp:
         tmp_src = pathlib.Path(_tmp) / "src"
@@ -233,6 +285,9 @@ def main() -> None:
         )
 
     if rc == 0:
+        if vscode_fix:
+            text = output_md.read_text(encoding="utf-8")
+            output_md.write_text(postprocess_md_for_vscode(text), encoding="utf-8")
         print(f"完了: {output_md}")
     else:
         print("変換に失敗しました。pandoc の出力を確認してください。", file=sys.stderr)
