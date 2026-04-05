@@ -92,6 +92,11 @@ def collect_bibs(bib_dir: pathlib.Path) -> list[pathlib.Path]:
     return []
 
 
+def locate_pandoc_crossref() -> str | None:
+    """pandoc-crossref 実行ファイルのパスを返す。見つからない場合は None。"""
+    return shutil.which("pandoc-crossref")
+
+
 def run_pandoc(
     pandoc: str,
     src_tex: pathlib.Path,
@@ -111,8 +116,12 @@ def run_pandoc(
         "--wrap", "none",
         "--output", str(output_md),
         "--resource-path", str(src_dir),
-        "--citeproc",
     ]
+
+    if locate_pandoc_crossref():
+        cmd += ["--filter", "pandoc-crossref"]
+
+    cmd += ["--citeproc"]
 
     for bib in bib_files:
         cmd += ["--bibliography", str(bib)]
@@ -203,7 +212,9 @@ def main() -> None:
         rel_src = src_tex
         rel_out = output_md
 
+    crossref = locate_pandoc_crossref()
     print(f"変換中: {rel_src} → {rel_out}  (フォーマット: {args.format})")
+    print(f"  pandoc-crossref: {'有効 (' + crossref + ')' if crossref else '不使用（未インストール）'}")
     if bib_files:
         print(f"  参考文献: {', '.join(b.name for b in bib_files)}")
     if media_dir:
