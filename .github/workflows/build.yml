@@ -26,8 +26,21 @@ jobs:
             apk add --no-cache zsh
             zsh utility/compile.sh
 
-      - name: Install pandoc
-        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends pandoc zip
+      - name: Install pandoc and pandoc-crossref
+        run: |
+          set -euo pipefail
+          PANDOC_VERSION="3.9.0.2"
+          CROSSREF_VERSION="v0.3.23a"
+          # pandoc
+          curl -fsSL "https://github.com/jgm/pandoc/releases/download/${PANDOC_VERSION}/pandoc-${PANDOC_VERSION}-1-amd64.deb" -o pandoc.deb
+          sudo dpkg -i pandoc.deb && rm pandoc.deb
+          # pandoc-crossref
+          curl -fsSL "https://github.com/lierdakil/pandoc-crossref/releases/download/${CROSSREF_VERSION}/pandoc-crossref-Linux-X64.tar.xz" -o pandoc-crossref.tar.xz
+          tar -xJf pandoc-crossref.tar.xz pandoc-crossref
+          sudo install -m 755 pandoc-crossref /usr/local/bin/pandoc-crossref
+          rm pandoc-crossref.tar.xz pandoc-crossref
+          # zip（リリースアーカイブ用）
+          sudo apt-get install -y --no-install-recommends zip
 
       - name: Fix build directory permissions
         run: sudo chown -R "$(whoami)" build/
