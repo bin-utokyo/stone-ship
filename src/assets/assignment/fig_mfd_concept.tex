@@ -62,13 +62,13 @@
 
 %% ===== n 方向の注釈 =====
 \node[font=\footnotesize, align=center, blue!60!black]
-    at (3, 5.0) {$n = n^*$（臨界）};
+    at (3.2, 4.8) {$n = n^*$（臨界）};
 
 %% ===== 平均速度の参考ライン（原点からの傾きが平均速度に比例） =====
 %% 自由流域の代表点 n=1: G(1)=2.5 なので slope=2.5
-\draw[gray!60, dotted, thin, ->]
+\draw[gray!80, dotted, thin, ->]
     (0, 0) -- (2.0, 5.0)
-    node[right, font=\footnotesize, gray!70]
+    node[above right=-0.1cm, font=\footnotesize, gray!90]
     {$\bar{v} \propto G(n)/n$};
 
 \end{tikzpicture}

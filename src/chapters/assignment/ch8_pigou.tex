@@ -257,12 +257,12 @@ Vickrey（1969）の\textbf{ボトルネックモデル}は，この動的側面
 
 \subsubsection*{モデルの設定}
 
-\paragraph{ボトルネック.}
+\paragraph*{ボトルネック.}
 固定容量 $s$（台/時）の単一ボトルネック（例：市内への入口に立地する橋）を考える．
 時刻 $t$ における交通需要が容量 $s$ を超えると，行列（待ち行列）
 $q(t)$（台）が形成される．単位時間あたりの待ち時間は $w(t) = q(t)/s$ である．
 
-\paragraph{希望到着時刻と通勤費用.}
+\paragraph*{希望到着時刻と通勤費用.}
 $N$（人）の同質な通勤者全員が，職場の始業時刻 $t^*$（例：午前9時）をちょうど ``希望到着時刻'' とする．
 通勤者の一般化費用は\textbf{$\alpha$-$\beta$-$\gamma$ 体系}\cite{Small1982,ArnottdePalmaLindsey1990}:
 
@@ -298,9 +298,9 @@ $\gamma > \alpha > \beta$ の仮定は，「遅刻は待ち時間より嫌」「
 この均衡では：
 \begin{itemize}
   \item $t^*$ より\textbf{前}に出発するほど行列が長く（待ち時間が大），到着が早い（早着費用が小）；
-        費用均等条件 $\alpha\, w(t) = \beta(t^* - t_{\text{arr}})$ が成立．
+        費用均等条件 $\alpha\, w(t) + \beta(t^* - t_{\text{arr}}) = C^*$ が成立．
   \item $t^*$ より\textbf{後}に出発するほど行列が短く，到着が遅い（遅着費用が大）；
-        費用均等条件 $\alpha\, w(t) = \gamma(t_{\text{arr}} - t^*)$ が成立．
+        費用均等条件 $\alpha\, w(t) + \gamma(t_{\text{arr}} - t^*) = C^*$ が成立．
   \item 結果として行列（キュー）が形成され，待ち時間 $w(t) > 0$ が発生する．
         この待ち時間は\textbf{純粋な社会的損失}（旅行時間が浪費され，誰も便益を得ない）である．
 \end{itemize}
@@ -322,8 +322,8 @@ $\gamma > \alpha > \beta$ の仮定は，「遅刻は待ち時間より嫌」「
 \begin{equation}
   \tau(t) =
   \begin{cases}
-    \beta\,(t^* - t_{\text{arr}}) & \text{早着側}\ (t < t^*) \\
-    \gamma\,(t_{\text{arr}} - t^*) & \text{遅着側}\ (t > t^*)
+    C^* - \beta\,(t^* - t_{\text{arr}}) & \text{早着側}\ (t \leq t^*) \\
+    C^* - \gamma\,(t_{\text{arr}} - t^*) & \text{遅着側}\ (t \geq t^*)
   \end{cases}
   \label{eq:optimal-dynamic-toll}
 \end{equation}
@@ -336,9 +336,14 @@ $\gamma > \alpha > \beta$ の仮定は，「遅刻は待ち時間より嫌」「
   \input{assets/assignment/fig_vickrey_bottleneck.tex}
   \caption{Vickrey ボトルネックモデルにおける出発時刻選択．
            縦軸は費用・待ち時間・課金額，横軸は出発時刻 $t$，$t^*$ は希望到着時刻．
+           $t_p$ は定時到着する最後の出発者の出発時刻（$t_p + w(t_p) = t^*$）であり，
+           待ち時間が正である限り $t_p < t^*$ となる．
            （a）無課金均衡：行列 $w(t) > 0$ が形成される（純粋な社会的損失）．
            （b）最適動的課金：山型（逆V字型）の料金 $\tau(t)$ により行列が消滅
-           （$w(t) = 0$）し，通勤費用は均衡値 $C^*$ のまま変化しない．}
+           （$w(t) = 0$）し，通勤費用は均衡値 $C^*$ のまま変化しない．
+           なお，非混雑時の旅行時間（フリーフロー所要時間）は $0$ と仮定している．
+           （b）の赤い三角形の面積は $\int\tau(t)\,dt$ であり，
+           ボトルネック容量 $s$ を乗じた $s\int\tau(t)\,dt$ が総課金収入に等しい．}
   \label{fig:vickrey-bottleneck}
 \end{figure}
 
@@ -485,7 +490,7 @@ $\gamma > \alpha > \beta$ の仮定は，「遅刻は待ち時間より嫌」「
         迂回交通への対応を含む単純な限界外部費用課金では不十分である
         （\ssref{subsec:second-best}）．
   \item \textbf{動的課金}：Vickrey ボトルネックモデルにおける
-        台形型料金プロファイルにより行列（キュー）が消滅し，
+        山型（逆V字型）料金プロファイルにより行列（キュー）が消滅し，
         最大 50\% の社会損失削減が可能である
         （\ssref{subsec:vickrey-bottleneck}）．
   \item \textbf{収入の再分配}：適切な再分配によりパレート改善が可能であり，
