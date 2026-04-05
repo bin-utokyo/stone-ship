@@ -47,13 +47,21 @@ jobs:
           name: main.md
           path: build/main.md
 
+      - name: Compute version
+        id: version
+        run: |
+          if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
+            echo "tag=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=v$(date +'%Y.%m.%d')-$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Create release archive
-        if: startsWith(github.ref, 'refs/tags/')
         run: zip -j build/release.zip build/main.pdf build/main.md
 
       - name: Create GitHub Release
-        if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ steps.version.outputs.tag }}
           files: build/release.zip
           generate_release_notes: true
