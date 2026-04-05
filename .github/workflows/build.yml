@@ -12,7 +12,7 @@ env:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: write   # リリース作成に必要
     steps:
@@ -40,6 +40,7 @@ jobs:
           sudo install -m 755 pandoc-crossref /usr/local/bin/pandoc-crossref
           rm pandoc-crossref.tar.xz pandoc-crossref
           # zip（リリースアーカイブ用）
+          sudo apt-get update
           sudo apt-get install -y --no-install-recommends zip
 
       - name: Fix build directory permissions
