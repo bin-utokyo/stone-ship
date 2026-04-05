@@ -6,7 +6,7 @@
 \usepackage[dvipdfmx]{graphicx}
 \usepackage[dvipdfmx]{xcolor}
 \usepackage{tikz}
-\usetikzlibrary{calc}
+\usetikzlibrary{calc,matrix}
 \usepackage{eso-pic}
 \usepackage{geometry}
 \geometry{a4paper}
@@ -35,7 +35,8 @@
 \renewcommand{\bibfont}{\small\renewcommand{\baselinestretch}{0.7}\selectfont}
 \usepackage{tcolorbox}
 \tcbuselibrary{breakable,skins}
-%\usepackage[dvipdfm, pdfstartview=FitH, bookmarksnumbered = true, linkbordercolor={1 1 1}, citebordercolor={1 1 1}]{hyperref}
+\usepackage[dvipdfm, pdfstartview=FitH, bookmarksnumbered = true, linkbordercolor={1 1 1}, citebordercolor={1 1 1}]{hyperref}
+\usepackage{mathtools}
 %\AtBeginDvi{\special{pdf:tounicode EUC-UCS2}}
 %
 
@@ -93,6 +94,11 @@
 
 \usepackage{bm}
 \newcommand{\argmax}{\mathop{\rm arg~max}\limits}
+
+% 節レベルの相互参照マクロ（\sectionは節，\subsectionは小節，\subsubsectionは項）
+\newcommand{\sref}[1]{第\ref{#1}節}
+\newcommand{\ssref}[1]{第\ref{#1}小節}
+\newcommand{\sssref}[1]{第\ref{#1}項}
 
 % 例題環境（章ごとに番号リセット）
 \newtcolorbox[auto counter,number within=chapter]{example}[1][]{

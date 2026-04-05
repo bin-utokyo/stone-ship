@@ -1,0 +1,416 @@
+%% chapters/assignment/ch9_simulation.tex
+%% 第9章　シミュレーション
+
+\section{シミュレーション}
+\label{sec:ch9-simulation}
+
+前節（\sref{sec:ch8-pigou}）まで，交通ネットワークの均衡・最適化・課金理論を
+解析的・数値的手法で扱ってきた．
+これらの理論モデルは均衡条件や最適解を明示的に与え，解釈性に優れる反面，
+大規模ネットワーク上での動的な交通変動，信号制御・情報提供といった施策の時空間的影響，
+あるいは個々の車両挙動をきめ細かく評価するためには，
+\textbf{シミュレーション}（Simulation）が不可欠である．
+
+交通シミュレーションは，その\textbf{空間分解能}と\textbf{計算粒度}に応じて，
+大きく2種類に区別される（表\ref{tab:sim-comparison}）：
+
+\begin{itemize}
+  \item \textbf{マクロシミュレーション}：
+    交通流を時間・空間で集計した量（密度，流量，速度）で記述する．
+    計算コストが低く，都市・地域スケールへの応用が可能である．
+  \item \textbf{ミクロシミュレーション}：
+    個々の車両を独立したエージェントとして逐次シミュレートする．
+    信号制御や車線変更など細粒度の現象を詳細に再現できるが，
+    計算コストが高い．
+\end{itemize}
+
+\begin{table}[htbp]
+  \centering
+  \caption{マクロシミュレーションとミクロシミュレーションの比較}
+  \label{tab:sim-comparison}
+  \begin{tabular}{lll}
+    \toprule
+    項目 & マクロシミュレーション & ミクロシミュレーション \\
+    \midrule
+    記述対象      & 集計交通量（密度・流量） & 個々の車両 \\
+    状態変数      & $n_i(t),\; G_i(n_i)$     & 各車両の位置・速度 \\
+    計算粒度      & ゾーン $\times$ 時間ステップ & 車両 $\times$ タイムステップ（秒） \\
+    計算コスト    & 低                         & 高 \\
+    空間詳細度    & 低                         & 高 \\
+    時間詳細度    & 低                         & 高 \\
+    適用スケール  & 都市・地域レベル           & 交差点・区間レベル \\
+    代表手法      & ゾーンベースモデル（MFD）  & 車両追従モデル（GHR 等） \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+本節では，\ssref{subsec:mfd} でマクロシミュレーションの中核をなす
+\textbf{マクロ基本ダイアグラム}（MFD）とゾーンベースモデルを，
+\ssref{subsec:micro-sim} でミクロシミュレーションの基礎となる
+\textbf{車両追従モデル}（GHR モデル）をそれぞれ解説する．
+
+本節で用いる主要記号を表\ref{tab:ch9-notation}にまとめる．
+
+\begin{table}[hbtp]
+  \centering
+  \caption{シミュレーションの主要記号}
+  \label{tab:ch9-notation}
+  \begin{tabular}{cll}
+    \toprule
+    記号 & 意味 & 単位（例） \\
+    \midrule
+    \multicolumn{3}{l}{\textit{マクロシミュレーション（LWR モデル・MFD）}} \\
+    \midrule
+    $\rho(x,t)$      & 交通流密度 & 台/km \\
+    $q(x,t)$         & 交通流量（LWR モデル） & 台/時 \\
+    $Q(\rho)$        & 基本図（密度から流量を決める関数） & 台/時 \\
+    $n_i$            & ゾーン $i$ の Accumulation（ゾーン内車両台数） & 台 \\
+    $G_i(n_i)$       & ゾーン $i$ の Production（MFD；単位時間の走行距離総和） & 台·km/時 \\
+    $\bar{v}_i$      & ゾーン $i$ の平均速度 $= G_i(n_i)/n_i$ & km/時 \\
+    $n_i^*$          & 臨界 Accumulation（Production が最大となる車両台数） & 台 \\
+    $\phi_{ij}$      & ゾーン $i$ からゾーン $j$ への方向別流動シェア & — \\
+    \midrule
+    \multicolumn{3}{l}{\textit{ミクロシミュレーション（GHR 車両追従モデル）}} \\
+    \midrule
+    $v_i(t)$         & 時刻 $t$ における車両 $i$（後続車）の速度 & km/時 \\
+    $\Delta x_i$     & 車両 $i$ と前方車両の車間距離 & m \\
+    $\Delta v_i$     & 車両 $i$ と前方車両の相対速度 & km/時 \\
+    $\Delta t$       & ドライバーの反応遅れ時間（GHR モデル） & 秒 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+% ---------------------------------------------------------------
+\subsection{マクロシミュレーション（MFD）}
+\label{subsec:mfd}
+% ---------------------------------------------------------------
+
+マクロシミュレーションでは，交通流を個々の車両ではなく
+\textbf{連続体}として捉え，
+密度・流量・速度などの集計量によってその挙動を記述する．
+本節では，この考え方の理論的背景から始め，
+都市ネットワーク規模で成立することが実証されている
+\textbf{マクロ基本ダイアグラム}（Macroscopic Fundamental Diagram, \textbf{MFD}）の
+概念と，それを活用したゾーンベースシミュレーションの定式化を解説する\cite{Daganzo2007,Geroliminis2008}．
+
+\subsubsection*{マクロ交通流の理論的背景：LWR モデル}
+
+マクロシミュレーションの理論的礎石は，
+Lighthill, Whitham (1955) および Richards (1956) によって同時期に独立に提案された
+\textbf{LWR（Lighthill-Whitham-Richards）モデル}に遡る\cite{Lighthill1955,Richards1956}．
+LWR モデルは，リンク上の交通流を 2 式で記述する：
+
+\begin{align}
+  \frac{\partial \rho}{\partial t}
+  + \frac{\partial q}{\partial x}
+  &= 0
+  \quad \text{（車両保存則）}
+  \label{eq:lwr-conservation} \\[4pt]
+  q
+  &= Q(\rho)
+  \quad \text{（基本図：閉合仮定）}
+  \label{eq:lwr-fd}
+\end{align}
+
+ここで $\rho(x,t)$ は密度 [台/km]，$q(x,t)$ は流量 [台/h]，
+$Q(\rho)$ は密度から流量を決定する単峰型関数（\textbf{基本図}，Fundamental Diagram）である．
+式\eqref{eq:lwr-conservation}と\eqref{eq:lwr-fd}を組み合わせると
+$\partial \rho / \partial t + Q'(\rho)\,\partial \rho / \partial x = 0$
+という一階双曲型 PDE が得られ，
+渋滞波（ショック波）がRankine-Hugoniot 条件 $v_s = \Delta q / \Delta \rho$ に従って
+後方へ伝播する現象を記述できる．
+
+LWR モデルはリンクスケールの連続体描写であるが，
+これをネットワーク全体に拡張・集約した概念として MFD が位置づけられる．
+
+\subsubsection*{MFD の定義と実証}
+
+\textbf{マクロ基本ダイアグラム}（MFD）は，
+ゾーン内の交通状態を次の 2 つの集計量で表す\cite{Daganzo2007}：
+
+\begin{description}
+  \item[\textbf{Accumulation} $n_i$ [台]]
+    ゾーン $i$ 内に現在存在する車両総数．
+    $n_i = \bar{\rho}_i \cdot L_i$（平均密度 $\bar{\rho}_i$ とネットワーク総延長 $L_i$ の積）．
+
+  \item[\textbf{Production} $G_i(n_i)$ [台・km/h]]
+    ゾーン $i$ 内で単位時間内に車両が走行する総距離．
+    $G_i(n_i) = \bar{q}_i \cdot L_i$（平均流量 $\bar{q}_i$ とネットワーク総延長の積）．
+    また，平均ネットワーク速度 $\bar{v}_i$ は：$\bar{v}_i = G_i(n_i) / n_i$．
+\end{description}
+
+MFD は，Accumulation $n_i$ を横軸，Production $G_i(n_i)$ を縦軸にとったとき，
+\textbf{単峰型}（unimodal）の関係として現れる（図\ref{fig:mfd-concept}）．
+臨界集積台数 $n_i^*$ でスループットは最大値 $G_{\max}$ に達し，
+これを超えると混雑が広がりスループットが低下する．
+原点から MFD 上の各点への直線の傾きは平均ネットワーク速度 $\bar{v}_i \propto G_i(n_i)/n_i$
+を表す．
+
+\begin{figure}[tb]
+  \centering
+  \input{assets/assignment/fig_mfd_concept.tex}
+  \caption{マクロ基本ダイアグラム（MFD）の典型的形状．横軸は Accumulation $n$，縦軸は Production $G(n)$．
+           臨界集積 $n^*$ でスループットが最大となり，これを超えると過密（グリッドロック）領域に入る．}
+  \label{fig:mfd-concept}
+\end{figure}
+
+MFD の\textbf{実証的存在}は Geroliminis \& Daganzo (2008) によって確認された\cite{Geroliminis2008}．
+横浜市中心部（2003 年）のループ検知器と GPS プローブデータを用いた実測実験で，
+都市ネットワーク規模で安定した単峰型の MFD が存在することが示された．
+ただし，混雑が空間的に均一に分布しているほど MFD のバラつきは小さく安定し，
+局所的な混雑集中が生じると MFD は不安定になる（ヒステリシスや散乱が増大する）ことも
+同研究で指摘されている．
+
+\subsubsection*{ゾーンベースシミュレーション}
+
+MFD を利用したゾーンベースシミュレーションは，
+ネットワークを複数の\textbf{ゾーン}（同質性を持つ部分ネットワーク）に分割し，
+ゾーン $i$ の車両台数（Accumulation）$n_i(t)$ の時間発展を
+次の\textbf{離散時間方程式}で記述する\cite{Daganzo2007}：
+
+\begin{equation}
+  n_i(t+1) = n_i(t) - n_{i,\text{out}}(t) + n_{i,\text{in}}(t)
+  \label{eq:zone-sim}
+\end{equation}
+
+ここで $n_{i,\text{out}}(t)$ はゾーン $i$ からの総流出台数，
+$n_{i,\text{in}}(t)$ はゾーン $i$ への総流入台数である．
+式\eqref{eq:zone-sim}は，Daganzo (2007) の連続時間モデル
+$\dot{n} = q_{\text{in}} - G(n)$ を 1 ステップ時間単位で離散化したものに対応する．
+
+ゾーン $i$ からゾーン $j$ へのリンク流量は，
+ゾーン間の方向別流動シェア $\phi_{ij}$
+（$\sum_{j \neq i} \phi_{ij} = 1$，ODパターンなどから与えられる定数）と
+MFD 流出関数 $G_i$ を用いて次のように定式化される：
+
+\begin{equation}
+  n_{ij,\text{out}}(t) = \phi_{ij} \cdot G_i\bigl(n_i(t)\bigr)
+  \label{eq:zone-out}
+\end{equation}
+
+したがってゾーン $i$ への総流入は
+$n_{i,\text{in}}(t) = \sum_{j \neq i} n_{ji,\text{out}}(t)
+  = \sum_{j \neq i} \phi_{ji}\, G_j(n_j(t))$
+となり，式\eqref{eq:zone-sim}--\eqref{eq:zone-out} を
+全ゾーンに対して連立することでネットワーク全体の動的状態が記述される．
+
+\subsubsection*{応用：ペリメーターコントロール}
+
+MFD に基づく代表的な制御手法として\textbf{ペリメーターコントロール}
+（Perimeter Control）がある\cite{Daganzo2007}．
+これは，都市中心部（対象ゾーン）の境界での流入量 $q_{\text{in}}$ を
+信号制御や IC 制御によって制限し，
+ゾーン内の Accumulation $n_i(t)$ を臨界値 $n_i^*$ 以下に保つ戦略である．
+$n_i$ が $n_i^*$ を超えると $G_i(n_i)$ が低下し，
+最悪の場合ネットワーク全体が機能停止するグリッドロック状態に陥るため，
+事前に流入制御することで $G_i$ を効率的な領域（$n_i \leq n_i^*$）に維持できる．
+
+更に，式\eqref{eq:zone-sim}\eqref{eq:zone-out}を最適制御問題
+（$n_i(t) \to n_i^*$ を目標とするフィードバック制御など）と統合することで，
+リアルタイム交通管理システムへの応用が可能である．
+
+\subsubsection*{計算効率上の利点}
+
+ゾーンベースシミュレーションの最大の利点は，
+リンクレベルの詳細シミュレーションと比較した\textbf{低い計算コスト}である．
+ゾーン数 $|\mathcal{I}|$ の連立 ODE を解くだけで
+都市・地域スケールの動的交通状態を推定できるため，
+最適制御などとのリアルタイム統合にも適している．
+一方，ゾーン内の空間均質性が損なわれると MFD が安定しないという制約もあり，
+ゾーン分割の適切な設計が性能に影響する．
+
+% ---------------------------------------------------------------
+\subsection{ミクロシミュレーション}
+\label{subsec:micro-sim}
+% ---------------------------------------------------------------
+
+ミクロシミュレーションでは，ネットワーク上を走行する\textbf{個々の車両}を
+明示的に表現し，各タイムステップ（$\Delta t \approx 0.1$〜$1$ 秒）ごとに
+全車両の挙動を逐次計算する\textbf{エージェントベース}の手法をとる．
+マクロシミュレーションが集計量の時間変化を追うのに対し，
+ミクロシミュレーションは個別車両の位置と速度を直接追跡する点で根本的に異なる．
+
+\subsubsection*{エージェントベースシミュレーションの設計}
+
+典型的なミクロシミュレーターは，1 タイムステップにつき以下の処理を全車両に対して繰り返す：
+
+\begin{enumerate}
+  \item \textbf{経路選択}：
+    各車両は交通情報や自身の学習に基づいて，
+    目的地への（暫定的な）経路を選択または更新する
+    （均衡配分理論（\sref{sec:ch3-ue}）を背景に もつステップ）．
+  \item \textbf{車両挙動計算}：
+    前方車両との距離・相対速度などをもとに，
+    車両追従モデル（本節後述）や車線変更モデルを用いて
+    加速度 $\dot{v}_i$ を決定する．
+  \item \textbf{状態更新}：
+    $v_i(t+\Delta t) = v_i(t) + \dot{v}_i \cdot \Delta t$，
+    $x_i(t+\Delta t) = x_i(t) + v_i(t)\cdot\Delta t$ により速度・位置を更新する．
+\end{enumerate}
+
+この繰り返しによって，信号での停止・発進，車線変更，合流・分岐など，
+マクロモデルでは平均化されて消えてしまう細粒度の交通流が再現される．
+
+\subsubsection*{車両追従モデル（GHR モデル）}
+
+\textbf{車両追従モデル}（Car-Following Model）は，
+後続車が前方車の挙動（速度・距離）に反応して加速・減速する様子を記述する
+微分方程式系であり，ミクロシミュレーションの中核をなす．
+
+代表的モデルの一つが Gazis, Herman \& Rothery (1961) による
+\textbf{GHR モデル}（General car-Following / Gazis-Herman-Rothery Model）である\cite{Gazis1961}．
+GHR モデルは「後続車の加速度は，前方車との\textbf{相対速度}（刺激）に
+感応係数を乗じた形で決まる」という\textbf{刺激-反応フレームワーク}に基づく
+（図\ref{fig:car-following}）：
+
+\begin{equation}
+  \dot{v}_i(t)
+  = \alpha\,
+    \frac{v_i^{\,\beta}(t)}
+         {\Delta x_i^{\,\gamma}(t - \Delta t)}\,
+    \Delta v_i(t - \Delta t)
+  \label{eq:ghr}
+\end{equation}
+
+\begin{figure}[tb]
+  \centering
+  \input{assets/assignment/fig_car_following.tex}
+  \caption{車両追従モデル（GHR モデル）の概念図．
+           後続車（車両 $i$）は，前方車（車両 $i-1$）との車間距離 $\Delta x_i$ および
+           相対速度 $\Delta v_i = v_{i-1} - v_i$ を反応遅れ $\Delta t$ ののち感知し，
+           加速度を調整する．}
+  \label{fig:car-following}
+\end{figure}
+
+式\eqref{eq:ghr}の各記号の意味は以下のとおりである：
+
+\begin{itemize}
+  \item $v_i(t)$：
+    時刻 $t$ における車両 $i$（後続車）の速度 [km/h]．
+  \item $\Delta x_i(t - \Delta t)$：
+    時刻 $t - \Delta t$（反応遅れ前）における車両 $i$ と前方車両 $i-1$ の
+    \textbf{車間距離} [m]．
+  \item $\Delta v_i(t - \Delta t) = v_{i-1}(t-\Delta t) - v_i(t-\Delta t)$：
+    時刻 $t - \Delta t$ における\textbf{相対速度} [km/h]
+    （正値 = 前方車がより速い，負値 = 前方車がより遅い）．
+  \item $\Delta t$：
+    ドライバーの\textbf{反応遅れ時間} [s]．
+  \item $\alpha$：
+    感応係数（感度のスケールを決定）．
+  \item $\beta,\, \gamma$：
+    速度・車間距離に対する感応の非線形性を表す指数パラメータ．
+\end{itemize}
+
+式\eqref{eq:ghr}の直感的解釈：
+前方車が速い（$\Delta v_i > 0$）ならば $\dot{v}_i > 0$（加速），
+前方車が遅い（$\Delta v_i < 0$）ならば $\dot{v}_i < 0$（減速）という
+自然な挙動を表現する．
+$v_i^\beta / \Delta x_i^\gamma$ 項は，
+「高速領域では感応が高まる，車間距離が近いほど感応が高まる」
+という非線形な感応特性を規定する．
+
+\subsubsection*{パラメータと特殊ケース}
+
+GHR モデルはパラメータ組 $(\alpha, \beta, \gamma)$ によって
+複数の既存モデルを統合する汎化枠組みである\cite{Gazis1961}：
+
+\begin{itemize}
+  \item $(\beta = 0,\; \gamma = 1)$：
+    Greenshields の線形速度-密度モデル $v = v_f(1 - k/k_j)$ に対応する巨視的基本図が導出される．
+  \item $(\beta = 0,\; \gamma = 2)$：
+    Greenberg の対数速度-密度モデル $v = c \ln(k_j/k)$ に対応する巨視的基本図が導出される．
+\end{itemize}
+
+また，GHR モデルを多数の車両に対して集計すると，
+マクロスケールの速度-密度関係（基本図）が導出されることが示されており\cite{Gazis1961}，
+ミクロ記述とマクロ記述（\ssref{subsec:mfd}）を架橋する理論的役割ももつ．
+現地データ（Lincoln Tunnel・Holland Tunnel の実測データ）を用いた
+パラメータ推定によって $(\alpha, \beta, \gamma)$ の値域が実証的に検証されている\cite{Gazis1961}．
+
+\subsubsection*{代表的なシミュレーションソフトウェア}
+
+現在，学術・実務での利用実績がある代表的なミクロシミュレーターとして
+次のものが挙げられる：
+
+\begin{description}
+  \item[MATSim]
+    ETH チューリッヒおよびベルリン工科大学が中心となって開発する
+    オープンソースの大規模エージェントベース交通シミュレーター
+    （Multi-Agent Transport Simulation）．
+    都市・地域スケールで数百万エージェントを扱うことができ，
+    経路選択・様式選択・活動スケジューリングの繰り返し最適化（Day-to-day 調整）に対応する．
+
+  \item[SUMO]
+    ドイツ航空宇宙センター（DLR）が開発するオープンソースのミクロシミュレーター
+    （Simulation of Urban MObility）．
+    自動車・公共交通・歩行者・自転車を含むマルチモーダルシミュレーションが可能で，
+    TraCI（Traffic Control Interface）を通じた外部プログラムとのリアルタイム連携
+    （信号制御プログラムや強化学習エージェントとの統合など）に広く利用される．
+
+  \item[HONGO]
+    東京大学で独自に開発された交通ミクロシミュレーター．
+    国内の道路構造・交通規則・運転行動特性を反映した
+    キャリブレーションが施されており，
+    日本の都市交通に特有の課題（密集交差点，路地交通，混在交通など）の
+    シミュレーション研究に活用されている．
+\end{description}
+
+\subsubsection*{利点と課題}
+
+マクロシミュレーション（\ssref{subsec:mfd}）と比較したミクロシミュレーションの
+\textbf{主な利点}は，以下のとおりである：
+
+\begin{itemize}
+  \item 信号制御戦略の精密な評価（ステップレベルの車両通過・停止の再現）が可能．
+  \item 車線規制，インフラ改良（料金ゲート設置，交差点形状変更等）の
+        局所的な影響を詳細に評価できる．
+  \item 自動運転・コネクテッドカー（ACC，CACC など）の導入効果や
+        混合交通下の挙動分析に適している．
+\end{itemize}
+
+一方，\textbf{主な課題}は以下のとおりである：
+
+\begin{itemize}
+  \item \textbf{計算コストの高さ}：
+    車両数・タイムステップ数に比例して計算量が増大するため，
+    大規模ネットワーク全体への適用は困難なことが多い．
+    マクロシミュレーションとの\textbf{ハイブリッド手法}（主要区間のみミクロ，
+    残余はマクロ）も研究・実用化されている．
+  \item \textbf{パラメータキャリブレーションの困難さ}：
+    GHR モデルのパラメータ $(\alpha, \beta, \gamma)$ など，
+    多数のパラメータを対象ネットワークの実測データにより推定・検証する
+    キャリブレーション作業が必要であり，工数・データ収集コストが大きい．
+  \item \textbf{モデルの仮定と現実の乖離}：
+    車両追従モデルは追従時の挙動を記述するが，
+    現実のドライバーの異質性（高齢者・攻撃的ドライバー等）や
+    緊急回避挙動などを完全には再現できない．
+\end{itemize}
+
+マクロシミュレーションとミクロシミュレーションはいずれも一方が他方を代替するものではなく，
+分析目的・スケール・利用可能データに応じて使い分けるべき相補的な手法である．
+均衡配分理論（\sref{sec:ch3-ue}〜\sref{sec:ch5-so}）・進化ダイナミクス（\sref{sec:ch7-evogame}）・混雑課金（\sref{sec:ch8-pigou}）といった
+本テキストの理論的成果を現実のシステムで検証・活用する際に，
+シミュレーションは不可欠なブリッジとして機能する．
+
+\subsubsection*{本節のまとめ}
+
+本節で示した主要な結果を整理する：
+\begin{enumerate}
+  \item \textbf{マクロシミュレーション（MFD）}は，LWR モデルを理論的基礎として
+        交通流を密度・流量の集計量で記述し，
+        都市ネットワーク規模の MFD を利用したゾーンベースモデルによって
+        大規模シミュレーションとペリメーターコントロールなどの
+        交通管理政策評価が可能になる
+        （\ssref{subsec:mfd}）．
+  \item \textbf{ミクロシミュレーション}は，GHR モデルなどの車両追従モデルを用いて
+        個々の車両の加速・減速挙動をエージェントとして逐次シミュレートし，
+        信号・交差点制御や自動運転などの細粒度の交通現象を詳細に評価できる；
+        一方，計算コストの高さやパラメータキャリブレーションの工数が課題である
+        （\ssref{subsec:micro-sim}）．
+  \item マクロ・ミクロの2手法は相補的であり，
+        分析目的・スケール・利用可能データに応じて使い分けることが求められる；
+        均衡配分理論（\sref{sec:ch3-ue}〜\sref{sec:ch5-so}）・
+        進化ダイナミクス（\sref{sec:ch7-evogame}）・
+        混雑課金（\sref{sec:ch8-pigou}）といった理論的成果を
+        現実のシステムで検証・活用する際の不可欠なブリッジとして機能する．
+\end{enumerate}

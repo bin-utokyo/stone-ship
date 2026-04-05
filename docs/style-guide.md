@@ -178,7 +178,10 @@ def logit_prob(utilities):
 
 | 対象 | ラベル例 | 参照構文 |
 |---|---|---|
-| 章・節 | `sec:intro` | `\ref{sec:intro}` |
+| 章 | `ch:intro` | `第\ref{ch:intro}章` |
+| 節（`\section`） | `sec:intro` | `\sref{sec:intro}` → 第\ref{sec:intro}節 |
+| 小節（`\subsection`） | `subsec:model` | `\ssref{subsec:model}` → 第\ref{subsec:model}小節 |
+| 項（`\subsubsection`） | `subsubsec:item` | `\sssref{subsubsec:item}` → 第\ref{subsubsec:item}項 |
 | 図 | `fig:result` | `図\ref{fig:result}` |
 | 表 | `tab:data` | `表\ref{tab:data}` |
 | 数式 | `eq:model` | `式\eqref{eq:model}` |

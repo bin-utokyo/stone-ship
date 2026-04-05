@@ -1459,7 +1459,7 @@
 \newcommand{\subsubsection}{\@startsection{subsubsection}{3}{13\h}%
    {0.00001\Cvs}%{.5\Cvs \@plus.5\Cdp \@minus.2\Cdp}%
    {0.00001\Cvs}%{.5\Cvs \@plus.3\Cdp}%
-   {\reset@font\normalsize}}
+   {\reset@font\normalsize\bfseries}}
 \newcommand{\paragraph}{\@startsection{paragraph}{4}{\z@}%
    {3.25ex \@plus 1ex \@minus .2ex}%
    {-1em}%

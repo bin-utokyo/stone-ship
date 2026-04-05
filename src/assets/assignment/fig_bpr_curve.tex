@@ -1,0 +1,65 @@
+%% fig_bpr_curve.tex
+%% BPR関数（Bureau of Public Roads Function）のグラフ
+%% t_a(x_a) = t_{a0} [1 + alpha*(x_a/C_a)^beta]  (alpha=0.15, beta=4)
+%%
+%% 座標変換:
+%%   x方向: x_a/C_a in [0, 1.5] -> TikZ座標 [0, 5.25]  (倍率 3.5)
+%%   y方向: (t_a/t_{a0} - 1) in [0, ~0.76] -> TikZ座標 [0, ~5.0]  (倍率 6.5)
+%%     t/t0=1.00 -> y=0, t/t0=1.15 -> y=0.975, t/t0=1.759 -> y=4.934
+%%
+%% Usage: \input{assets/assignment/fig_bpr_curve.tex}
+
+\begin{tikzpicture}[
+    every node/.style={font=\small}
+]
+
+%% ===== 軸 =====
+\draw[->] (-0.3, 0) -- (5.9, 0)
+    node[right] {$x_a / C_a$};
+\draw[->] (0, -0.3) -- (0, 5.5)
+    node[above] {$t_a(x_a) / t_{a0}$};
+
+%% ===== x軸 目盛り =====
+%% x/C=0.5 -> 3.5*0.5=1.75, x/C=1.0 -> 3.5, x/C=1.5 -> 5.25
+\draw (1.75, 0.07) -- (1.75, -0.12) node[below] {$0.5$};
+\draw (3.5,  0.07) -- (3.5,  -0.12) node[below] {$1.0$};
+\draw (5.25, 0.07) -- (5.25, -0.12) node[below] {$1.5$};
+
+%% ===== y軸 目盛り・ラベル =====
+%% y=0 は t/t0=1.00 を表す
+\node[left, font=\footnotesize] at (-0.05, 0)     {$1.00$};
+
+%% t/t0=1.15 -> (1.15-1)*6.5 = 0.975
+\draw (-0.05,  0.975) -- (0.05, 0.975)
+    node[left, xshift=-0.05cm, font=\footnotesize] {$1.15$};
+
+%% t/t0=1.50 -> (1.50-1)*6.5 = 3.25
+\draw (-0.05, 3.25) -- (0.05, 3.25)
+    node[left, xshift=-0.05cm, font=\footnotesize] {$1.50$};
+
+%% t/t0=1.75 -> (1.75-1)*6.5 = 4.875
+\draw (-0.05, 4.875) -- (0.05, 4.875)
+    node[left, xshift=-0.05cm, font=\footnotesize] {$1.75$};
+
+%% ===== BPR曲線 (alpha=0.15, beta=4) =====
+%% x座標 = 3.5 * (x_a/C_a)
+%% y座標 = 6.5 * (t/t0 - 1) = 6.5 * 0.15 * (x_a/C_a)^4
+%%       = 6.5 * 0.15 * \x * \x * \x * \x
+\draw[domain=0:1.5, smooth, very thick, samples=60]
+    plot ({3.5*\x}, {6.5*0.15*\x*\x*\x*\x});
+
+%% ===== 補助線: x/C=1.0 での動作点 (1.0, 1.15) =====
+\draw[dashed, gray]
+    (3.5, 0) -- (3.5, 0.975) -- (0, 0.975);
+\node[font=\scriptsize, below] at (3.5, -0.15) {$C_a$};
+
+%% ===== 自由流旅行時間の注釈 =====
+\draw[<-, >=stealth, gray, thin] (0.08, 0.06) -- (0.8, 2.0)
+    node[above right, font=\footnotesize, gray, align=left]
+    {自由流旅行時間\\$t_{a0}$（$x_a=0$ のとき）};
+
+%% ===== x/C=1.0 での注釈 =====
+\node[font=\scriptsize, right] at (3.5, 0.975)
+    {$(1.0,\; 1.15\,t_{a0})$};
+
+\end{tikzpicture}

@@ -1,0 +1,77 @@
+%% fig_dial_example.tex
+%% Dial のアルゴリズム：リンク尤度・前進処理・後退処理の例示
+%%
+%% ネットワーク：r(Origin), A, B, s(Destination)
+%% リンクコスト：t_{rA}=1, t_{rB}=3, t_{As}=2, t_{AB}=1, t_{Bs}=1
+%% 最短経路費用（Dijkstra）：c(r)=0, c(A)=1, c(B)=2, c(s)=3
+%% θ=1 でのリンク尤度 L[i→j] = exp(θ{c(j)−c(i)−t_{ij}})：
+%%   L[r→A]=1.00, L[r→B]=e^{-1}≈0.37, L[A→s]=1.00, L[A→B]=1.00, L[B→s]=1.00
+%%
+%% Usage: \input{assets/assignment/fig_dial_example.tex}
+
+\begin{tikzpicture}[
+    every node/.style={font=\small},
+    nd/.style={circle, draw, thick, minimum size=0.75cm,
+               font=\small\bfseries, inner sep=1pt, fill=white},
+    cnd/.style={rectangle, draw, thick, rounded corners=3pt,
+                minimum width=0.80cm, minimum height=0.80cm,
+                font=\small\bfseries, inner sep=4pt, fill=gray!10},
+    arr/.style={->, >=stealth, thick},
+    arrfaint/.style={->, >=stealth, thick, gray!50},
+    lbl/.style={font=\footnotesize, fill=white, inner sep=1.5pt},
+    lbll/.style={font=\scriptsize, fill=white, inner sep=1pt, text=blue!70!black},
+    lbllt/.style={font=\scriptsize, fill=white, inner sep=1pt, text=gray!60}
+]
+
+%% ===== ノード（最短費用 c(i) を表示） =====
+\node[cnd, label={[font=\scriptsize,gray]below:$c=0$}] (r) at (0.0,  0.0) {$r$};
+\node[nd,  label={[font=\scriptsize,gray]below=12pt, right=-10pt:$c=1$}] (A) at (3.0,  1.5) {$A$};
+\node[nd,  label={[font=\scriptsize,gray]below:$c=2$}] (B) at (3.0, -1.5) {$B$};
+\node[cnd, label={[font=\scriptsize,gray]below:$c=3$}] (s) at (6.0,  0.0) {$s$};
+
+%% ===== リンク（コスト+尤度を2段表記） =====
+%% r→A（L=1.00，最短経路上）
+\draw[arr] (r)
+    to node[lbl, above, sloped] {$t=1$}
+    node[lbll, below, sloped] {$L=1.00$}
+    (A);
+
+%% r→B（L=e^{-1}≈0.37，非最短）
+\draw[arrfaint] (r)
+    to node[lbl, below, sloped] {$t=3$}
+    node[lbllt, above, sloped] {$L=e^{-1}{\approx}0.37$}
+    (B);
+
+%% A→B（L=1.00，最短経路上）
+\draw[arr] (A)
+    to node[lbl, right] {$t=1$}
+    node[lbll, left] {$L=1.00$}
+    (B);
+
+%% A→s（L=1.00，最短経路上）
+\draw[arr] (A)
+    to node[lbl, above, sloped] {$t=2$}
+    node[lbll, below, sloped] {$L=1.00$}
+    (s);
+
+%% B→s（L=1.00，最短経路上）
+\draw[arr] (B)
+    to node[lbl, below, sloped] {$t=1$}
+    node[lbll, above, sloped] {$L=1.00$}
+    (s);
+
+%% ===== OD需要 =====
+\draw[<->, >=stealth, thick, gray, dashed, out=70, in=110]
+    (r) to node[above=3pt, font=\footnotesize, gray] {$q_{rs}=10$} (s);
+
+%% ===== 前進/後退パス方向の矢印（説明ラベル） =====
+\node[draw, rounded corners=2pt, font=\footnotesize, align=left,
+      inner sep=5pt, fill=white]
+  at (3.0, -3.25) {
+    {\bfseries 前進処理（Step 3）}：$c(i)$ の昇順（$r \to s$ 方向）にノードを処理\\
+    {\bfseries 後退処理（Step 4）}：$c(i)$ の降順（$s \to r$ 方向）にノードを処理\\[1pt]
+    \textcolor{blue!70!black}{青字}：$L>0$（合理的リンク）\quad
+    \textcolor{gray!50}{灰色}：$L<1$（非最短方向）
+  };
+
+\end{tikzpicture}

@@ -1,0 +1,192 @@
+%% chapters/assignment/intro.tex
+%% 序章　交通ネットワーク配分とは
+
+\section*{序章　交通ネットワーク配分とは}
+\addcontentsline{toc}{section}{序章　交通ネットワーク配分とは}
+
+\subsection*{交通量配分問題の設定}
+
+私たちが日常的に経験する道路の渋滞は，どのような仕組みで生まれるのだろうか．
+朝のラッシュ時，多くのドライバーが同じ幹線道路に集中し，互いの走行を妨げ合う．
+この現象の背後には，個々の利用者が自己の所要時間を最短化しようとする合理的行動と，
+それが引き起こす相互依存関係がある．
+\textbf{交通量配分}（Traffic Assignment）とは，この複雑な相互作用を数理モデルとして記述し，
+ネットワーク上の各道路区間（リンク）に流れる交通量を推定する分析手法である\cite{土木学会1998,Sheffi1985}．
+
+より厳密に言えば，交通量配分問題とは次のように定式化される．
+交通需要は，出発地（Origin, $r$）と目的地（Destination, $s$）の間を移動する交通量
+$q_{rs}$（OD交通量）として記述される．
+ネットワーク上には複数の経路が存在し，各利用者はその中から経路を選択する．
+交通量配分問題の目的は，すべてのODペアに対する経路選択行動を集約することで，
+各リンク $a$ の交通量 $x_a$ を推定することである．
+
+この問題が単純でないのは，リンクの混雑度（旅行時間）が交通量そのものに依存するためである．
+多くの利用者が特定のリンクに集中すれば，そのリンクの旅行時間は増大し，
+利用者の経路選択に影響を与える．
+交通量配分は，この\textbf{相互依存関係}を整合的に扱う分析の枠組みを提供する．
+
+\subsection*{四段階推定法における位置づけ}
+
+交通量配分は，交通計画における需要予測の古典的な手順である
+\textbf{四段階推定法}（Four-Step Model）の第4段階を構成する（図\ref{fig:4stages}）\cite{土木学会1998}．
+
+\begin{figure}[tb]
+  \centering
+  \input{assets/assignment/fig_4stages.tex}
+  \caption{交通需要予測の四段階推定法（網掴けが本節の対象）}
+  \label{fig:4stages}
+\end{figure}
+
+四段階推定法では，以下の順序で需要予測が行われる．
+
+\begin{description}
+  \item[第1段階：発生・集中（Trip Generation）]
+    ゾーンの人口，土地利用，経済活動量などを説明変数として，
+    各ゾーンから発生・集中する交通量を推定する．
+  \item[第2段階：分布（Trip Distribution）]
+    各ゾーン間のOD交通量を推定し，OD行列を作成する．
+    重力モデルやフレーター法などが用いられる．
+  \item[第3段階：機関分担（Modal Split）]
+    自動車，鉄道，バスなど交通手段ごとの利用割合を推定する．
+    ロジットモデルなど離散選択モデルが広く用いられる．
+  \item[第4段階：配分（Traffic Assignment）]
+    前段階で得られたOD交通量を，道路・鉄道などのネットワーク上の
+    各リンクに割り当てる．\textbf{本節の主題}である．
+\end{description}
+
+なお，四段階推定法は各段階を逐次的に処理することで計算を簡便にしているが，
+現実には需要と供給が連立しているため，厳密には各段階の間にフィードバックが必要である．
+また，近年では多段階を統合したアクティビティベースモデルなども提案されている\cite{Sheffi1985}．
+
+\subsection*{交通量配分モデルの応用分野}
+
+交通量配分モデルは，次のような幅広い実務・研究場面で活用されている．
+
+\begin{description}
+  \item[道路計画・ネットワーク設計]
+    新規道路の整備や既存道路の拡幅が交通流に与える影響を事前評価する．
+    単純な容量増強が時に逆効果となることを示すBraess のパラドックス
+    （\sref{sec:ch3-ue} \ssref{subsec:braess}）は，モデルによる事前検討の重要性を示す典型例である\cite{Braess1968}．
+  \item[混雑課金・需要管理]
+    外部不経済（混雑の外部性）を内部化するための最適な課金額を算定する．
+    Pigouvian 税の概念を交通に適用した混雑課金（\sref{sec:ch5-so}・\sref{sec:ch8-pigou}）は，
+    ロンドン，ストックホルム，シンガポールなど世界の主要都市で実施されている\cite{Pigou1920,Vickrey1969}．
+  \item[交通制御・情報提供]
+    リアルタイムの交通情報や経路誘導が利用者行動に与える影響を分析し，
+    ネットワーク全体の効率改善策を設計する．
+  \item[防災・危機管理]
+    大規模災害時の交通需要と道路網の機能低下を同時に考慮し，
+    混雑分布や避難経路の脆弱性を評価する．
+  \item[シミュレーションとの連携]
+    マクロ基本図（MFD）に基づくゾーンシミュレーションや
+    ミクロシミュレーション（\sref{sec:ch9-simulation}）の初期条件・境界条件として配分結果が利用される\cite{Daganzo2007,Geroliminis2008}．
+\end{description}
+
+\subsection*{交通量配分モデルの分類}
+
+交通量配分モデルは，（i）旅行時間がリンク交通量に依存するか否か（フロー依存性），
+および（ii）利用者の経路選択が確定的か確率的かの観点から，
+大きく4種類に分類できる（図\ref{fig:model_overview}）\cite{土木学会1998,Sheffi1985}．
+
+\begin{figure}[tb]
+  \centering
+  \input{assets/assignment/fig_model_overview.tex}
+  \caption{交通量配分モデルの4象限分類}
+  \label{fig:model_overview}
+\end{figure}
+
+\begin{description}
+  \item[All-or-Nothing 配分（AoN）]
+    交通量によらず旅行時間が一定（フロー非依存）と仮定し，
+    各利用者が最短経路にすべての交通量を集中させる手法（\sref{sec:ch2-uncongested} \ssref{subsec:aon}）．
+    計算は単純だが，混雑の非線形性を無視する．
+  \item[確率的配分]
+    フロー非依存の下で，利用者が複数の経路からロジット等の確率モデルに従って選択する手法
+    （\sref{sec:ch2-uncongested} \ssref{subsec:stochastic-assignment}・\ssref{subsec:dial-algorithm}）．経路の分散利用を反映できる．
+  \item[利用者均衡配分（User Equilibrium, UE）]
+    旅行時間がフロー依存でも，個々の利用者が自己の旅行時間を
+    最小化した結果，均衡状態が実現すると仮定する手法（\sref{sec:ch3-ue}）．
+    Wardropの第1原則を満たす配分であり，実務で最も広く用いられる\cite{Wardrop1952}．
+  \item[確率的利用者均衡配分（Stochastic User Equilibrium, SUE）]
+    フロー依存の下で，旅行時間の認知に確率的誤差が存在することを考慮した均衡配分
+    （\sref{sec:ch4-sue}）．UEより現実的な行動仮定を持つが，計算コストは増大する\cite{Daganzo1977}．
+\end{description}
+
+さらに，社会全体の総旅行時間を最小化するシステム最適配分（\sref{sec:ch5-so}），
+均衡へ至る動的調整過程を記述する進化ゲーム理論的アプローチ（\sref{sec:ch7-evogame}），
+混雑課金の経済理論（\sref{sec:ch8-pigou}），そして各種シミュレーション手法（\sref{sec:ch9-simulation}）へと
+議論は展開していく．
+
+\subsection*{交通量配分モデルの特長}
+
+交通量配分モデルが交通計画や政策評価において広く用いられてきた理由は，
+以下の4つの特長による\cite{土木学会1998}．
+
+\begin{enumerate}
+  \item \textbf{論理の明快さ}：
+    「利用者は自己の旅行時間を最小化する」という単純な行動仮定から出発し，
+    直感的で説得力のある政策提言が得られる．
+
+  \item \textbf{理論解の一意性}：
+    適切な条件（単調増加なリンクコスト関数）の下でUE解は一意に存在し，
+    誰が計算しても同じ結果が得られる（\sref{sec:ch3-ue} \ssref{subsec:beckmann}）．
+    これは意思決定支援ツールとしての信頼性を担保する．
+
+  \item \textbf{ミクロ経済学との整合性}：
+    消費者余剰・生産者余剰の概念を用いた余剰分析（\sref{sec:ch5-so} \ssref{subsec:surplus-analysis}）や，
+    混雑課金の最適設計（\sref{sec:ch8-pigou}）は，ミクロ経済理論と厳密に整合しており，
+    福祉評価・費用便益分析に直接応用できる．
+
+  \item \textbf{複雑モデルの比較基準}：
+    エージェントベースシミュレーションや機械学習モデルなど，
+    より複雑な新しいアプローチの結果を評価する際，
+    均衡配分モデルの解は理論的な基準点（ベンチマーク）としての役割を果たす．
+\end{enumerate}
+
+\subsection*{本章の構成}
+
+本章は以下の9節から構成される．
+
+\begin{description}
+  \item[\sref{sec:ch1-network}　交通ネットワークの記述]
+    ネットワークの構成要素（ノード，リンク，経路，ODペア）を定義し，
+    基本変数と関係式，および旅行時間をリンク交通量の関数とするBPR関数を導入する．
+
+  \item[\sref{sec:ch2-uncongested}　非混雑型配分（フロー非依存配分）]
+    All-or-Nothing 配分，吸収マルコフ過程配分，
+    確率的配分（ロジット型），および Dial のアルゴリズムを解説する\cite{Dial1971}．
+
+  \item[\sref{sec:ch3-ue}　利用者均衡配分（UE）]
+    Wardropの第1原則，Beckmann 変換による等価最適化問題の導出，
+    Frank-Wolfe 法，および Braess のパラドックスを扱う\cite{Beckmann1956,FrankWolfe1956,Wardrop1952}．
+
+  \item[\sref{sec:ch4-sue}　確率的利用者均衡配分（SUE）]
+    完全情報仮定を緩和したランダム効用モデルに基づく配分と，
+    ロジット型SUEの等価最適化問題・解法を解説する\cite{Fisk1980,McFadden1974}．
+
+  \item[\sref{sec:ch5-so}　システム最適配分（SO）と混雑課金]
+    Wardropの第2原則，UEとSOの比較，限界費用課金の考え方，
+    および余剰分析を扱う\cite{Pigou1920}．
+
+  \item[\sref{sec:ch6-dta}　動的交通配分（DTA）]
+    静的UEとの対比を通じてDTAの位置づけを整理し，
+    変分不等式による動的利用者均衡（DUE）の定式化と解法の概要を解説する．
+
+  \item[\sref{sec:ch7-evogame}　進化ゲーム理論と交通配分]
+    ポテンシャルゲームとしてのUE，集団ゲームの枠組み，
+    代表的な進化動学（Smith ダイナミクス，レプリケーター動学等），
+    およびDay-to-day ダイナミクスへの応用を解説する\cite{Sandholm2001,Sandholm2010}．
+
+  \item[\sref{sec:ch8-pigou}　ピグー課金と混雑課金の一般理論]
+    外部性の経済学，第一最善・第二最善課金，
+    Vickrey ボトルネックモデルによる動的課金，
+    および課金収入の再分配・公平性について論じる\cite{Vickrey1969}．
+
+  \item[\sref{sec:ch9-simulation}　シミュレーション]
+    マクロ基本図（MFD）に基づくゾーンシミュレーションと
+    ミクロシミュレーション（車両追従モデル）の基礎を紹介する\cite{Daganzo2007,Geroliminis2008,Gazis1961}．
+\end{description}
+
+また，本章末には補足として，黄金分割法（\sref{sec:appendix-A}），
+All-or-Nothing 配分の効率的アルゴリズム（\sref{sec:appendix-B}），
+および利用者均衡と Nash 均衡の等価性の証明（\sref{sec:appendix-C}）を付す\cite{Nash1950,Nash1951}．
