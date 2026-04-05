@@ -29,6 +29,9 @@ jobs:
       - name: Install pandoc
         run: sudo apt-get install -y --no-install-recommends pandoc
 
+      - name: Fix build directory permissions
+        run: sudo chown -R "$USER" build/
+
       - name: Convert to Markdown
         run: python3 utility/tex2md.py
 
