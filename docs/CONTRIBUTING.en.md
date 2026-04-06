@@ -15,6 +15,10 @@ covering environment setup, adding chapters, building, and submitting pull reque
   - [Prerequisites](#prerequisites)
   - [Repository Setup](#repository-setup)
   - [Directory Structure](#directory-structure)
+  - [Writing a Column](#writing-a-column)
+    - [Step 1 — Locate the column file](#step-1--locate-the-column-file)
+    - [Step 2 — Add a title and your name](#step-2--add-a-title-and-your-name)
+    - [Step 3 — Write the content](#step-3--write-the-content)
   - [Adding a Chapter](#adding-a-chapter)
     - [Step 1 — Create a chapter file](#step-1--create-a-chapter-file)
     - [Step 2 — Create a bib file](#step-2--create-a-bib-file)
@@ -109,6 +113,47 @@ stone-ship/
     ├── compile.sh            # Build script (zsh)
     └── compile.ps1           # Build script (PowerShell)
 ```
+
+---
+
+## Writing a Column
+
+Each chapter folder contains a dedicated `.tex` file for columns
+(e.g. `src/chapters/assignment/col5_miniresearch.tex`).
+When writing a column, **do not edit the main chapter file** — edit only the column file.
+
+### Step 1 — Locate the column file
+
+Open the main `.tex` file for your chapter (`src/chapters/<chapter>.tex`) and look for `\input` directives that reference a column file.
+
+```latex
+% Example from src/chapters/assignment.tex
+\input{chapters/assignment/col5_miniresearch.tex}
+```
+
+The path shown there is the file you should edit.
+
+> **Note**: The filename (`col5_miniresearch.tex`) varies by chapter. Always check the `\input` directives in your own chapter's file.
+
+### Step 2 — Add a title and your name
+
+**Always include a title and your name** in the column.
+Place the title as the argument to `\begin{column}{...}` and put your name at the start of the body.
+
+```latex
+\clearpage
+\begin{column}{Why Mini-Research Matters}
+{\small Taro Yamada}
+
+(Write your content here)
+\end{column}
+\clearpage
+```
+
+### Step 3 — Write the content
+
+Write the body text after the title and your name.
+Figures, equations, and citations can all be used inside a column.
 
 ---
 
