@@ -1,0 +1,57 @@
+%% fig_network_example.tex
+%% 交通ネットワークの構成要素（4ノード例）
+%% Usage: \input{assets/assignment/fig_network_example.tex}
+%%
+%% ノード: セントロイド r (Origin), s (Destination)，交差点 A, B
+%% リンク: r->A, r->B, A->s, B->s, A->B (5本)
+%% 経路: k=1 (r->A->s)，k=2 (r->B->s)，k=3 (r->A->B->s)
+
+\begin{tikzpicture}[
+    every node/.style={font=\small},
+    %% 通常交差点ノード（円形）
+    nd/.style={circle, draw, thick, minimum size=0.80cm,
+               font=\small\bfseries, inner sep=1pt, fill=white},
+    %% セントロイドノード（角丸四角形）
+    cnd/.style={rectangle, draw, thick, rounded corners=3pt,
+                minimum width=0.80cm, minimum height=0.80cm,
+                font=\small\bfseries, inner sep=4pt, fill=gray!10},
+    arr/.style={->, >=stealth, thick},
+    lbl/.style={font=\footnotesize, fill=white, inner sep=1.5pt}
+]
+
+%% ===== ノード =====
+\node[cnd] (r) at (0,    0   ) {$r$};
+\node[nd]  (A) at (3.0,  1.4 ) {$A$};
+\node[nd]  (B) at (3.0, -1.4 ) {$B$};
+\node[cnd] (s) at (6.0,  0   ) {$s$};
+
+%% ===== リンク =====
+\draw[arr] (r) -- node[lbl, above, sloped] {$t_{rA}(x_{rA})$} (A);
+\draw[arr] (r) -- node[lbl, below, sloped] {$t_{rB}(x_{rB})$} (B);
+\draw[arr] (A) -- node[lbl, above, sloped] {$t_{As}(x_{As})$} (s);
+\draw[arr] (B) -- node[lbl, below, sloped] {$t_{Bs}(x_{Bs})$} (s);
+\draw[arr] (A) -- node[lbl, right]         {$t_{AB}(x_{AB})$} (B);
+
+%% ===== ODペア表示 =====
+\draw[<->, >=stealth, thick, gray, dashed, out=60, in=120]
+    (r) to node[above, font=\footnotesize, gray] {ODペア $rs$，需要 $q_{rs}$} (s);
+
+%% ===== ノード種別注釈 =====
+\node[font=\footnotesize, gray, align=center] at (0, -2.4)
+    {セントロイド\\$r \in R$（出発地）};
+\node[font=\footnotesize, gray, align=center] at (6.0, -2.4)
+    {セントロイド\\$s \in S$（目的地）};
+\node[font=\footnotesize, gray, align=center] at (3.0, -2.4)
+    {交差点ノード\\$A, B \in N$};
+
+%% ===== 経路一覧（図内注釈）=====
+\node[draw=black, rounded corners=2pt, font=\footnotesize, align=left,
+      inner sep=5pt, fill=gray!8]
+  at (3.0, 3.5) {
+    \textbf{経路一覧 $K_{rs}$}\\[3pt]
+    経路 $k\!=\!1$: $r \!\to\! A \!\to\! s$ $\in K_{rs}$\\
+    経路 $k\!=\!2$: $r \!\to\! B \!\to\! s$ $\in K_{rs}$\\
+    経路 $k\!=\!3$: $r \!\to\! A \!\to\! B \!\to\! s$ $\in K_{rs}$
+  };
+
+\end{tikzpicture}

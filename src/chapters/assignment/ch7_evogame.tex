@@ -1,0 +1,632 @@
+%% chapters/assignment/ch7_evogame.tex
+%% 第7章　進化ゲーム理論と交通配分（Sandholm 2010）
+
+\section{進化ゲーム理論と交通配分}
+\label{sec:ch7-evogame}
+
+\sref{sec:ch3-ue}では，利用者均衡配分（UE）が
+Beckmann 変換によって凸最適化問題（UE/FD-Primal）と等価であることを示し，
+Frank-Wolfe 法によって数値的に解けることを確認した\cite{Beckmann1956,Wardrop1952}．
+しかし，静学的な UE 分析が答えるのは「均衡状態がどこにあるか」という問いのみであり，
+「利用者がどのようにして均衡に到達するか」という\textbf{ダイナミクス}の問いには答えない．
+
+本節では，この問いに答えるための枠組みとして\textbf{進化ゲーム理論}を導入する
+\cite{Sandholm2010,Sandholm2001}．
+まず，UE がポテンシャルゲームの最小値と等価であるという静学的な関係を整理し
+（\ssref{subsec:potential-game}），
+この枠組みを進化的 Day-to-day ダイナミクスへ拡張する動機を説明する
+（\ssref{subsec:evo-game-overview}）．
+続いて \textbf{集団ゲーム}（Population Game）の基本概念を導入し
+（\ssref{subsec:population-game}），
+有限合理性のもとでの乗り換え行動を記述する
+\textbf{改訂プロトコル}（Revision Protocol）と
+\textbf{集団ダイナミクス}（Mean Dynamics）の理論的枠組みを示す
+（\ssref{subsec:revision-protocol}）．
+\ssref{subsec:dynamics-examples} では交通配分に関連する代表的な進化動学を紹介し，
+\ssref{subsec:stability-convergence} で収束定理を述べ，
+\ssref{subsec:daytodaydyn} で Day-to-day ダイナミクスの交通政策への含意を考察する．
+
+本節で新たに用いる主要記号を表\ref{tab:ch7-notation}にまとめる（基本記号は表\ref{tab:notation}参照）．
+
+\begin{table}[hbtp]
+  \centering
+  \caption{進化ゲームと Day-to-day ダイナミクスの主要記号}
+  \label{tab:ch7-notation}
+  \begin{tabular}{cll}
+    \toprule
+    記号 & 意味 & 単位（例） \\
+    \midrule
+    $\boldsymbol{x} \in X$ & 社会状態ベクトル（各戦略を選択している利用者数） & 台/時 \\
+    $F_i(\boldsymbol{x})$  & 戦略 $i$ の利得関数（$= -c_k^{rs}$；負の旅行時間） & — \\
+    $\bar{F}(\boldsymbol{x})$ & 集団全体の平均利得 $= \sum_i x_i F_i / m$ & — \\
+    $\rho_{ij}(F,\boldsymbol{x})$ & 改訂プロトコル（戦略 $i$ から戦略 $j$ への乗り換え率） & 日$^{-1}$ \\
+    $\dot{f}_k^{rs}$       & 経路交通量の時間変化率（Day-to-day ODE の左辺） & — \\
+    $\boldsymbol{V}(\boldsymbol{f})$ & 集団ダイナミクスのベクトル場（$\dot{\boldsymbol{f}} = \boldsymbol{V}(\boldsymbol{f})$） & — \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+% ---------------------------------------------------------------
+\subsection{ポテンシャルゲームとしての UE}
+\label{subsec:potential-game}
+% ---------------------------------------------------------------
+
+\subsubsection*{ポテンシャルゲームの概念}
+
+UE の最適化問題（\ssref{subsec:beckmann}）を
+ゲーム理論の視点から捉え直すと，その背後に
+\textbf{ポテンシャルゲーム}（Potential Game）の構造が見えてくる
+\cite{Monderer1996}．
+
+ポテンシャルゲームとは，すべてのプレーヤーの「利得の変化」が，
+1 つのグローバルな関数 $Q$（\textbf{ポテンシャル関数}）の変化に
+きっかりと等しいゲームである．
+すなわち，プレーヤー $a$ が戦略を $i$ から $j$ に変更したとき：
+\begin{equation}
+  U_a(j,\, \boldsymbol{s}_{-a}) - U_a(i,\, \boldsymbol{s}_{-a})
+  = Q(j,\, \boldsymbol{s}_{-a}) - Q(i,\, \boldsymbol{s}_{-a})
+  \label{eq:potential-def}
+\end{equation}
+が成り立つ（$\boldsymbol{s}_{-a}$ は他のプレーヤーの戦略プロファイル）
+\cite{Monderer1996}．
+この条件のもとでは，$Q$ を最小化する点が Nash 均衡と一致する
+——複数のプレーヤー間の均衡を，単一の最小化問題に置き換えられる点が
+ポテンシャルゲームの大きな強みである．
+
+\subsubsection*{交通配分のポテンシャル関数}
+
+$n$ 人のドライバー（プレーヤー）が ODペア $rs$ 間の経路を選択するゲームを考える．
+ドライバー $a$ が選ぶ経路 $k$ の費用（負の利得）は
+経路旅行時間 $c_k^{rs}(\boldsymbol{f})$ である（\sref{sec:ch3-ue}参照）．
+
+ポテンシャル関数として Beckmann 変換の目的関数
+\begin{equation}
+  Z(\boldsymbol{x})
+  = \sum_{a \in A} \int_0^{x_a} t_a(w)\, dw
+  \label{eq:beckmann-potential}
+\end{equation}
+を採用すると，式\eqref{eq:potential-def}の条件が満たされることが示せる
+\cite{Monderer1996,Sandholm2001}．
+離散 $n$ 人ゲームの対応物として，1 人のドライバーが経路 $k$ から経路 $l$ に
+変更したときの $Z$ の変化量は，連続近似のもとでそのドライバーの
+旅行時間変化 $c_l^{rs} - c_k^{rs}$ に等しい
+（$n$ が十分大きい極限での議論は\sref{sec:appendix-C}で別途扱う）．
+
+\textbf{結論として}，
+\begin{itemize}
+  \item $Z$ を最小化する経路フロー $\boldsymbol{f}^*$ が Nash 均衡 $=$ UE と一致する，
+  \item どのドライバーも $Z$ が最小の状態では経路変更のインセンティブを持たない，
+\end{itemize}
+という2つの事実が成り立つ\cite{Sandholm2001}．
+
+UE をポテンシャルゲームの最小値として捉える利点は静学的解析に留まらない．
+次節以降で見るように，この構造は
+進化動学の\textbf{Lyapunov 関数}としての役割を果たし，
+ダイナミクスの安定性分析を可能にする．
+
+% ---------------------------------------------------------------
+\subsection{進化ゲームと Day-to-day ダイナミクス}
+\label{subsec:evo-game-overview}
+% ---------------------------------------------------------------
+
+\subsubsection*{静学モデルの限界}
+
+混雑ゲームの静学的 Nash 均衡分析（\sref{sec:ch3-ue}，\sref{sec:appendix-C}）は
+「均衡状態はどこか」という問いには答えるが，
+次の問いには答えない：
+
+\begin{itemize}
+  \item 利用者は均衡状態を知っているのか？
+  \item 均衡への収束は保証されるか？
+  \item 均衡から外れた初期状態からどのような経路を辿って均衡に到達するか？
+\end{itemize}
+
+UE モデルは「完全情報」と「完全合理性」を前提とする（\ssref{subsec:wardrop}参照）．
+しかし現実の交通行動では，利用者は前日の旅行時間をもとに翌日の経路を決定するなど，
+\textbf{有限合理性}（Bounded Rationality）に基づいた漸次的な調整行動が観察される．
+これが\textbf{Day-to-day ダイナミクス}の研究動機である．
+
+\subsubsection*{進化ゲーム理論による拡張}
+
+\textbf{進化ゲーム理論}（Evolutionary Game Theory）は，
+もともと生物進化（Taylor \& Jonker 1978）や社会学習（Smith 1984）を記述するために
+発展した理論であり，プレーヤー集団の戦略分布が時間とともに変化する
+ダイナミクスを扱う\cite{Taylor1978,Smith1984}．
+
+交通工学における Day-to-day ダイナミクス（day-to-day adjustment process）は，
+進化ゲーム理論の枠組みと自然に対応する：
+
+\begin{center}
+  \begin{tabular}{ll}
+    \toprule
+    進化ゲーム理論 & Day-to-day ダイナミクス \\
+    \midrule
+    プレーヤー集団 & 通勤者・ドライバー集団 \\
+    戦略 & 経路選択 \\
+    集団状態 & 経路交通量 $f_k^{rs}$ \\
+    利得 & 負の旅行時間（$-c_k^{rs}$） \\
+    戦略改訂 & 日々の経路変更行動 \\
+    Nash 均衡 & Wardrop UE \\
+    \bottomrule
+  \end{tabular}
+\end{center}
+
+Sandholm（2001, 2010）は，ポテンシャルゲームに対して適切な条件を満たす
+進化動学を導入することで，
+\textbf{合理性の完全性を仮定しなくても長期的に UE へ収束すること}を
+理論的に証明した\cite{Sandholm2001,Sandholm2010}．
+本章の後半でこの収束定理を詳しく述べる（\ssref{subsec:stability-convergence}）．
+
+% ---------------------------------------------------------------
+\subsection{集団ゲームの枠組み}
+\label{subsec:population-game}
+% ---------------------------------------------------------------
+
+\subsubsection*{集団ゲームの基本要素}
+
+Sandholm（2010）の\textbf{集団ゲーム}（Population Game）$\mathcal{G}$
+は次の3要素で定義される\cite{Sandholm2010}：
+
+\begin{description}
+  \item[\textbf{社会状態} $\boldsymbol{x} \in X$]
+    $n$ 個の戦略（純粋戦略）のそれぞれを選択している利用者数を並べたベクトル：
+    \begin{equation}
+      X = \left\{
+        \boldsymbol{x} \in \mathbb{R}^n_{\geq 0}
+        \;\middle|\;
+        \sum_{i=1}^{n} x_i = m
+      \right\}
+      \label{eq:social-state-set}
+    \end{equation}
+    ここで $m > 0$ は集団の規模（総プレーヤー数）を表す．
+    交通配分では $m = q_{rs}$（OD 交通量），$x_i = f_k^{rs}$（経路 $k$ の交通量）
+    に対応する．
+
+  \item[\textbf{利得関数} $F\colon X \to \mathbb{R}^n$]
+    社会状態 $\boldsymbol{x}$ に応じた各戦略の利得を表す写像．
+    $F_i(\boldsymbol{x})$ は戦略 $i$ を選択した利用者が得る利得である．
+    交通配分では，負の旅行時間 $F_i(\boldsymbol{x}) = -c_k^{rs}(\boldsymbol{f})$
+    が利得に対応する（コストが小さいほど選好される）．
+
+  \item[\textbf{Nash 均衡} $\boldsymbol{x}^* \in X$]
+    どの利用者も戦略を変更することで利得を改善できない状態：
+    \begin{equation}
+      x_i^* > 0
+      \implies
+      F_i(\boldsymbol{x}^*) \geq F_j(\boldsymbol{x}^*)
+      \quad \forall j
+      \label{eq:nash-condition}
+    \end{equation}
+    すなわち，正の流量を持つ戦略は必ず利得を最大化している．
+    交通配分では，条件\eqref{eq:nash-condition}は
+    Wardrop UE 条件（式\eqref{eq:wardrop-condition}）と一致する．
+\end{description}
+
+\subsubsection*{交通配分との対応}
+
+単一の ODペア $rs$ に対して，経路集合 $K_{rs}$ の要素（経路）を戦略とし，
+集団の規模を OD 交通量 $q_{rs}$ とすると，集団ゲームの各要素は次のように対応する：
+
+\begin{center}
+  \begin{tabular}{lll}
+    \toprule
+    集団ゲーム要素 & 交通配分の対応 & 式 \\
+    \midrule
+    戦略 $i$ & 経路 $k^{rs} \in K_{rs}$ & \\
+    集団規模 $m$ & OD交通量 $q_{rs}$ & \\
+    社会状態 $x_i$ & 経路交通量 $f_k^{rs}$ & 式\eqref{eq:ue-demand} \\
+    実行可能集合 $X$ & フロー保存集合 $\sum_k f_k^{rs}=q_{rs}$ & \\
+    利得 $F_i(\boldsymbol{x})$ & 負の経路旅行時間 $-c_k^{rs}(\boldsymbol{f})$ & \\
+    Nash 均衡 & Wardrop UE & 式\eqref{eq:wardrop-condition} \\
+    \bottomrule
+  \end{tabular}
+\end{center}
+
+複数ODペアが存在する場合は，ODペアごとに独立な集団ゲームを設定し，
+各集団のダイナミクスを並列に扱う．
+
+% ---------------------------------------------------------------
+\subsection{改訂プロトコルと進化動学}
+\label{subsec:revision-protocol}
+% ---------------------------------------------------------------
+
+\subsubsection*{限定合理性の定式化}
+
+完全合理性を仮定する Nash 均衡分析では，
+プレーヤーは常に最良の戦略を選択することが前提となっている．
+しかし Day-to-day モデルでは，利用者は情報制約や慣性のもとで
+\textbf{確率的・漸次的に戦略を変更する}ことが現実的である．
+
+この行動を定式化するのが\textbf{改訂プロトコル}（Revision Protocol）である
+\cite{Sandholm2010}．
+
+\begin{description}
+  \item[\textbf{改訂プロトコル} $\rho_{ij}(F,\, \boldsymbol{x}) \geq 0$]
+    現在，戦略 $i$ を選択しているエージェント（利用者）1 人が，
+    単位時間あたりに戦略 $j$ へ乗り換える条件付き確率（率）：
+    \begin{equation}
+      \rho_{ij}(F,\, \boldsymbol{x}) \geq 0
+      \qquad (\text{乗り換え率})
+      \label{eq:revision-protocol}
+    \end{equation}
+    $\rho_{ij}$ は現在の利得のベクトル $F(\boldsymbol{x})$ と社会状態 $\boldsymbol{x}$
+    の関数として与えられる．
+    限定合理性の具体的なモデル（どの情報をどう使うか）は
+    $\rho_{ij}$ の選び方によって規定される．
+\end{description}
+
+\subsubsection*{集団ダイナミクス（Mean Dynamics）}
+
+個人レベルの確率的乗り換え行動から，集団全体の平均的な運動方程式（\textbf{Mean Dynamics}）を導出できる
+\cite{Sandholm2010}．
+戦略 $i$ の利用者数 $x_i$ の時間変化率は，
+「他の戦略から $i$ への流入」マイナス「$i$ から他の戦略への流出」で与えられる：
+
+\begin{equation}
+  \dot{x}_i
+  = \sum_{j \neq i} x_j\, \rho_{ji}(F,\, \boldsymbol{x})
+    - x_i \sum_{j \neq i} \rho_{ij}(F,\, \boldsymbol{x})
+  \label{eq:mean-dynamics}
+\end{equation}
+
+式\eqref{eq:mean-dynamics}の右辺：
+\begin{itemize}
+  \item 第1項：戦略 $j$ を採用している $x_j$ 人のうち，
+        率 $\rho_{ji}$ で戦略 $i$ に乗り換える者の流入量．
+  \item 第2項：戦略 $i$ を採用している $x_i$ 人のうち，
+        率 $\rho_{ij}$ で他の戦略 $j$ に乗り換える者の流出量．
+\end{itemize}
+
+交通配分の文脈では，戦略 $i$ を経路 $k^{rs}$ と読み替え，
+$x_i = f_k^{rs}$，$F_i = -c_k^{rs}$ とすることで，
+Day-to-day 調整過程の常微分方程式（ODE）が得られる．
+
+\subsubsection*{フロー保存の維持}
+
+式\eqref{eq:mean-dynamics}において，$\sum_i \dot{x}_i = 0$ が任意の時刻で成立すること，
+すなわち社会状態が常に実行可能集合 $X$（式\eqref{eq:social-state-set}）内に留まることが確認できる
+\cite{Sandholm2010}：
+\begin{equation*}
+  \sum_i \dot{x}_i
+  = \sum_i \sum_{j \neq i} x_j \rho_{ji}
+    - \sum_i x_i \sum_{j \neq i} \rho_{ij}
+  = \sum_{i \neq j} x_j \rho_{ji} - \sum_{i \neq j} x_i \rho_{ij}
+  = 0
+\end{equation*}
+（添字の付け替えによる）．
+このため，初期条件 $\boldsymbol{x}(0) \in X$ を設定すれば，
+すべての時刻で $\boldsymbol{x}(t) \in X$ が保証される．
+
+% ---------------------------------------------------------------
+\subsection{代表的な進化動学}
+\label{subsec:dynamics-examples}
+% ---------------------------------------------------------------
+
+解析的・計算的に扱いやすいいくつかの進化動学を紹介する．
+各動学は改訂プロトコル $\rho_{ij}$ の選び方によって定まり，
+異なる限定合理性モデルに対応する\cite{Sandholm2010}．
+
+\subsubsection*{Smith ダイナミクス}
+
+\textbf{Smith ダイナミクス}（Smith Dynamics）は，
+乗り換え率をコスト差に比例させるモデルであり，
+交通工学の文脈では Smith（1984）\cite{Smith1984}が提案したことでよく知られる．
+
+\begin{description}
+  \item[改訂プロトコル]
+    \begin{equation}
+      \rho_{ij}^{\rm S}(F,\, \boldsymbol{x})
+      = \bigl[F_j(\boldsymbol{x}) - F_i(\boldsymbol{x})\bigr]_+
+      = \bigl[-c_j^{rs} + c_i^{rs}\bigr]_+
+      \label{eq:smith-protocol}
+    \end{equation}
+    ここで $[\cdot]_+ \coloneqq \max(\cdot,\, 0)$ は正値部分（負の値をゼロとする操作）を表す．
+    すなわち，乗り換え先 $j$ のほうが現在の戦略 $i$ より利得が大きい（コストが低い）
+    場合のみ，コスト差に比例した率で乗り換えが生じる．
+
+  \item[集団ダイナミクス（経路交通量表示）]
+    \begin{equation}
+      \dot{f}_k^{rs}
+      = \sum_{l \neq k} f_l^{rs}\, \bigl[c_l^{rs} - c_k^{rs}\bigr]_+
+        - f_k^{rs} \sum_{l \neq k} \bigl[c_k^{rs} - c_l^{rs}\bigr]_+
+      \label{eq:smith-dynamics}
+    \end{equation}
+    右辺第1項は「経路 $l$ より経路 $k$ が安価」なとき $l$ から $k$ への乗り換え（流入），
+    第2項は「経路 $k$ が他の経路より高価」なとき $k$ から他の経路への乗り換え（流出）を表す．
+\end{description}
+
+\subsubsection*{レプリケーター動学}
+
+\textbf{レプリケーター動学}（Replicator Dynamics）は，
+進化生物学において適応度が高い形質が集団内で増加する過程
+（Taylor \& Jonker 1978）\cite{Taylor1978}を記述するモデルで，
+交通行動の「平均旅行時間より良い経路は利用者を引き付ける」という直感を表す：
+
+\begin{equation}
+  \dot{x}_i
+  = x_i \bigl(F_i(\boldsymbol{x}) - \bar{F}(\boldsymbol{x})\bigr)
+  \label{eq:replicator}
+\end{equation}
+
+ここで $\bar{F}(\boldsymbol{x}) = \sum_k x_k F_k / m$ は集団全体の平均利得
+（平均旅行時間の負値）である．
+平均利得より高い利得を持つ戦略（自己の旅行時間が平均より短い経路）は流量が増加し，
+逆は減少する．
+ただし，レプリケーター動学では境界（$x_i = 0$）の点が不変集合となるため，
+もともと利用されていない経路には新規の交通が流入しないという制約がある\cite{Sandholm2010}．
+
+\subsubsection*{最良応答動学}
+
+\textbf{最良応答動学}（Best Response Dynamics）は，
+利用者が常にその時点での社会状態 $\boldsymbol{x}$ に対して
+最良の戦略（最短経路）へ即座に乗り換えると仮定するモデルである：
+
+\begin{equation}
+  \dot{\boldsymbol{x}} \in \mathrm{BR}(\boldsymbol{x}) - \boldsymbol{x}
+  \label{eq:best-response}
+\end{equation}
+
+ここで $\mathrm{BR}(\boldsymbol{x}) = \arg\max_i F_i(\boldsymbol{x})$
+は現在の状態での最良応答対応である．
+この動学は数理的には「右辺不連続な微分包含（Differential Inclusion）」となり，
+他の動学と比較して最も合理的な乗り換え行動を仮定するが，その分実装や解析がやや複雑になる．
+
+\subsubsection*{代表的な進化動学の比較}
+
+\begin{table}[hbtp]
+  \centering
+  \caption{代表的な進化動学の比較}
+  \label{tab:dynamics-comparison}
+  \begin{tabular}{llll}
+    \toprule
+    動学 & 乗り換え率 $\rho_{ij}$ & ODE の形 & 特徴 \\
+    \midrule
+    Smith & $[F_j - F_i]_+$ &
+      $\dot{x}_i = \sum_j x_j[F_i\!-\!F_j]_+ - x_i\!\sum_j [F_j\!-\!F_i]_+$ &
+      コスト差比例；連続 \\[2pt]
+    レプリケーター & $[F_j - \bar{F}]_+/m$ &
+      $\dot{x}_i = x_i(F_i - \bar{F})$ &
+      平均との差；境界不変 \\[2pt]
+    最良応答 & $\mathbf{1}[j \in \mathrm{BR}]$ &
+      $\dot{\boldsymbol{x}} \in \mathrm{BR}(\boldsymbol{x}) - \boldsymbol{x}$ &
+      不連続；最速収束 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+% ---------------------------------------------------------------
+\subsection{安定性と収束定理}
+\label{subsec:stability-convergence}
+% ---------------------------------------------------------------
+
+\subsubsection*{進化動学に課す条件}
+
+ここでは，経路フローの時間発展を記述する常微分方程式（ODE）
+\begin{equation}
+  \dot{\boldsymbol{f}} = \boldsymbol{V}(\boldsymbol{f})
+  \label{eq:evolutionary-dynamics-ode}
+\end{equation}
+を考える．
+$\boldsymbol{V}(\boldsymbol{f}) = \bigl(V_k^{rs}(\boldsymbol{f})\bigr)_{rs,k}$
+は各経路フローの変化率を与えるベクトル場であり，
+式\eqref{eq:mean-dynamics}の右辺に対応する（Smith ダイナミクスでは式\eqref{eq:smith-dynamics}，
+レプリケーター動学では式\eqref{eq:replicator} の右辺がこれにあたる）．
+
+Sandholm（2001, 2010）は，
+以下の5つの条件を満たす進化動学であれば，
+ポテンシャルゲームの Nash 均衡（＝UE）へ収束することを証明した
+\cite{Sandholm2001,Sandholm2010}．
+
+\begin{description}
+  \item[(L) リプシッツ連続性]
+    $\boldsymbol{V}(\boldsymbol{f})$ はリプシッツ連続である（解の一意存在を保証）．
+
+  \item[(N) 非負性]
+    $f_k^{rs} = 0$ ならば $V_k^{rs}(\boldsymbol{f}) \geq 0$（流量ゼロの経路への流入のみ許容）．
+
+  \item[(C) フロー保存]
+    $\displaystyle\sum_{k \in K_{rs}} V_k^{rs}(\boldsymbol{f}) = 0$，
+    $\forall rs \in \Omega$（OD 交通量が時間不変）．
+
+  \item[(PC) 正相関]（Positive Correlation）
+    \begin{equation}
+      \sum_{rs \in \Omega} \sum_{k \in K_{rs}}
+      V_k^{rs}(\boldsymbol{f})\, c_k^{rs}(\boldsymbol{f}) \leq 0
+      \label{eq:positive-correlation}
+    \end{equation}
+    旅行費用が高い経路は流量が減少する方向への変化（コスト差に反応する合理性を最低限保証）．
+
+  \item[(NS) Nash 固定性]（Nash Stationarity）
+    $\boldsymbol{V}(\boldsymbol{f}^*) = \boldsymbol{0}$ ならば $\boldsymbol{f}^*$ は Nash 均衡（UE）．
+\end{description}
+
+Smith ダイナミクス（式\eqref{eq:smith-dynamics}）はこれら5つの条件をすべて満たす
+\cite{Smith1984,Sandholm2010}．
+レプリケーター動学（式\eqref{eq:replicator}）も (L)(N)(C)(PC)(NS) を満たすことが確認できる．
+
+\subsubsection*{ポテンシャル関数のLyapunov性}
+
+収束定理の核心は，Beckmann 変換のポテンシャル関数 $Z(\boldsymbol{x})$
+が進化動学の\textbf{Lyapunov 関数}として機能することにある．
+
+\begin{description}
+  \item[\textbf{命題（Lyapunov 減少）}]
+    正相関条件 (PC) を満たす進化動学のもとでは，
+    \begin{equation}
+      \frac{d}{dt} Z(\boldsymbol{f}(t))
+      = \sum_{rs} \sum_{k} \frac{\partial Z}{\partial f_k^{rs}}\, V_k^{rs}(\boldsymbol{f})
+      = \sum_{rs} \sum_{k} c_k^{rs}(\boldsymbol{f})\, V_k^{rs}(\boldsymbol{f})
+      \leq 0
+      \label{eq:lyapunov-decrease}
+    \end{equation}
+    が任意の $\boldsymbol{f}(t) \in X$ で成立する（等号は Nash 均衡のみ）．
+\end{description}
+
+ここで，$\partial Z / \partial f_k^{rs} = c_k^{rs}$ は
+Beckmann 変換の勾配計算（\ssref{subsec:beckmann}参照）から直接得られる：
+リンク交通量を通じた連鎖律が経路旅行時間を与えるためである
+（KKT 条件；式\eqref{eq:kkt-ue}参照）．
+不等式は正相関条件\eqref{eq:positive-correlation}そのものであり，
+$Z$ は単調非増加であること，
+すなわちポテンシャルゲームの「谷」（Nash 均衡）に向かって系が流れることを意味する．
+
+図\ref{fig:potential-z} に 2 経路モデルでの $Z$ の形状と，
+進化動学の収束軌跡のイメージを示す．
+
+\begin{figure}[hbtp]
+  \centering
+  \input{assets/assignment/fig_potential_z.tex}
+  \caption{2 経路モデルにおけるポテンシャル関数 $Z(f_1)$ と収束軌跡の概念図
+           （$c_1(f_1)=10+f_1$，$c_2(f_1)=23-3f_1$，$q=6$）．
+           $Z$ は $f_1^* = 3.25$ を最小値とする凸関数であり，
+           正相関条件を満たす進化動学（橙色の点列）は
+           $Z$ を単調に減少させながら UE に収束する（式\eqref{eq:lyapunov-decrease}）．}
+  \label{fig:potential-z}
+\end{figure}
+
+\subsubsection*{収束定理}
+
+以上の議論を整理すると，次の定理が得られる．
+
+\begin{description}
+  \item[\textbf{定理（Sandholm, 2001; 2010）}]
+    リンク費用関数 $t_a(\cdot)$ が連続かつ単調非減少であるとき，
+    交通配分の集団ゲームはポテンシャルゲームである．
+    この集団ゲームに対して条件 (L)(N)(C)(PC)(NS) を満たす任意の進化動学
+    $\dot{\boldsymbol{f}} = \boldsymbol{V}(\boldsymbol{f})$ について，
+    \begin{enumerate}
+      \item すべての解軌道 $\boldsymbol{f}(t)$ は Nash 均衡（UE）の
+            連結部分集合に収束する，
+      \item リンク費用関数 $t_a(\cdot)$ が\textbf{狭義単調増加}であれば
+            UE は一意に定まり，
+            任意の初期条件から出発した解軌道がその唯一の Nash 均衡（UE）へ
+            収束する（global attractor）．
+    \end{enumerate}
+    \cite{Sandholm2001,Sandholm2010}
+\end{description}
+
+BPR 関数（\ssref{subsec:bpr}）のような狭義単調増加・狭義凸なリンク費用関数のもとでは
+$Z$ も狭義凸となり(ii)の条件が満たされるため，
+UE の一意性と大域的収束が保証される\cite{土木学会1998}．
+
+図\ref{fig:smith-dynamics} に Smith ダイナミクス（式\eqref{eq:smith-dynamics}）の
+1次元位相図（$\dot{f}_1$ vs $f_1$）を示す．
+$f_1 < f_1^*$ では $\dot{f}_1 > 0$（経路 1 へ流量が増加），
+$f_1 > f_1^*$ では $\dot{f}_1 < 0$（経路 1 から流量が減少）となり，
+UE への収束が確認できる．
+
+\begin{figure}[hbtp]
+  \centering
+  \input{assets/assignment/fig_smith_dynamics.tex}
+  \caption{Smith ダイナミクスの 1 次元位相図（2 経路モデル）．
+           $f_1^* = 3.25$ がUE（Nash 均衡点），$\dot{f}_1 = 0$．
+           左側（$f_1 < f_1^*$）では $\dot{f}_1 > 0$，
+           右側（$f_1 > f_1^*$）では $\dot{f}_1 < 0$ となり，
+           全初期条件から UE への大域的収束が見て取れる．}
+  \label{fig:smith-dynamics}
+\end{figure}
+
+% ---------------------------------------------------------------
+\subsection{Day-to-day ダイナミクスへの応用}
+\label{subsec:daytodaydyn}
+% ---------------------------------------------------------------
+
+\subsubsection*{Day-to-day 調整過程の解釈}
+
+収束定理は次のことを意味する：
+\textbf{「完全合理性（全情報・完全先読み）を前提としなくても，
+正相関条件（コストが高い経路を避ける傾向）を持つ日々の経路変更行動が続けば，
+長期的には Wardrop UE が実現する．」}
+
+具体的に Smith ダイナミクス（式\eqref{eq:smith-dynamics}）を
+Day-to-day 調整過程として解釈すると：
+
+\begin{itemize}
+  \item 各エージェント（通勤者）は毎日，
+        現在使用している経路のコストと対比して，
+        コストが低い代替経路が存在すれば，
+        そのコスト差に比例した確率で経路を変更する．
+  \item 個人レベルでは確率的で局所的な情報処理にすぎないが，
+        集団全体では $\dot{Z}(\boldsymbol{f}(t)) \leq 0$ が保たれ，
+        長期的に UE に収束する．
+\end{itemize}
+
+このメカニズムは，交通行動の観測結果と整合的であり，
+交通管理・情報提供の効果評価に応用できる．
+
+\subsubsection*{混雑課金・情報提供の動的評価への含意}
+
+静学的な UE 分析では，混雑課金や情報提供の「均衡状態における効果」は評価できるが，
+「均衡への収束速度や収束の経路（過渡状態）」は評価できない．
+Day-to-day 進化動学の枠組みでは，次のような問いに対する分析基盤が与えられる：
+
+\begin{enumerate}
+  \item \textbf{収束速度への政策効果}:
+        混雑課金（\sref{sec:ch5-so} \ssref{subsec:congestion-toll}）は，
+        課金なしの自由均衡（UE）ではなく SO を実現する料金体系を課す．
+        Day-to-day ダイナミクスのもとでは，
+        課金によって経路間コスト差が縮小ないし再構成されるため，
+        収束速度や過渡状態の交通量が変化しうる
+        \cite{赤松1996}．
+
+  \item \textbf{情報提供による乗り換え誘導}:
+        可変情報板（VMS）やナビゲーションシステムによりリアルタイムの経路情報が提供されると，
+        $\rho_{ij}$ の構造が変化し，
+        より正確な情報（コスト差への反応の鋭化）が得られると改訂プロトコルが強化される．
+        これは収束速度の改善として現れるが，
+        過剰反応（全員が同一経路へ殺到する現象）を引き起こすリスクも生じる
+        \cite{Sandholm2010}．
+
+  \item \textbf{Braessのパラドックスとダイナミクス}:
+        \ssref{subsec:braess}で示した Braess のパラドックスは，
+        静学的に「新規リンク追加後の UE が悪化する」ことを示す．
+        Day-to-day ダイナミクスの観点では，
+        過渡状態でいったん既存リンクの混雑が緩和するように見えながら，
+        最終的に悪化した均衡に落ち着く動的挙動が確認できる
+        \cite{Sandholm2010,Braess1968}．
+\end{enumerate}
+
+\begin{example}[title={クイズ 9：毎朝の「昨日より速い道」探しは，どこへ収束する？}]
+山手通り周辺に通勤する多数のドライバーが，毎朝「昨日より旅行時間が短い経路があれば少しずつ乗り換える」という
+Smith ダイナミクス（改訂プロトコル $\rho_{ij}\propto[F_j-F_i]^+$）を繰り返しています．
+この「毎日の微修正」を長期間繰り返すと，最終的にどの状態に収束するでしょうか？
+\begin{itemize}
+  \item[(ア)] ランダムに変動し続け，安定した状態には到達しない
+  \item[(イ)] 利用者均衡（UE）——誰も旅行時間を短縮できる乗り換え先がない状態
+  \item[(ウ)] システム最適（SO）——総旅行時間が最小の状態
+  \item[(エ)] 全員が同じ経路に集中する
+\end{itemize}
+\hyperref[ans:q9]{$\rightarrow$ 正解・解説は節末を参照}
+\end{example}
+
+\subsubsection*{本節のまとめ}
+
+本節で示した主要な結果を整理する：
+\begin{enumerate}
+  \item UE は\textbf{ポテンシャルゲーム}の Nash 均衡であり，
+        Beckmann 変換の目的関数 $Z(\boldsymbol{x})$ がポテンシャル関数に対応する
+        （\ssref{subsec:potential-game}）．
+  \item 進化ゲーム理論の\textbf{集団ゲーム}・\textbf{改訂プロトコル}の枠組みにより，
+        有限合理性のもとでの Day-to-day 調整過程を ODE として定式化できる
+        （\ssref{subsec:population-game}，\ssref{subsec:revision-protocol}）．
+  \item Smith ダイナミクス，レプリケーター動学など多様な進化動学が
+        正相関条件等を満たしており，これらは\textbf{交通量配分の Day-to-day モデル}
+        として利用できる
+        （\ssref{subsec:dynamics-examples}）．
+  \item 正相関条件を満たす進化動学はポテンシャル関数 $Z$ を Lyapunov 関数として
+        Nash 均衡（UE）に収束する
+        ——完全合理性を仮定しなくても長期均衡は静学的 UE と一致する
+        （\ssref{subsec:stability-convergence}）．
+  \item Day-to-day 進化動学の観点から，混雑課金・情報提供・ネットワーク設計の
+        \textbf{動的評価}（収束速度・過渡状態への影響）が可能となる
+        （\ssref{subsec:daytodaydyn}）．
+\end{enumerate}
+
+\begin{example}[title={クイズ 9 正解・解説}]
+\phantomsection\label{ans:q9}
+\textbf{正解：（イ）}
+
+ポテンシャルゲームとしての UE の構造から，
+Smith ダイナミクスはグローバルに UE に収束することが保証されます．
+毎朝の「賢い乗り換え」は最終的に，Wardrop が 1952 年に定義した均衡条件を動的に「発見」するプロセスです．
+\end{example}

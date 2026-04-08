@@ -1,0 +1,509 @@
+%% chapters/assignment/ch8_pigou.tex
+%% 第8章　ピグー課金と混雑課金の一般理論
+
+\section{ピグー課金と混雑課金の一般理論}
+\label{sec:ch8-pigou}
+
+\sref{sec:ch5-so}では，システム最適配分（SO）と混雑課金の基本的な考え方を導入し，
+最適課金額 $\tau_a^* = x_a^{SO} t_a'(x_a^{SO})$ という結果を示した（\ssref{subsec:congestion-toll}）．
+しかし，現実の政策場面では「なぜその課金額が正当化されるのか」という経済学的根拠，
+「すべてのリンクに同時に課金できない場合はどうなるか」という制度的制約，
+「時間帯によって需要が異なる場合の動的課金」など，より踏み込んだ議論が必要になる．
+
+本節は\sref{sec:ch5-so}を発展させ，混雑課金の理論を体系的に整理する．
+\ssref{subsec:pigou-externality} では，外部性という概念からピグー税の経済的根拠を整理する．
+\ssref{subsec:first-best} では複数リンクネットワークへの第一最善課金の定式化を行う．
+\ssref{subsec:second-best} では課金可能なリンクが限られる第二最善問題を扱う．
+\ssref{subsec:vickrey-bottleneck} では，出発時刻選択を扱う
+Vickrey ボトルネックモデルと最適動的課金を説明する．
+最後に \ssref{subsec:redistribution} では，課金収入の再分配と公平性の問題を論じる．
+
+本節で新たに用いる主要記号を表\ref{tab:ch8-notation}にまとめる（基本記号は表\ref{tab:notation}，表\ref{tab:ch5-notation}参照）．
+
+\begin{table}[hbtp]
+  \centering
+  \caption{ピグー課金・ボトルネックモデルの主要記号}
+  \label{tab:ch8-notation}
+  \begin{tabular}{cll}
+    \toprule
+    記号 & 意味 & 単位（例） \\
+    \midrule
+    $V$                & 単一リンクの交通量（本節での連続変数表記） & 台/時 \\
+    $\mathrm{MEC}$     & 限界外部費用 $= V\,t'(V)$（単一リンク表記） & 分 \\
+    $A^T \subseteq A$  & 課金可能なリンクの集合（第二最善課金で $A^T \subsetneq A$） & — \\
+    $\tilde{t}_a$      & 課金後の一般化リンク費用 $= t_a(x_a) + \tau_a$ & 分 \\
+    $s$                & ボトルネックの処理容量（最大サービス率） & 台/時 \\
+    $q(t)$             & 時刻 $t$ における待ち行列長 & 台 \\
+    $w(t) = q(t)/s$    & 時刻 $t$ における待ち時間 & 時 \\
+    $N$                & 通勤者総数 & 人 \\
+    $t^*$              & 希望到着時刻（始業時刻） & — \\
+    $C(t)$             & 時刻 $t$ に出発する通勤者の一般化費用（$\alpha$-$\beta$-$\gamma$ 体系） & 円 \\
+    $\alpha$           & 待ち時間の価値（時間費用係数；表\ref{tab:notation}の $\alpha$ とは異なる） & 円/時 \\
+    $\beta$            & 早着スケジュール遅延費用係数（$\beta<\alpha$） & 円/時 \\
+    $\gamma$           & 遅着スケジュール遅延費用係数（$\gamma>\alpha$） & 円/時 \\
+    $\tau(t)$          & 時刻 $t$ における動的課金額 & 円 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+% ---------------------------------------------------------------
+\subsection{外部性とピグー税の考え方}
+\label{subsec:pigou-externality}
+% ---------------------------------------------------------------
+
+\subsubsection*{混雑の外部性とは何か}
+
+ある利用者が混雑したリンクに追加的に入ると，
+そのリンクを走行している他の利用者全員の旅行時間が増加する．
+しかし意思決定を行う利用者はこの影響を自己の費用として算入しない．
+これが\textbf{混雑の外部性}（Congestion Externality）である\cite{Pigou1920}．
+
+単一リンク，交通量 $V$（連続変数），旅行時間関数 $t(V)$ を仮定すると，
+各費用成分は次のように整理される：
+
+\begin{align}
+  \text{私的限界費用}\ (\text{PMC}) &= t(V)
+    \label{eq:pmc-def}\\
+  \text{社会的費用の全体}            &= V \cdot t(V)
+    \label{eq:social-cost}\\
+  \text{社会的限界費用}\ (\text{SMC}) &= \frac{d}{dV}\bigl[V \cdot t(V)\bigr]
+    = t(V) + V\, t'(V)
+    \label{eq:smc-def}\\
+  \text{外部費用}\ (\text{MEC}) &= V\, t'(V)
+    = \text{SMC} - \text{PMC}
+    \label{eq:mec-def}
+\end{align}
+
+外部費用 $\text{MEC} = V t'(V)$ は，1台が追加参入したことによって
+既存の $V$ 台すべての旅行時間が $t'(V)$ だけ延びることから生じる．
+$t(V)$ が単調増加（$t'(V) > 0$）である限り，MEC $> 0$，すなわち
+混雑は\textbf{負の外部性}をもたらす．
+
+\subsubsection*{ピグー税による外部性の内部化}
+
+Pigou（1920）は，負の外部性が「市場の失敗」の一形態であり，
+外部費用に等しい税を課すことで個人の意思決定を社会的最適に誘導できるという
+\textbf{ピグー税}（Pigouvian Tax）の概念を提唱した\cite{Pigou1920}．
+
+混雑課金の文脈では，ピグー税率を
+\begin{equation}
+  \tau^* = V^* \cdot t'(V^*)
+  \label{eq:pigou-tax}
+\end{equation}
+と定める（$V^* = V_{SO}$ は社会的最適交通量）．
+この課金を課すと，利用者が直面する費用は
+$\text{PMC} + \tau^* = t(V^*) + V^* t'(V^*) = \text{SMC}(V^*)$
+となり，個人の私的最適化と社会最適が一致する（図\ref{fig:surplus-analysis}参照）．
+
+\begin{tcolorbox}[
+  colback=orange!6!white, colframe=orange!60!black,
+  title={\small ピグー税の要点},
+  breakable, fonttitle=\bfseries\small
+]
+  \begin{itemize}\setlength{\itemsep}{2pt}
+    \item 課金なし（UE）では PMC のみを参照 $\rightarrow$ SMC $>$ PMC により過剰交通量
+    \item ピグー税 $\tau^* = \text{MEC}(V^*)$ を課すと，私的費用 = SMC
+    \item 利用者の自発的な経路選択が社会最適（SO 解）と一致する
+    \item 課金収入（= $\tau^* \times V^*$）は政府が徴収し，再分配可能（\ssref{subsec:redistribution}参照）
+  \end{itemize}
+\end{tcolorbox}
+
+% ---------------------------------------------------------------
+\subsection{最適課金の定式化（第一最善）}
+\label{subsec:first-best}
+% ---------------------------------------------------------------
+
+\sref{sec:ch5-so} \ssref{subsec:congestion-toll} では単一リンクの例でピグー税を導出した．
+ここでは\textbf{多リンクネットワーク}に拡張し，
+\textbf{第一最善}（First-Best）課金の定式化を体系的に示す\cite{Sheffi1985,土木学会1998}．
+
+\subsubsection*{第一最善課金の定義}
+
+「ネットワーク上のすべてのリンクに，任意の大きさの課金を設定できる」という
+理想的な条件下での最適課金を\textbf{第一最善課金}という．
+
+各リンク $a \in A$ に料金 $\tau_a \geq 0$ を設定するとき，
+利用者が直面する一般化費用は $\tilde{t}_a(x_a) = t_a(x_a) + \tau_a$ となる．
+利用者はこの一般化費用に基づいて UE 原則で経路選択するため，
+均衡リンク交通量 $\boldsymbol{x}(\boldsymbol{\tau})$ は $\boldsymbol{\tau}$ の関数となる．
+
+\subsubsection*{最適料金の導出}
+
+社会的費用を最小化するためには，均衡が SO 解 $\boldsymbol{x}^{SO}$ に対応するよう
+$\boldsymbol{\tau}$ を選べばよい．
+\sref{sec:ch5-so}（\ssref{subsec:wardrop2}，式\eqref{eq:smc-gradient}）で示したとおり，
+SO-Frank-Wolfe においてリンクコストとして用いるのは社会的限界費用 SMC であった．
+これを各リンクの課金後費用が SMC に等しくなるよう設定すると：
+\begin{equation}
+  t_a(x_a^{SO}) + \tau_a^* = t_a(x_a^{SO}) + x_a^{SO}\, t_a'(x_a^{SO})
+\end{equation}
+よって
+\begin{equation}
+  \boxed{
+    \tau_a^* = x_a^{SO}\, t_a'(x_a^{SO})
+    \qquad \forall\, a \in A
+  }
+  \label{eq:first-best-toll}
+\end{equation}
+この第一最善料金 $\tau_a^*$ をすべてのリンクに設定したとき，
+修正費用 $\tilde{t}_a$ に基づく UE の解は SO 解と一致する，
+すなわち $\boldsymbol{x}_{UE}^{\text{toll}} = \boldsymbol{x}^{SO}$\cite{Beckmann1956}．
+
+\subsubsection*{BPR 関数への適用}
+
+BPR 関数 $t_a(x_a) = t_{a0}\left\{1 + \alpha(x_a/C_a)^\beta\right\}$（\ssref{subsec:bpr}）
+に対しては，式\eqref{eq:bpr-deriv} から：
+\begin{equation}
+  \tau_a^* = t_{a0}\,\alpha\,\beta\,\frac{(x_a^{SO})^{\beta}}{C_a^{\beta}}
+  \label{eq:first-best-bpr-toll}
+\end{equation}
+混雑が激しく $V/C$ 比 $x_a^{SO}/C_a$ が大きいリンクほど，第一最善料金が高くなる．
+$\beta=4$（通常値）では，$V/C$ が2倍になると $\tau_a^*$ は $2^4 = 16$ 倍になる．
+
+\subsubsection*{余剰分析との接続}
+
+\sref{sec:ch5-so} \ssref{subsec:surplus-analysis} で整理したとおり，
+第一最善課金によって UE の死荷重損失（図\ref{fig:surplus-analysis} の紫の三角形）が
+完全に解消され，社会的余剰が最大化される．
+課金収入 $R_a = \tau_a^* \cdot x_a^{SO}$ は政府に帰属し，
+適切に再分配されれば原理的にパレート改善が実現する（\ssref{subsec:redistribution}参照）．
+
+% ---------------------------------------------------------------
+\subsection{第二最善課金とネットワーク制約}
+\label{subsec:second-best}
+% ---------------------------------------------------------------
+
+\subsubsection*{第二最善課金の必要性}
+
+現実の政策環境では，技術的・政治的制約から
+\textbf{すべてのリンクに同時に課金することは困難}である：
+高速道路には料金所を設けられるが，一般道への課金は難しい，
+あるいは都心に入る一部コリドーのみ課金する「コードン型課金」（都市の周囲に料金関門を設ける方式）を採用する，
+などの状況がある\cite{土木学会1998}．
+
+課金可能なリンクの集合を $A^T \subseteq A$（$|A^T| < |A|$），
+課金できないリンクの集合を $A \setminus A^T$ とする．
+このとき，$A^T$ のみに課金しての最適料金設計問題を\textbf{第二最善課金}という．
+
+\subsubsection*{問題の複雑さ：バイレベル計画問題}
+
+第二最善課金の導出は，第一最善とは構造的に異なる難しさを持つ．
+一部のリンクのみに課金すると，利用者は課金リンクを回避し，
+未課金リンクへ迂回するため，かえって社会的損失が増大しうる\cite{Sheffi1985}．
+
+最適な第二最善料金 $\boldsymbol{\tau}^{A^T}$ を求めるには，
+以下のような\textbf{バイレベル計画問題}（Bilevel Programming Problem）を解く必要がある：
+
+\begin{description}
+  \item[上位問題（プランナー）]
+    \begin{equation}
+      \min_{\boldsymbol{\tau}^{A^T} \geq \mathbf{0}}\;
+      \sum_{a \in A} x_a\, t_a(x_a)
+      \qquad \text{（社会的純損失の最小化）}
+      \label{eq:second-best-upper}
+    \end{equation}
+  \item[下位問題（利用者）]
+    \begin{equation}
+      \boldsymbol{x} = \boldsymbol{x}_{UE}(\boldsymbol{\tau}^{A^T})
+      \qquad \text{（課金後の UE 配分）}
+      \label{eq:second-best-lower}
+    \end{equation}
+\end{description}
+
+上位問題は社会的費用の最小化，下位問題は利用者の均衡反応を表す．
+両者が入れ子になっているため，一般に非凸最適化問題となり，
+大域的な最適解の探索が困難である\cite{Sheffi1985}．
+
+\subsubsection*{第二最善課金の特性}
+
+\begin{itemize}
+  \item \textbf{未課金リンクへの転換効果}：
+        課金リンクの料金を上げると，利用者が未課金リンクへ移動し，
+        未課金リンクの混雑が増大する．二次的な外部費用が生じるため，
+        最適な第二最善料金は単純な限界外部費用 $V t'(V)$ より小さくなることが多い．
+
+  \item \textbf{パレート改善の非保証}：
+        第一最善課金ではパレート改善（収入再分配で全員改善）が原理的に可能だが，
+        第二最善課金では課金収入が少額になるうえ，
+        迂回交通量の増大により一部の利用者の厚生が低下しうる．
+
+  \item \textbf{実用的アプローチ}：
+        コードン型課金（ロンドン 2003年〜，ストックホルム 2006年〜，
+        シンガポール 1998年〜 ERP）では，
+        都心部への流入リンクのみに課金し，
+        外部性全体を近似的に内部化するとともに政治的受容性を確保している\cite{Vickrey1969}．
+\end{itemize}
+\begin{example}[title={クイズ 10：首都高だけに課金したら，環七はどうなる？}]
+首都高速と並走する環状七号線（環七通り）は無料です．仮に首都高にのみ最適課金 $\tau^*=1$（前章参照）を設定した場合，
+次のうち最も起きやすいのはどれでしょうか？
+\begin{itemize}
+  \item[(ア)] 首都高の混雑が解消され，環七も含めたネットワーク全体が改善される
+  \item[(イ)] 課金を嫌ったドライバーが環七に流れ込み，環七の混雑が増し，
+             課金による社会的改善効果が大きく削がれる
+  \item[(ウ)] ドライバーは料金差より利便性を重視するため，流出はほとんど起きない
+\end{itemize}
+\hyperref[ans:q10]{$\rightarrow$ 正解・解説は節末を参照}
+\end{example}
+% ---------------------------------------------------------------
+\subsection{Vickrey ボトルネックモデルと動的課金}
+\label{subsec:vickrey-bottleneck}
+% ---------------------------------------------------------------
+
+これまでの議論は\textbf{静的モデル}（時間を固定したスナップショット）を前提としていたが，
+現実のラッシュ時交通需要は時間帯によって大きく変動し，
+ボトルネックでは行列（キュー）が時系列で形成・消滅する\textbf{動的プロセス}が重要となる．
+Vickrey（1969）の\textbf{ボトルネックモデル}は，この動的側面を分析するための
+代表的な枠組みである\cite{Vickrey1969}．
+
+\subsubsection*{モデルの設定}
+
+\paragraph*{ボトルネック.}
+固定容量 $s$（台/時）の単一ボトルネック（例：市内への入口に立地する橋）を考える．
+時刻 $t$ における交通需要が容量 $s$ を超えると，行列（待ち行列）
+$q(t)$（台）が形成される．単位時間あたりの待ち時間は $w(t) = q(t)/s$ である．
+
+\paragraph*{希望到着時刻と通勤費用.}
+$N$（人）の同質な通勤者全員が，職場の始業時刻 $t^*$（例：午前9時）をちょうど ``希望到着時刻'' とする．
+通勤者の一般化費用は\textbf{$\alpha$-$\beta$-$\gamma$ 体系}\cite{Small1982,ArnottdePalmaLindsey1990}:
+
+\begin{equation}
+  C(t)
+  = \alpha\, w(t)
+  + \beta\, \max(t^* - t_{\text{arr}}, 0)
+  + \gamma\, \max(t_{\text{arr}} - t^*, 0)
+  \label{eq:abc-cost}
+\end{equation}
+
+\begin{itemize}
+  \item $\alpha > 0$：行列での待ち時間（旅行時間）の価値（時間費用，$[$円/時$]$）
+  \item $\beta > 0$：希望到着時刻より\textbf{早着}した場合のスケジュール遅延費用 $(\beta < \alpha)$
+  \item $\gamma > 0$：希望到着時刻より\textbf{遅着}した場合のスケジュール遅延費用 $(\gamma > \alpha)$
+  \item $t_{\text{arr}}$：実際の職場到着時刻
+\end{itemize}
+
+$\gamma > \alpha > \beta$ の仮定は，「遅刻は待ち時間より嫌」「しかし早着より遅着のほうが嫌」
+という一般的な実証結果に整合している．
+
+\subsubsection*{無課金均衡（Nash 出発時刻均衡）}
+
+課金なしの状態では，通勤者は一般化費用が最小となる出発時刻を選ぶ．
+均衡では，ラッシュ時間帯（$[t_0, t_1]$）に出発するすべての通勤者の費用が等しくなる：
+
+\begin{equation}
+  C(t) = C^* = \text{const.}
+  \qquad \forall\, t \in [t_0, t_1]
+  \label{eq:departure-equilibrium}
+\end{equation}
+
+この均衡では：
+\begin{itemize}
+  \item $t^*$ より\textbf{前}に出発するほど行列が長く（待ち時間が大），到着が早い（早着費用が小）；
+        費用均等条件 $\alpha\, w(t) + \beta(t^* - t_{\text{arr}}) = C^*$ が成立．
+  \item $t^*$ より\textbf{後}に出発するほど行列が短く，到着が遅い（遅着費用が大）；
+        費用均等条件 $\alpha\, w(t) + \gamma(t_{\text{arr}} - t^*) = C^*$ が成立．
+  \item 結果として行列（キュー）が形成され，待ち時間 $w(t) > 0$ が発生する．
+        この待ち時間は\textbf{純粋な社会的損失}（旅行時間が浪費され，誰も便益を得ない）である．
+\end{itemize}
+
+\subsubsection*{最適動的課金}
+
+最適動的課金では，各時刻 $t$ における課金額 $\tau(t)$ を設定して，
+行列（キュー）を完全に消滅させることを目標とする：
+\begin{equation}
+  w(t) = 0
+  \quad \forall\, t \in [t_0, t_1]
+  \label{eq:queue-free}
+\end{equation}
+
+行列 $q(t) = 0$ を実現するには，ボトルネックへの到着率がつねに容量 $s$ に等しくなるよう
+出発時刻の分布を誘導する必要がある．
+このとき，費用均等条件から最適料金プロファイルが決まる：
+
+\begin{equation}
+  \tau(t) =
+  \begin{cases}
+    C^* - \beta\,(t^* - t_{\text{arr}}) & \text{早着側}\ (t \leq t^*) \\
+    C^* - \gamma\,(t_{\text{arr}} - t^*) & \text{遅着側}\ (t \geq t^*)
+  \end{cases}
+  \label{eq:optimal-dynamic-toll}
+\end{equation}
+
+料金プロファイルは「早着側は増加，遅着側は減少」という\textbf{山型}（逆V字型）の形状となる
+（図\ref{fig:vickrey-bottleneck}）．
+
+\begin{figure}[hbtp]
+  \centering
+  \input{assets/assignment/fig_vickrey_bottleneck.tex}
+  \caption{Vickrey ボトルネックモデルにおける出発時刻選択．
+           縦軸は費用・待ち時間・課金額，横軸は出発時刻 $t$，$t^*$ は希望到着時刻．
+           $t_p$ は定時到着する最後の出発者の出発時刻（$t_p + w(t_p) = t^*$）であり，
+           待ち時間が正である限り $t_p < t^*$ となる．
+           （a）無課金均衡：行列 $w(t) > 0$ が形成される（純粋な社会的損失）．
+           （b）最適動的課金：山型（逆V字型）の料金 $\tau(t)$ により行列が消滅
+           （$w(t) = 0$）し，通勤費用は均衡値 $C^*$ のまま変化しない．
+           なお，非混雑時の旅行時間（フリーフロー所要時間）は $0$ と仮定している．
+           （b）の赤い三角形の面積は $\int\tau(t)\,dt$ であり，
+           ボトルネック容量 $s$ を乗じた $s\int\tau(t)\,dt$ が総課金収入に等しい．}
+  \label{fig:vickrey-bottleneck}
+\end{figure}
+
+\subsubsection*{最適課金の嬉しい性質}
+
+\begin{enumerate}
+  \item
+    \textbf{キュー消滅}：最適課金によって $w(t)=0$ が実現し，
+    行列による時間浪費という社会的損失が完全に解消される．
+    通勤者の到着時刻パターンは課金前と同一であり，
+    スケジュール遅延費用は不変のままである（費用均等条件から明らか）．
+
+  \item
+    \textbf{福祉改善の規模}：
+    最適課金で解消できる社会的損失の割合は最大 50\%（ケースによる）であることが
+    Arnott, de Palma and Lindsey（1990）によって示されている\cite{ArnottdePalmaLindsey1990}．
+    正確には，福祉改善率は $\beta/\alpha$ と $\gamma/\alpha$ の比率に依存し，
+    $\beta \to 0$ かつ $\gamma \to \infty$ の極限で改善率が最大になる．
+
+  \item
+    \textbf{課金収入}：
+    $\tau(t) \cdot s\,dt$ を積分した課金総収入は，
+    課金前に発生していた行列での待ち時間費用の合計に等しく，
+    利用者へ還付することで厚生損失なしに同一の効用水準を達成できる．
+\end{enumerate}
+
+\subsubsection*{時間帯別料金との関係}
+
+実務では連続的な料金プロファイル $\tau(t)$ の設定は困難なため，
+時間帯を数個に区切った\textbf{時間帯別料金}（Time-of-Day Pricing）で近似される．
+例えば「ピーク前（やや高）$\rightarrow$ ピーク（最高）$\rightarrow$ ピーク後（やや高）$\rightarrow$ 夜間（無料）」という
+3〜4段階の料金体系が実用的である．
+シンガポールの ERP（Electronic Road Pricing）は
+30分単位で料金を変動させる実装例として知られている．
+
+% ---------------------------------------------------------------
+\subsection{収入の再分配と公平性}
+\label{subsec:redistribution}
+% ---------------------------------------------------------------
+
+\subsubsection*{課金収入の規模}
+
+最適課金を実施した場合の収入は実務的に相当な規模になりうる．
+
+\begin{itemize}
+  \item ロンドン中心部課金（2003年導入）：年間約 2.3 億ポンドの総収入（純収入は約 1.5 億ポンド，2018/19年度）
+  \item ストックホルム中心部課金（2006年導入，2007年恒久化）：年間約 15 億クローナ（2017年度，2016年の税率引上げ後）
+  \item シンガポール ERP：道路整備・公共交通補助の主要財源の一つ（収入額は詳細非公表）
+\end{itemize}
+
+\subsubsection*{収入の使途（再分配方式）}
+
+課金収入の使途によって，社会的公正（equity）への影響が大きく異なる（表\ref{tab:revenue-use}）．
+
+\begin{table}[hbtp]
+  \centering
+  \caption{課金収入の主な使途と公平性への影響}
+  \label{tab:revenue-use}
+  \begin{tabular}{p{3.5cm}p{5.5cm}p{4.5cm}}
+    \toprule
+    方式 & 内容 & 公平性への影響 \\
+    \midrule
+    一律還付（lump-sum） &
+      全市民に等額還付
+      （「交通券」「現金還付」など） &
+      低所得者は支払い分よりも
+      受取分が相対的に大きい場合があり，
+      逆進性の緩和につながりうる \\[4pt]
+    公共交通投資 &
+      鉄道・バスの改善，
+      自転車インフラ整備に充当 &
+      自動車を持たない低所得層・
+      高齢者の移動手段を拡充 \\[4pt]
+    既存税の減税 &
+      所得税・法人税などの
+      歪んだ税を引き下げ &
+      \textbf{二重配当効果}（double dividend）：
+      環境・混雑効率 + 租税効率の
+      同時改善 \\[4pt]
+    燃料税の代替 &
+      燃料税廃止と引き換えに
+      混雑課金を導入 &
+      既存負担との整合性が
+      政治的受容性を向上させる \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\subsubsection*{公平性の懸念}
+
+混雑課金には逆進性の懸念がある：
+低所得者ほど収入に対する課金額の割合が大きく（\textbf{逆進的}），
+かつ「通勤のために車を使わざるを得ない」層に負担が集中しやすい\cite{Pigou1920}．
+
+しかし次の点に留意が必要である：
+
+\begin{itemize}
+  \item
+    \textbf{パレート改善の可能性}：
+    課金収入を適切に再分配すれば，理論的には全員の厚生が（少なくとも）
+    課金前と同水準以上に改善できる．すなわち\textbf{パレート改善}が可能である．
+    混雑課金を「運転者への負担増」としてではなく，
+    「交通システム全体の効率化で生じた余剰の再分配」として捉え直すことが重要である．
+
+  \item
+    \textbf{車を持たない市民への便益}：
+    課金によって交通量が減少し，バスの定時性や自転車の安全性が向上するため，
+    自動車非保有者（低所得層・高齢者に多い）に対しても直接的便益がある．
+
+  \item
+    \textbf{政治経済学的側面}：
+    「混雑課金」という表現への心理的抵抗から，
+    「快適ドライブ料金」「交通スムーズ料金」などの呼称変更や
+    パイロット実験段階的導入が，政治的受容性を高める効果があることが
+    ストックホルムの事例で実証されている\cite{Vickrey1969}．
+\end{itemize}
+
+\subsubsection*{二重配当効果}
+
+課金収入を既存の歪んだ税（所得税，法人税）の引き下げに充当すると，
+\textbf{二重配当}（double dividend）が生じる\cite{Pigou1920}：
+
+\begin{enumerate}
+  \item \textbf{第一配当}：混雑外部性の内部化 $\rightarrow$ 交通効率の改善（死荷重損失の解消）
+  \item \textbf{第二配当}：租税の歪み（超過負担）の縮小 $\rightarrow$ 経済全体の効率改善
+\end{enumerate}
+
+両配当が同時に実現するため，混雑課金はただの「税収確保策」ではなく，
+「経済政策」として正当化できるという論拠になる．
+
+\subsubsection*{本節のまとめ}
+
+本節で示した主要な結果を整理する：
+\begin{enumerate}
+  \item \textbf{外部性の内部化}：ピグー税 $\tau^* = V^* t'(V^*)$ で
+        私的限界費用（PMC）を社会的限界費用（SMC）に引き上げることで，
+        個人の私的最適化が社会最適と一致する
+        （\ssref{subsec:pigou-externality}）．
+  \item \textbf{第一最善課金}：全リンクに $\tau_a^* = x_a^{SO} t_a'(x_a^{SO})$
+        を設定することで UE 解が SO 解に一致し，死荷重損失が解消される
+        （\ssref{subsec:first-best}）．
+  \item \textbf{第二最善課金}：課金可能リンクが限定される場合，
+        バイレベル計画問題を解く必要があり，
+        迂回交通への対応を含む単純な限界外部費用課金では不十分である
+        （\ssref{subsec:second-best}）．
+  \item \textbf{動的課金}：Vickrey ボトルネックモデルにおける
+        山型（逆V字型）料金プロファイルにより行列（キュー）が消滅し，
+        最大 50\% の社会損失削減が可能である
+        （\ssref{subsec:vickrey-bottleneck}）．
+  \item \textbf{収入の再分配}：適切な再分配によりパレート改善が可能であり，
+        二重配当効果によって混雑課金を経済政策として正当化する論拠も生まれる
+        （\ssref{subsec:redistribution}）．
+\end{enumerate}
+
+\begin{example}[title={クイズ 10 正解・解説}]
+\phantomsection\label{ans:q10}
+\textbf{正解：（イ）}
+
+これが第二最善課金の本質——課金可能リンクが $A^T\subsetneq A$ に限定されると，
+課金外リンクへの交通転換が新たな外部性を生みます．
+「首都高は有料・一般道は無料」という現実の制度は，
+まさにこの第二最善問題を毎日実演しています．
+\end{example}

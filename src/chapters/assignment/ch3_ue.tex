@@ -1,0 +1,674 @@
+%% chapters/assignment/ch3_ue.tex
+%% 第3章　利用者均衡配分（UE）
+
+\section{利用者均衡配分（UE）}
+\label{sec:ch3-ue}
+
+\sref{sec:ch1-network}で整備した記法と，\sref{sec:ch2-uncongested}で扱ったフロー非依存型配分を踏まえ，
+本節では\textbf{利用者均衡配分}（User Equilibrium Assignment, UE）を体系的に扱う．
+UE は，リンク旅行時間がリンク交通量に依存する混雑ネットワークにおいて，
+利用者が自己の旅行時間を最小化しようとする合理的行動の均衡状態を記述するモデルであり，
+交通量配分理論の根幹をなす\cite{Wardrop1952,Beckmann1956}．
+
+本節の構成は次のとおりである．
+\ssref{subsec:wardrop} で均衡条件を与える Wardrop の第1原則を導入し，
+\ssref{subsec:beckmann} でこの条件を等価な凸最適化問題（Beckmann 変換）に変換する．
+\ssref{subsec:frank-wolfe} では，この最適化問題の標準的な解法である
+\textbf{Frank-Wolfe 法}を他手法との比較も交えて説明する．
+\ssref{subsec:braess} では，UE の本質的な性質を浮き彫りにする事例として
+\textbf{Braess のパラドックス}を紹介する．
+
+\begin{example}[title={クイズ 4：東京駅$\rightarrow$羽田空港，なぜ2経路に分かれる？}]
+平日朝，東京駅から羽田空港へ向かうタクシーには大きく 2 経路があります．
+首都高速（C1環状$\rightarrow$1号羽田線，高速・料金あり）と，国道 1 号・第一京浜経由（一般道，無料）です．
+どちらかが明らかに速ければ全車がそちらに集中するはずなのに，実際には両経路に車が分散しています．
+この分散を最もよく説明するのはどれでしょうか？
+（注：このモデルでは旅行時間のみを考慮します．）
+\begin{itemize}
+  \item[(ア)] 東京都が法律でルートごとの交通量上限を定めているから
+  \item[(イ)] ドライバーがそれぞれ旅行時間を最小化した結果，両経路の旅行時間が均等になっているから
+  \item[(ウ)] ランダムにルートを選んでいるので，自然と分散するから
+  \item[(エ)] 首都高の料金を嫌うドライバーが一定数いるから
+\end{itemize}
+\hyperref[ans:q4]{$\rightarrow$ 正解・解説は節末を参照}
+\end{example}
+
+% ---------------------------------------------------------------
+\subsection{Wardrop の第1原則}
+\label{subsec:wardrop}
+% ---------------------------------------------------------------
+
+\subsubsection*{均衡条件の直感的背景}
+
+混雑を考慮したネットワークでは，リンク旅行時間 $t_a(x_a)$ は
+リンク交通量 $x_a$ の増加関数である（\sref{sec:ch1-network} \ssref{subsec:bpr} 参照）．
+このとき，多数の利用者が同時に自己の旅行時間を最小化しようとすれば，
+最初は最短経路に交通量が集中して旅行時間が上昇し，
+やがて各利用者が経路をそれ以上変更する動機を失う状態（均衡状態）に落ち着く．
+この均衡を定式化したのが英国の交通工学者 J.\,G.\ Wardrop の第1原則である\cite{Wardrop1952}．
+
+UE モデルは以下の2つの行動仮定に立脚する：
+
+\begin{enumerate}
+  \item \textbf{旅行時間最小化}：すべての利用者は，自己の旅行時間が
+        最小となる経路を選択しようとする．
+  \item \textbf{完全情報}：すべての利用者は，利用可能な全経路の
+        旅行時間に関する完全な情報を持つ．
+\end{enumerate}
+
+これらの仮定のもとで，利用者が経路選択を最適化した結果として到達する均衡状態が，
+以下の原則として定式化される．
+
+\begin{description}
+  \item[\textbf{Wardrop の第1原則（利用者均衡条件）}] \mbox{}\\
+    「利用されているすべての経路の旅行時間は等しく，かつ利用されていない
+    経路の旅行時間以下である．」
+\end{description}
+
+均衡状態では，どの利用者も経路を変更することによって自己の旅行時間を
+それ以上短縮できない．言い換えると，UE は交通量配分における
+\textbf{Nash 均衡}（Nash equilibrium）に対応する
+\cite{Nash1950,Nash1951}
+（Nash 均衡との等価性の厳密な議論は\sref{sec:appendix-C}を参照）．
+
+\subsubsection*{UE 条件の数学的表現}
+
+Wardrop の第1原則を数式として表すと，
+任意の ODペア $rs \in \Omega$ について以下のとおりとなる
+\cite{Beckmann1956,Sheffi1985}：
+
+\begin{equation}
+  f_k^{rs} > 0  \implies  c_k^{rs} = u_{rs},
+  \qquad
+  f_k^{rs} = 0  \implies  c_k^{rs} \geq u_{rs}
+  \label{eq:wardrop-condition}
+\end{equation}
+
+ここで $u_{rs}$ は ODペア $rs$ における均衡最小旅行時間（利用されている
+経路の共通旅行時間）である．
+$c_k^{rs} = \sum_{a} t_a(x_a)\,\delta_{a,k}^{rs}$ は経路 $k^{rs}$ の旅行時間
+（式\eqref{eq:path-time}参照）である．
+
+条件\eqref{eq:wardrop-condition}を\textbf{相補性条件}（相補性条件および KKT 条件の一般形については\sref{sec:appendix-D}を参照）の形式に書き直すと，
+
+\begin{equation}
+  f_k^{rs} \geq 0,
+  \qquad
+  c_k^{rs} - u_{rs} \geq 0,
+  \qquad
+  f_k^{rs}(c_k^{rs} - u_{rs}) = 0
+  \qquad
+  \forall\, k \in K_{rs},\; \forall\, rs \in \Omega
+  \label{eq:wardrop-kkt}
+\end{equation}
+
+となる．
+これは，経路 $k^{rs}$ に交通量が流れている（$f_k^{rs}>0$）ときかつそのときに限り，
+その経路の費用 $c_k^{rs}$ が最小費用 $u_{rs}$ に等しい（$c_k^{rs}=u_{rs}$）
+ことを意味する．
+
+% ---------------------------------------------------------------
+\subsection{等価最適化問題（Beckmann 変換）}
+\label{subsec:beckmann}
+% ---------------------------------------------------------------
+
+\subsubsection*{直接解法の困難}
+
+式\eqref{eq:wardrop-kkt}の UE 条件を直接満たす解を求めることは，
+実際のネットワークでは計算上困難である：
+経路を列挙しながら相補性条件を解くには組み合わせ爆発の問題が伴う．
+Beckmann, McGuire, and Winsten \cite{Beckmann1956}は，
+UE 条件と\textbf{等価な凸最適化問題}を導出した（Beckmann 変換）．
+この等価性により，確立された凸最適化アルゴリズムを直接 UE 解法に適用できる．
+
+\subsubsection*{UE 等価最適化問題（UE/FD-Primal）}
+
+\textbf{UE/FD-Primal}（需要固定型利用者均衡の主問題）を次式で定義する：
+
+\begin{equation}
+  \min_{\boldsymbol{f}} \quad
+  Z(\boldsymbol{f}) = \sum_{a \in A} \int_0^{x_a(\boldsymbol{f})} t_a(w)\, dw
+  \label{eq:ue-primal}
+\end{equation}
+
+\begin{alignat}{2}
+  \text{subject to} \quad
+  & \sum_{k \in K_{rs}} f_k^{rs} = q_{rs}
+  && \qquad \forall\, rs \in \Omega
+  \label{eq:ue-demand}\\
+  & f_k^{rs} \geq 0
+  && \qquad \forall\, k \in K_{rs},\; \forall\, rs \in \Omega
+  \label{eq:ue-nonneg}
+\end{alignat}
+
+ここで $x_a(\boldsymbol{f}) = \sum_{rs}\sum_{k} f_k^{rs}\,\delta_{a,k}^{rs}$
+は式\eqref{eq:link-flow}のリンク交通量である．
+$Z(\boldsymbol{f})$ は\textbf{Beckmann ポテンシャル関数}と呼ばれる．
+
+\subsubsection*{KKT 条件と Wardrop 条件の等価性}
+
+問題\eqref{eq:ue-primal}--\eqref{eq:ue-nonneg}の
+KKT（Karush-Kuhn-Tucker）条件が Wardrop 条件\eqref{eq:wardrop-kkt}に
+一致することを示す\cite{Beckmann1956}．
+
+等式制約\eqref{eq:ue-demand}に対する Lagrange 乗数を $u_{rs}$ とすると，
+Lagrangian は次式となる：
+
+\begin{equation}
+  L(\boldsymbol{f},\, \boldsymbol{u})
+  = \sum_{a} \int_0^{x_a} t_a(w)\, dw
+  - \sum_{rs} u_{rs}\!\left(\sum_k f_k^{rs} - q_{rs}\right)
+  \label{eq:lagrangian}
+\end{equation}
+
+連鎖律を用いると，経路フロー $f_k^{rs}$ に関する偏微分は，
+
+\begin{equation}
+  \frac{\partial Z}{\partial f_k^{rs}}
+  = \sum_{a \in A} t_a\!\left(x_a\right) \delta_{a,k}^{rs}
+  = c_k^{rs}
+  \label{eq:dz-df}
+\end{equation}
+
+（リンク $a$ の旅行時間 $t_a(x_a)$ は，経路 $k^{rs}$ がリンク $a$ を通るとき
+$\delta_{a,k}^{rs}=1$ で寄与する．）
+KKT 停留条件 $\partial L/\partial f_k^{rs} = c_k^{rs} - u_{rs}$ に
+非負制約 $f_k^{rs} \geq 0$ の相補性条件を合わせると，
+
+\begin{equation}
+  f_k^{rs} \geq 0,
+  \qquad
+  c_k^{rs} - u_{rs} \geq 0,
+  \qquad
+  f_k^{rs}(c_k^{rs} - u_{rs}) = 0
+  \label{eq:kkt-ue}
+\end{equation}
+
+これは Wardrop 条件\eqref{eq:wardrop-kkt}と同一である．
+すなわち，\textbf{問題\eqref{eq:ue-primal}の最適解は Wardrop の第1原則を満たす}，
+つまり UE 解である．
+
+\subsubsection*{解の存在と一意性}
+
+リンクパフォーマンス関数 $t_a(x_a)$ が $x_a \geq 0$ 上で
+\textbf{単調非減少}（$t_a'(x_a) \geq 0$）であるとき，
+$Z(\boldsymbol{f})$ は凸であり，最適解（UE 解）が存在することが保証される
+\cite{Beckmann1956,土木学会1998}．
+さらに，$t_a(x_a)$ が\textbf{狭義単調増加}（$t_a'(x_a)>0$）である場合
+（BPR 関数の $\beta \geq 1$ のとき：式\eqref{eq:bpr}参照），
+$Z(\boldsymbol{f})$ は狭義凸となり，
+\textbf{リンク交通量} $\{x_a\}$ に関する UE 解が\textbf{一意}に定まる
+\cite{Sheffi1985}．
+
+\begin{itemize}
+  \item 経路交通量 $\{f_k^{rs}\}$ の一意性は一般に保証されない
+        （複数の経路で旅行時間が同じになれば，その間の配分比率は不定）．
+  \item リンク交通量が一意に定まれば，交通計画実務上は十分である．
+\end{itemize}
+
+% ---------------------------------------------------------------
+\subsection{Frank-Wolfe 法}
+\label{subsec:frank-wolfe}
+% ---------------------------------------------------------------
+
+\subsubsection{制約つき最適化問題へのアプローチ比較}
+\label{subsubsec:fw-comparison}
+
+問題\eqref{eq:ue-primal}は，フロー保存条件\eqref{eq:ue-demand}と非負条件\eqref{eq:ue-nonneg}という制約をもつ凸最適化問題である．以下では，制約つき最適化問題の代表的な解法を比較し，Frank-Wolfe 法が UE 解法として特に適している理由を述べる
+\cite{Pokutta2024}．
+
+\subsubsection*{（1）射影法（Projection-based methods）}
+
+勾配降下法（$\boldsymbol{x}$ を $-\nabla Z$ 方向に移動）と，
+更新後の点が制約領域 $P$ 外に出た場合に
+最近傍点へ引き戻す\textbf{射影}（projection）を組み合わせた方法である：
+
+\begin{equation}
+  \boldsymbol{x}_{t+1}
+  = \Pi_P\!\left(\boldsymbol{x}_t - \gamma_t \nabla Z(\boldsymbol{x}_t)\right),
+  \qquad
+  \Pi_P(\boldsymbol{x}) = \arg\min_{\boldsymbol{y} \in P} \|\boldsymbol{x}-\boldsymbol{y}\|
+  \label{eq:proj-gd}
+\end{equation}
+
+直交制約（球面）やボックス制約（各変数の上下界）では射影を解析的に計算できる
+が，UE のフロー保存制約のような多次元等号制約に対しては，
+各ステップごとに別の最適化問題を解く必要があり計算コストが高い．
+
+\subsubsection*{（2）内点法（Interior-point methods）}
+
+実行可能領域の境界に近づくと発散する\textbf{バリア関数} $B(\boldsymbol{x})$ を
+目的関数に加え，制約なし最適化問題に変換する：
+
+\begin{equation}
+  \min_{\boldsymbol{x}} \bigl\{Z(\boldsymbol{x}) + \mu\, B(\boldsymbol{x})\bigr\}
+  \label{eq:interior}
+\end{equation}
+
+精度向上のためにヘッセ行列（2階微分）の情報が必要であり，
+また制約を正確にバリア関数で表現することが難しい場合がある．
+
+\subsubsection*{（3）Frank-Wolfe 法（条件付き勾配法）}
+
+Frank and Wolfe が提案した本手法は，制約つき問題をそのままの形で扱い，
+最適化の全過程を通じて実行可能性を自動的に保証する
+\cite{FrankWolfe1956}．
+中心的なアイデアは，目的関数を現在の解まわりで\textbf{線形近似}し，
+その線形近似が制約領域上で最小となる点（補助解）を求めることである：
+
+\begin{equation}
+  \boldsymbol{y}_t
+  = \arg\min_{\boldsymbol{y} \in P}
+    \nabla Z(\boldsymbol{x}_t)^{\!\top} \boldsymbol{y}
+  \label{eq:fw-aux}
+\end{equation}
+
+式\eqref{eq:fw-aux}において $\nabla Z(\boldsymbol{x}_t)$ は現在点で評価した定数ベクトルであり，
+式\eqref{eq:dz-df}より各リンク成分は現在の交通量で評価したリンク旅行時間に等しい：
+\begin{equation}
+  \bigl[\nabla Z(\boldsymbol{x}_t)\bigr]_a = t_a\!\left(x_a^{(t)}\right)
+  \label{eq:fw-grad}
+\end{equation}
+したがって，式\eqref{eq:fw-aux}は最適化変数 $\boldsymbol{y}$ に関して\textbf{線形な問題}である．
+凸多面体 $P$ 上の最小解は必ずその端点（頂点）となる．
+その後，現在の解 $\boldsymbol{x}_t$ と補助解 $\boldsymbol{y}_t$ を
+線形補間して更新する：
+
+\begin{equation}
+  \boldsymbol{x}_{t+1}
+  = (1-\gamma_t)\boldsymbol{x}_t + \gamma_t \boldsymbol{y}_t,
+  \qquad 0 \leq \gamma_t \leq 1
+  \label{eq:fw-update}
+\end{equation}
+
+実行可能領域 $P$ が凸集合であれば，
+$\boldsymbol{x}_t,\,\boldsymbol{y}_t \in P$ の凸結合である
+$\boldsymbol{x}_{t+1}$ も常に $P$ 内に留まる——
+射影（式\eqref{eq:proj-gd}）を一切必要としないため，
+「射影なし法」（projection-free method）とも呼ばれる
+\cite{Pokutta2024}．
+
+\textbf{UE への対応}：
+$Z(\boldsymbol{f})$ の勾配は $\partial Z/\partial f_k^{rs} = c_k^{rs}$
+（式\eqref{eq:dz-df}）であるから，
+式\eqref{eq:fw-aux}の線形計画は，現在のリンク旅行時間
+$\{t_a(x_a^{(n)})\}$ に基づいて各ODペアの全需要を最小費用経路に集中させる，
+まさに\textbf{All-or-Nothing 配分}の問題に対応する．
+All-or-Nothing 配分の結果は凸多面体 $P$ の端点（頂点）であり，
+常に実行可能解である．
+
+\subsubsection{Frank-Wolfe 法のアルゴリズムと収束条件}
+\label{subsubsec:fw-algorithm}
+
+\subsubsection*{適用条件}
+
+Frank-Wolfe 法が有効に機能するための条件を示す\cite{Pokutta2024}：
+
+\begin{itemize}
+  \item 目的関数 $Z$ が凸かつ微分可能
+  \item 実行可能領域 $P$ が凸集合
+  \item 線形計画 $\min_{\boldsymbol{y} \in P} \nabla Z(\boldsymbol{x})^{\!\top} \boldsymbol{y}$
+        が簡単に解ける
+\end{itemize}
+
+UE/FD-Primal\eqref{eq:ue-primal}はこれらをすべて満たす
+（BPR 関数の凸性より $Z$ が凸，線形計画は All-or-Nothing 配分で効率的に解ける）．
+
+\subsubsection*{アルゴリズムの手順}
+
+アルゴリズムの各ステップを表\ref{tab:fw-algorithm}に示す．
+
+\begin{table}[hbtp]
+  \centering
+  \caption{UE を解く Frank-Wolfe 法のアルゴリズム}
+  \label{tab:fw-algorithm}
+  \begin{tabular}{cp{0.82\linewidth}}
+    \toprule
+    Step & 内容 \\
+    \midrule
+    1 & \textbf{初期化}：すべてのリンク交通量を $x_a^{(0)}=0$ とし，
+        自由流旅行時間 $t_a(0)=t_{a0}$ に基づいて All-or-Nothing 配分を
+        実行し，初期解 $\boldsymbol{x}^{(1)}$ を得る．$n \leftarrow 1$．
+        \\[4pt]
+    2 & \textbf{旅行時間の更新}：現在の解 $\boldsymbol{x}^{(n)}$ の各リンクで
+        旅行時間 $t_a\!\left(x_a^{(n)}\right)$ を計算する．
+        \\[4pt]
+    3 & \textbf{補助解の計算}（Frank-Wolfe ステップ）：\\
+      & 更新された旅行時間のもとで All-or-Nothing 配分を実行し，
+        補助解 $\boldsymbol{y}^{(n)}$ を得る（式\eqref{eq:fw-aux}の線形計画の解）．
+        \\[4pt]
+    4 & \textbf{ステップサイズ探索}（線探索）：\\
+      & \quad $\alpha^* = \arg\min_{0 \leq \alpha \leq 1}
+        Z\!\left(\boldsymbol{x}^{(n)} + \alpha
+        \bigl(\boldsymbol{y}^{(n)} - \boldsymbol{x}^{(n)}\bigr)\right)$\\[2pt]
+      & 黄金分割法などの1次元最小化を用いる（\sref{sec:appendix-A}参照）．
+        \\[4pt]
+    5 & \textbf{解の更新}：
+        $\boldsymbol{x}^{(n+1)} = (1-\alpha^*)\boldsymbol{x}^{(n)}
+        + \alpha^* \boldsymbol{y}^{(n)}$．
+        \\[4pt]
+    6 & \textbf{収束判定}：
+        相対ギャップ（式\eqref{eq:relative-gap}）が閾値 $\varepsilon$ 以下なら終了．
+        そうでなければ $n \leftarrow n+1$ として Step 2 へ．
+        \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+図\ref{fig:fw-step}に Frank-Wolfe 法の1ステップの幾何学的イメージを示す．
+現在の解 $\boldsymbol{x}^{(n)}$ から，線形近似が最小となる実行可能領域の頂点
+（補助解 $\boldsymbol{y}^{(n)}$ = All-or-Nothing 解）を求め，
+線探索で決定したステップサイズ $\alpha^*$ に従って $\boldsymbol{x}^{(n+1)}$ に
+移動する．
+
+\begin{figure}[hbtp]
+  \centering
+  \input{assets/assignment/fig_fw_step.tex}
+  \caption{Frank-Wolfe 法の1ステップ（概念図）．
+           シャドウ付き多角形が実行可能領域 $P$
+           （フロー保存条件を満たすフロー集合の模式的表現，2次元単体）．
+           曲線は目的関数 $Z(\boldsymbol{x})$ の等費用線（内側ほど小）．
+           $\boldsymbol{x}^*$ が UE 最適解，
+           $\boldsymbol{y}^{(n)}$ は現在の旅行時間での
+           All-or-Nothing 解（実行可能領域の頂点），
+           $\boldsymbol{x}^{(n+1)}$ は線探索後の更新点．}
+  \label{fig:fw-step}
+\end{figure}
+
+\subsubsection*{収束判定：相対ギャップ}
+
+実用的な収束判定基準として，\textbf{相対ギャップ}（Relative Gap）を用いる：
+
+\begin{equation}
+  \mathrm{Gap}^{(n)}
+  = \frac{\displaystyle\sum_{a \in A}
+          t_a\!\left(x_a^{(n)}\right)
+          \left(x_a^{(n)} - y_a^{(n)}\right)}
+         {\displaystyle\sum_{a \in A}
+          t_a\!\left(x_a^{(n)}\right) x_a^{(n)}}
+  \label{eq:relative-gap}
+\end{equation}
+
+分子 $\sum_a t_a(x_a^{(n)})(x_a^{(n)} - y_a^{(n)})$
+は Frank-Wolfe ギャップ
+$\nabla Z(\boldsymbol{x}^{(n)})^{\!\top}(\boldsymbol{x}^{(n)}-\boldsymbol{y}^{(n)})$
+に等しく（$\nabla_{x_a} Z = t_a(x_a)$），UE 解からの残差を表す．
+分母は現在の総旅行時間であり，正規化の役割を果たす．
+$\mathrm{Gap}^{(n)} \geq 0$ であり，
+$\mathrm{Gap}^{(n)} \to 0$ のとき $\boldsymbol{x}^{(n)}$ は UE 解に収束する．
+
+\subsubsection*{収束条件の意味（大域最適性の証明）}
+
+$\mathrm{Gap}^{(n)} = 0$，すなわち
+$\nabla Z(\boldsymbol{x}^{(n)})^{\!\top}
+(\boldsymbol{y}^{(n)} - \boldsymbol{x}^{(n)}) \geq 0$
+が成立するとき
+（$\boldsymbol{y}^{(n)}$ が線形近似の最小解であることから
+この内積は常に $\leq 0$ であり，
+$\geq 0$ との組み合わせで $= 0$ と同値である），$\boldsymbol{x}^{(n)}$ が大域最適解（UE 解）であることを示す
+\cite{FrankWolfe1956,Pokutta2024}．
+実行可能領域内の任意の点 $\boldsymbol{x}$ に対して，
+
+\begin{alignat}{2}
+  Z(\boldsymbol{x})
+  &\geq Z(\boldsymbol{x}^{(n)})
+    + \nabla Z(\boldsymbol{x}^{(n)})^{\!\top}(\boldsymbol{x} - \boldsymbol{x}^{(n)})
+  && \quad \text{（$Z$ の凸性）}
+  \label{eq:proof-convex}\\
+  &\geq Z(\boldsymbol{x}^{(n)})
+    + \nabla Z(\boldsymbol{x}^{(n)})^{\!\top}(\boldsymbol{y}^{(n)} - \boldsymbol{x}^{(n)})
+  && \quad \text{（$\boldsymbol{y}^{(n)}$ が線形近似の最小解）}
+  \label{eq:proof-min}\\
+  &\geq Z(\boldsymbol{x}^{(n)})
+  && \quad \text{（収束条件より）}
+  \label{eq:proof-gap}
+\end{alignat}
+
+よって，すべての実行可能解 $\boldsymbol{x}$ について $Z(\boldsymbol{x}) \geq Z(\boldsymbol{x}^{(n)})$
+が成立し，$\boldsymbol{x}^{(n)}$ が大域最適，すなわち UE 解であることが確認される．
+
+\subsubsection{特徴と改良手法}
+\label{subsubsec:fw-features}
+
+\subsubsection*{長所}
+
+\begin{itemize}
+  \item \textbf{実装が単純}：各イテレーションは旅行時間計算 $\rightarrow$ All-or-Nothing
+        配分 $\rightarrow$ 線探索 $\rightarrow$ 更新という明快な手順で構成される．
+  \item \textbf{メモリ効率が良い}：経路を陽に列挙・記憶する必要がなく，
+        リンク交通量のみを保持すればよい．
+  \item \textbf{実行可能性の自動保証}：更新点は常に実行可能領域内に留まり，
+        射影計算が不要である（前節で証明）．
+\end{itemize}
+
+\subsubsection*{短所}
+
+最大の欠点は\textbf{収束の遅さ}である\cite{Pokutta2024}：
+
+\begin{itemize}
+  \item ステップサイズ $\alpha^*$ が収束するにつれて小さくなり，最適解付近で
+        解が「ジグザグ運動」を繰り返す（図\ref{fig:fw-step}の $\boldsymbol{x}^{(n)}$ と
+        $\boldsymbol{y}^{(n)}$ を結ぶ方向が交互に振れるイメージ）．
+  \item 1階の微分（勾配）情報のみを使い，目的関数の曲率（2階微分）を
+        活用しないため，収束速度は $O(1/t)$ のオーダーに留まる
+        （$t$ はイテレーション数）．
+\end{itemize}
+
+\subsubsection*{改良手法}
+
+この欠点を克服するための改良手法として主に以下が知られている\cite{土木学会1998,Sheffi1985}：
+
+\begin{description}
+  \item[打ち切り二次計画法（Truncated Quadratic Programming）]
+    目的関数のテイラー展開を2次項まで用い，局所的な二次近似を最小化する．
+    収束速度が改善されるが，ヘッセ行列の計算コストが生じる．
+  \item[Simplicial Decomposition 法]
+    均衡解を，これまでの反復で得られた All-or-Nothing 解（端点解）の凸結合
+    として表し，その結合係数を最適化する．
+    少数の端点解を記憶するコストはあるが，Frank-Wolfe 法より収束が
+    大幅に加速される．
+\end{description}
+
+\begin{example}[title={クイズ 5：ソウルの高架道路を撤去したら，渋滞が改善した——なぜ？}]
+2003 年 7 月にソウル市は清渓川（チョンゲチョン）沿いの高架道路（1 日約 17 万台が走行）の撤去工事を始め，2005 年 9 月に開通しました．
+交通専門家の多くが「渋滞が悪化する」と予測しましたが，
+実際には周辺の渋滞がむしろ改善しました．
+この「道路を減らして渋滞が改善した」現象は，次のどの考え方から説明できるでしょうか？
+\begin{itemize}
+  \item[(ア)] 道路が減ると交通需要自体も減るから（誘発交通の逆）
+  \item[(イ)] 道路を追加すると逆に渋滞が悪化することがある Braess のパラドックスの逆——
+             逆 Braess 現象が起きたから
+  \item[(ウ)] 撤去エリアのドライバーが公共交通機関に転換したから
+\end{itemize}
+\hyperref[ans:q5]{$\rightarrow$ 正解・解説は節末を参照}
+\end{example}
+
+% ---------------------------------------------------------------
+\subsection{Braess のパラドックス}
+\label{subsec:braess}
+% ---------------------------------------------------------------
+
+\subsubsection*{パラドックスの概要}
+
+UE の本質的な性質を示す重要な例を紹介する\cite{Braess1968}．
+
+\begin{description}
+  \item[\textbf{Braess のパラドックス}（Braess's paradox）] \mbox{}\\
+    「ネットワークに新しいリンクを追加すると，
+    利用者均衡配分のもとで\textbf{すべての}利用者の旅行時間が
+    増加することがある．」
+\end{description}
+
+これは，UE では各利用者が自己の旅行時間だけを考慮し，
+自分がリンクに追加した際の他利用者への混雑増大（外部コスト）を
+考慮しないために生じる．
+Nash 均衡としての個人最適化が，社会全体の最適化と食い違うことの
+端的な例である．
+
+\subsubsection*{数値例の設定}
+
+図\ref{fig:braess-network}のネットワークを考える．
+OD 交通量は $q_{ST} = 6$（台/時），
+リンクコスト関数は表\ref{tab:braess-links}のとおりである．
+
+\begin{figure}[hbtp]
+  \centering
+  \input{assets/assignment/fig_braess_network.tex}
+  \caption{Braess のパラドックス：リンク5（$A \to B$，破線）の追加前後の UE 解
+           と均衡旅行時間．}
+  \label{fig:braess-network}
+\end{figure}
+
+\begin{table}[hbtp]
+  \centering
+  \caption{Braess ネットワークのリンクコスト関数（$q_{ST}=6$）}
+  \label{tab:braess-links}
+  \begin{tabular}{ccll}
+    \toprule
+    リンク番号 & 向き & コスト関数 & 種別 \\
+    \midrule
+    1 & $S \to A$ & $t_1(x_1) = 10 x_1$ & 混雑型 \\
+    2 & $A \to T$ & $t_2 = 50$ & 定数型 \\
+    3 & $S \to B$ & $t_3 = 50$ & 定数型 \\
+    4 & $B \to T$ & $t_4(x_4) = 10 x_4$ & 混雑型 \\
+    5 & $A \to B$ & $t_5 = 10$ & 定数型（新設） \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\subsubsection*{リンク5 追加前}
+
+利用可能経路は，$S \to A \to T$（経路1）と $S \to B \to T$（経路2）の2本である．
+Wardrop 条件（利用される2経路の費用が等しい）と流量保存則を連立すると，
+
+\begin{align}
+  t_1(x_1) + t_2 &= t_3 + t_4(x_4), \notag\\
+  10 x_1 + 50 &= 50 + 10 x_4
+  \implies x_1 = x_4
+  \label{eq:braess-before-ue}\\
+  x_1 + x_3 &= q_{ST} = 6
+  \label{eq:braess-before-conserv}
+\end{align}
+
+ネットワークの対称性（$t_1 = t_4$，$t_2 = t_3$）により $x_1 = x_3 = x_4 = 3$，
+均衡旅行時間は $10 \times 3 + 50 = \mathbf{80}$ 分である．
+
+\subsubsection*{リンク5 追加後}
+
+3本目の経路 $S \to A \to B \to T$（経路3）が利用可能となる．
+Wardrop 条件（3経路すべての費用が等しい）を立てる：
+
+\begin{equation}
+  10 x_1 + 50
+  = 50 + 10 x_4
+  = 10 x_1 + 10 + 10 x_4
+  \label{eq:braess-after-ue}
+\end{equation}
+
+左辺と右辺の等式から $50 = 10 + 10 x_4$ より $x_4 = 4$，
+中辺と右辺の等式から $50 = 10 + 10 x_1$ より $x_1 = 4$．
+
+次に，経路交通量 $f_1,\,f_2,\,f_3$（それぞれ経路1・2・3）と
+リンク交通量の関係式
+
+\begin{equation}
+  x_1 = f_1 + f_3, \quad
+  x_2 = f_1, \quad
+  x_3 = f_2, \quad
+  x_4 = f_2 + f_3, \quad
+  x_5 = f_3
+  \label{eq:braess-link-flow}
+\end{equation}
+
+に $x_1 = x_4 = 4$ と流量保存則 $f_1 + f_2 + f_3 = 6$ を代入すると，
+$f_1 = f_2 = f_3 = 2$ が得られ，
+$(x_1,\, x_2,\, x_3,\, x_4,\, x_5) = (4,\, 2,\, 2,\, 4,\, 2)$ となる．
+
+\textbf{流量保存則の確認}（各ノードで流入＝流出）：
+
+\begin{itemize}
+  \item ノード $S$：$x_1 + x_3 = 4+2 = 6 = q_{ST}$ \checkmark
+  \item ノード $A$：$x_1 = x_2 + x_5 \implies 4 = 2+2$ \checkmark
+  \item ノード $B$：$x_3 + x_5 = x_4 \implies 2+2 = 4$ \checkmark
+\end{itemize}
+
+3経路すべての旅行時間は，$10\times4+50 = 50+10\times4 = 10\times4+10+10\times4 = \mathbf{90}$ 分に増加した．
+結果を表\ref{tab:braess-result}にまとめる．
+
+\begin{table}[hbtp]
+  \centering
+  \caption{Braess のパラドックス：数値例のまとめ（$q_{ST}=6$）}
+  \label{tab:braess-result}
+  \begin{tabular}{lcc}
+    \toprule
+    状況 & リンク交通量 $(x_1,x_2,x_3,x_4,x_5)$ & UE 旅行時間 \\
+    \midrule
+    リンク5 追加前 & $(3,\;3,\;3,\;3,\;-)$ & 80 分 \\
+    リンク5 追加後 & $(4,\;2,\;2,\;4,\;2)$ & 90 分（悪化） \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\subsubsection*{考察}
+
+追加後の均衡では，すべての利用者が経路3（$A \to B$ 経由の迂回路）を部分的に
+利用し，リンク1・4 に交通量が集中した結果，旅行時間が 80 分から 90 分へと
+悪化した．
+
+\begin{itemize}
+  \item \textbf{インフラ整備の逆効果}：新設リンクが全利用者に開放されても，
+        均衡における集合的行動の結果として旅行時間が悪化しうる
+        （「新道を作ったのに渋滞が増えた」という実社会の観察と合致）．
+  \item \textbf{SO との対比}：社会的に最適な配分で利用者を制御すれば，
+        このパラドックスは生じない（\sref{sec:ch5-so}参照）．
+        UE と SO のギャップが，混雑課金による政策介入
+        （Pigouvian 課金，\sref{sec:ch5-so}・\sref{sec:ch8-pigou}\cite{Pigou1920}）の根拠となる．
+  \item \textbf{ネットワーク設計への教訓}：インフラ整備計画においては，
+        個人の経路選択行動を明示的に考慮しなければ，
+        投資が逆効果をもたらしうる．
+\end{itemize}
+
+\subsubsection*{本節のまとめ}
+
+本節で示した主要な結果を整理する：
+\begin{enumerate}
+  \item \textbf{Wardrop の第1原則}（「使用経路はすべて最短で等時間，
+        未使用経路はそれ以上」）が混雑ネットワークの Nash 均衡を定式化し，
+        利用者均衡（UE）の均衡条件を与える；
+        UE は完全情報・旅行時間最小化という2仮定のもとで定義される
+        （\ssref{subsec:wardrop}）．
+  \item \textbf{Beckmann 変換}により UE 条件は凸最適化問題（UE/FD-Primal）と
+        等価であることが示され，その KKT 条件が Wardrop 均衡条件に一致する；
+        BPR 関数のような狭義単調増加リンク費用のもとでは
+        目的関数が狭義凸となり，UE 解は一意に定まる
+        （\ssref{subsec:beckmann}）．
+  \item \textbf{Frank-Wolfe 法}は，補助解問題（AoN 配分）と
+        ステップサイズ最適化の反復を通じて相対ギャップが収束するまで
+        UE 解を逐次的に求める実用的アルゴリズムであり，
+        大規模ネットワークへの適用が現実的である
+        （\ssref{subsec:frank-wolfe}）．
+  \item \textbf{Braess のパラドックス}は，新規リンク追加後の Nash 均衡（UE）において
+        全利用者の旅行時間が悪化しうることを示す典型的な反例であり，
+        UE と社会最適配分（SO）との乖離が
+        混雑課金介入（\sref{sec:ch5-so}・\sref{sec:ch8-pigou}）の根拠となることを示唆する
+        （\ssref{subsec:braess}）．
+\end{enumerate}
+
+\begin{example}[title={クイズ 4 正解・解説}]
+\phantomsection\label{ans:q4}
+\textbf{正解：（イ）}
+
+誰も全体を調整していないのに，利己的行動の集積として均衡が「自然に」生まれます——これが Wardrop 均衡の核心です．
+（エ）の料金効果は第 7 章の一般化費用で扱われます．
+\end{example}
+
+\begin{example}[title={クイズ 5 正解・解説}]
+\phantomsection\label{ans:q5}
+\textbf{正解：（イ）}（（ウ）も部分的に正しい）
+
+Braess のパラドックス（この節）の数値例では，リンクを 1 本追加すると全員の旅行時間が 80 分から 90 分に悪化します．
+ソウルの清渓川事例はその逆——撤去によって利用者均衡が改善された「逆 Braess 現象」の実例として交通工学の文献で引用されています．
+
+\noindent\small\textbf{参考：}
+\href{https://en.wikipedia.org/wiki/Cheonggyecheon}{Wikipedia -- Cheonggyecheon}
+\end{example}

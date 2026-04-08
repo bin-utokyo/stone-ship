@@ -1,0 +1,374 @@
+%% ============================================================
+%% transformer.tex — 第8章 時系列モデルとTransformer
+%%
+%% 本章では，RNNから始まりTransformerへと至る
+%% 系列処理アーキテクチャの発展を解説する．
+%% ============================================================
+
+\chapter{時系列モデルとTransformer}
+\label{chap:transformer}
+
+本章では，系列データを扱うニューラルネットワークアーキテクチャについて学ぶ．
+自然言語処理，音声認識，時系列予測といった応用領域では，
+時間軸に沿った依存性のモデル化が本質的である．
+再帰型ニューラルネットワーク（RNN）から始まり，
+その限界を克服するために発展したTransformerアーキテクチャへと至る道筋を辿る．
+
+% ------------------------------------------------------------------
+\section{系列データの確率的定式化}
+\label{sec:seq-prob}
+% ------------------------------------------------------------------
+
+\subsection{系列データと結合分布}
+
+時系列や自然言語テキストなど，時間順序を持つデータの集合を
+\textbf{系列データ（sequential data）}と呼ぶ．
+系列データ $\mathbf{x} = (x_1, x_2, \ldots, x_T)$ の確率的生成メカニズムを
+理解するため，結合確率分布 $p(x_1, x_2, \ldots, x_T)$ を考える．
+
+確率論の基本的な法則である\textbf{連鎖律（chain rule）}により，
+結合分布を条件付き確率の積として分解できる：
+\begin{equation}
+  p(x_1, x_2, \ldots, x_T) = p(x_1) \prod_{t=2}^{T} p(x_t | x_1, x_2, \ldots, x_{t-1}).
+  \label{eq:chain-rule}
+\end{equation}
+
+この分解により，系列生成を時刻 $t=1$ から $t=T$ に至る
+逐次的な確率的過程として捉えることが可能になる．
+
+\subsection{マルコフ仮定と潜在変数モデル}
+
+連鎖律の分解は厳密であるが，過去のすべての観測値に依存する
+条件付き確率 $p(x_t | x_1, \ldots, x_{t-1})$ は，
+パラメータ数が時刻ステップに応じて増大するため，実践的なモデリングが困難である．
+
+この課題に対応するため，\textbf{マルコフ仮定（Markov assumption）}が導入される．
+1階のマルコフ仮定は，$x_t$ が条件付けられる過去の情報を直近の観測値 $x_{t-1}$ に限定する：
+\begin{equation}
+  p(x_t | x_1, x_2, \ldots, x_{t-1}) \approx p(x_t | x_{t-1}).
+  \label{eq:markov}
+\end{equation}
+
+しかし，自然言語テキストや複雑な時系列現象では，1階のマルコフ仮定は過度に制限的である．
+この限界を克服するため，\textbf{潜在変数（latent variable）} $\boldsymbol{h}_t$ を導入する．
+潜在変数モデルでは，観測系列に対応する隠れた状態系列
+$\boldsymbol{h}_0, \boldsymbol{h}_1, \ldots, \boldsymbol{h}_T$ が存在すると仮定する：
+\begin{align}
+  p(x_1, \ldots, x_T | \boldsymbol{h}_1, \ldots, \boldsymbol{h}_T) &= \prod_{t=1}^{T} p(x_t | \boldsymbol{h}_t), \\
+  p(\boldsymbol{h}_1, \ldots, \boldsymbol{h}_T) &= p(\boldsymbol{h}_0) \prod_{t=1}^{T} p(\boldsymbol{h}_t | \boldsymbol{h}_{t-1}).
+\end{align}
+
+このように潜在変数を導入することで，低次元の隠れ状態によって長距離の依存性を表現できる．
+RNNは，この潜在変数モデルの実践的な実装として位置づけられる．
+
+% ------------------------------------------------------------------
+\section{再帰型ニューラルネットワーク（RNN）}
+\label{sec:rnn}
+% ------------------------------------------------------------------
+
+\subsection{隠れ状態の再帰方程式}
+
+再帰型ニューラルネットワークの核は，以下の\textbf{隠れ状態更新方程式}である：
+\begin{equation}
+  \boldsymbol{h}_t = \sigma(W_h \boldsymbol{h}_{t-1} + W_x \boldsymbol{x}_t + \boldsymbol{b}).
+  \label{eq:rnn-update}
+\end{equation}
+
+ここで：
+\begin{itemize}
+  \item $\boldsymbol{h}_t \in \mathbb{R}^{d_h}$：時刻 $t$ における隠れ状態ベクトル
+  \item $\boldsymbol{x}_t \in \mathbb{R}^{d_x}$：時刻 $t$ における入力ベクトル
+  \item $W_h \in \mathbb{R}^{d_h \times d_h}$：隠れ状態から隠れ状態への遷移重み行列
+  \item $W_x \in \mathbb{R}^{d_h \times d_x}$：入力から隠れ状態への重み行列
+  \item $\boldsymbol{b} \in \mathbb{R}^{d_h}$：バイアスベクトル
+  \item $\sigma(\cdot)$：活性化関数（通常はtanh）
+\end{itemize}
+
+この方程式の重要な性質は以下の通りである：
+\begin{enumerate}
+  \item \textbf{重み共有}：すべての時刻 $t$ に対して同一の重み行列が用いられる
+  \item \textbf{非線形変換}：活性化関数により，線形なマルコフモデルの表現力を超える
+  \item \textbf{漸近的な記憶機構}：隠れ状態は過去の入力情報を圧縮して保有する
+\end{enumerate}
+
+\subsection{出力層と予測}
+
+隠れ状態が計算されたのち，タスクに応じた出力を生成する：
+\begin{equation}
+  \boldsymbol{y}_t = W_o \boldsymbol{h}_t + \boldsymbol{c}.
+\end{equation}
+
+確率分布を出力する場合：
+\begin{equation}
+  p(x_t | \boldsymbol{h}_t) = \mathrm{softmax}(W_o \boldsymbol{h}_t + \boldsymbol{c}).
+\end{equation}
+
+\subsection{時間方向の誤差逆伝播（BPTT）}
+
+RNNの学習には\textbf{BPTT（Backpropagation Through Time）}が用いられる．
+目的関数 $\mathcal{L} = \sum_{t=1}^T \mathcal{L}_t$ に対し，連鎖律により：
+\begin{equation}
+  \frac{\partial \mathcal{L}}{\partial \boldsymbol{h}_t} = \frac{\partial \mathcal{L}_t}{\partial \boldsymbol{h}_t} + \frac{\partial \mathcal{L}}{\partial \boldsymbol{h}_{t+1}} \frac{\partial \boldsymbol{h}_{t+1}}{\partial \boldsymbol{h}_t}.
+\end{equation}
+
+\subsection{勾配消失・爆発問題}
+
+RNNの学習における最大の課題は，\textbf{勾配消失}および\textbf{勾配爆発}問題である．
+時刻 $t$ から時刻 $s < t$ への勾配の逆伝播経路を考えると：
+\begin{equation}
+  \frac{\partial \boldsymbol{h}_t}{\partial \boldsymbol{h}_s} = \prod_{k=s+1}^{t} \frac{\partial \boldsymbol{h}_k}{\partial \boldsymbol{h}_{k-1}} \approx \prod_{k=s+1}^{t} W_h^T \mathrm{diag}(\sigma'(\cdot)).
+\end{equation}
+
+行列 $W_h^T$ のスペクトラル半径 $\rho$ に応じて：
+\begin{itemize}
+  \item $\rho < 1$ の場合：$\rho^{t-s} \to 0$（勾配消失）
+  \item $\rho > 1$ の場合：$\rho^{t-s} \to \infty$（勾配爆発）
+\end{itemize}
+
+% ------------------------------------------------------------------
+\section{LSTM と GRU}
+\label{sec:lstm-gru}
+% ------------------------------------------------------------------
+
+\subsection{LSTM（Long Short-Term Memory）}
+
+\textbf{LSTM}\cite{Hochreiter1997}は，隠れ状態と独立した\textbf{セル状態} $\boldsymbol{c}_t$ を導入することで
+勾配消失を緩和する．
+
+\subsubsection{ゲート機構}
+
+LSTMセルは以下の4つの構成要素を持つ：
+
+\textbf{忘却ゲート}：
+\begin{equation}
+  \boldsymbol{f}_t = \sigma(W_f[\boldsymbol{h}_{t-1}, \boldsymbol{x}_t] + \boldsymbol{b}_f).
+\end{equation}
+
+\textbf{入力ゲート}：
+\begin{equation}
+  \boldsymbol{i}_t = \sigma(W_i[\boldsymbol{h}_{t-1}, \boldsymbol{x}_t] + \boldsymbol{b}_i).
+\end{equation}
+
+\textbf{候補セル状態}：
+\begin{equation}
+  \tilde{\boldsymbol{c}}_t = \tanh(W_c[\boldsymbol{h}_{t-1}, \boldsymbol{x}_t] + \boldsymbol{b}_c).
+\end{equation}
+
+\textbf{セル状態更新}：
+\begin{equation}
+  \boldsymbol{c}_t = \boldsymbol{f}_t \odot \boldsymbol{c}_{t-1} + \boldsymbol{i}_t \odot \tilde{\boldsymbol{c}}_t.
+  \label{eq:lstm-cell}
+\end{equation}
+
+\textbf{出力ゲート}：
+\begin{equation}
+  \boldsymbol{o}_t = \sigma(W_o[\boldsymbol{h}_{t-1}, \boldsymbol{x}_t] + \boldsymbol{b}_o).
+\end{equation}
+
+\textbf{隠れ状態更新}：
+\begin{equation}
+  \boldsymbol{h}_t = \boldsymbol{o}_t \odot \tanh(\boldsymbol{c}_t).
+\end{equation}
+
+式\eqref{eq:lstm-cell}に示されるように，セル状態は\textbf{加法的に更新}される．
+この加法的構造が，勾配消失を緩和する鍵となる．
+
+\subsection{GRU（Gated Recurrent Unit）}
+
+\textbf{GRU}\cite{Cho2014}は，LSTMを単純化したアーキテクチャである．
+セル状態と隠れ状態を統合し，ゲート数を削減している：
+
+\textbf{リセットゲート}：
+\begin{equation}
+  \boldsymbol{r}_t = \sigma(W_r[\boldsymbol{h}_{t-1}, \boldsymbol{x}_t] + \boldsymbol{b}_r).
+\end{equation}
+
+\textbf{更新ゲート}：
+\begin{equation}
+  \boldsymbol{z}_t = \sigma(W_z[\boldsymbol{h}_{t-1}, \boldsymbol{x}_t] + \boldsymbol{b}_z).
+\end{equation}
+
+\textbf{隠れ状態更新}：
+\begin{equation}
+  \boldsymbol{h}_t = (1 - \boldsymbol{z}_t) \odot \boldsymbol{h}_{t-1} + \boldsymbol{z}_t \odot \tilde{\boldsymbol{h}}_t.
+\end{equation}
+
+GRUはLSTMと同等の性能を示しながら，計算効率が高い．
+
+% ------------------------------------------------------------------
+\section{Attention機構}
+\label{sec:attention}
+% ------------------------------------------------------------------
+
+\subsection{Encoder-Decoder アーキテクチャの限界}
+
+機械翻訳などの系列間学習では，入力系列を固定長の\textbf{文脈ベクトル} $\boldsymbol{c}$ に
+圧縮する必要がある．これが\textbf{情報ボトルネック}となり，
+長い入力系列では性能が低下する．
+
+\subsection{Attention の導入}
+
+\textbf{Attention機構}\cite{Bahdanau2015}は，デコーダの各時刻において，
+エンコーダの全時刻の隠れ状態に対して\textbf{注意重み}を計算する：
+\begin{equation}
+  \alpha_{ts} = \frac{\exp(e_{ts})}{\sum_{s'=1}^{T_x} \exp(e_{ts'})},
+  \label{eq:attention-weight}
+\end{equation}
+ここで $e_{ts}$ は注意スコアである：
+\begin{equation}
+  e_{ts} = v_a^T \tanh(W_a [\boldsymbol{h}_{t-1}^{(\mathrm{dec})}; \boldsymbol{h}_s^{(\mathrm{enc})}]).
+\end{equation}
+
+文脈ベクトルは，注意重みによる加重和として動的に計算される：
+\begin{equation}
+  \boldsymbol{c}_t = \sum_{s=1}^{T_x} \alpha_{ts} \boldsymbol{h}_s^{(\mathrm{enc})}.
+\end{equation}
+
+Attentionの利点：
+\begin{enumerate}
+  \item \textbf{情報ボトルネックの解放}：時刻ごとに異なる入力部分に集中できる
+  \item \textbf{解釈可能性}：注意重みを視覚化できる
+  \item \textbf{段階的な情報活用}：出力の各部分が入力の異なる部分に対応
+\end{enumerate}
+
+% ------------------------------------------------------------------
+\section{Transformer アーキテクチャ}
+\label{sec:transformer}
+% ------------------------------------------------------------------
+
+\subsection{RNN の限界と Self-Attention}
+
+RNNの根本的な制約は，隠れ状態が時刻 $t-1$ に依存するため，
+時刻 $t$ の計算は時刻 $t-1$ が完了するまで開始できないことである．
+これにより，時間計算量は最低でも $O(T)$ となり，並列化が困難である．
+
+\textbf{Transformer}\cite{Vaswani2017}は，\textbf{Self-Attention}を中核に据えることで
+この制約を克服する．
+
+\subsection{スケーリングドット積 Attention}
+
+入力シーケンス $\mathbf{X} \in \mathbb{R}^{T \times d}$ から，
+クエリ，キー，バリュー行列を生成する：
+\begin{equation}
+  \mathbf{Q} = \mathbf{X} \mathbf{W}^Q, \quad \mathbf{K} = \mathbf{X} \mathbf{W}^K, \quad \mathbf{V} = \mathbf{X} \mathbf{W}^V.
+\end{equation}
+
+スケーリングドット積Attentionは：
+\begin{equation}
+  \mathrm{Attention}(\mathbf{Q}, \mathbf{K}, \mathbf{V}) = \mathrm{softmax}\left(\frac{\mathbf{Q}\mathbf{K}^T}{\sqrt{d_k}}\right)\mathbf{V}.
+  \label{eq:scaled-dot-product}
+\end{equation}
+
+スケーリング係数 $1/\sqrt{d_k}$ は，内積の分散が次元に応じて増加することを補正し，
+softmaxの飽和を防ぐ．
+
+\subsection{Multi-Head Attention}
+
+単一のAttentionでは表現力が限定される．
+\textbf{Multi-Head Attention}は複数の独立したAttentionヘッドを並列に適用する：
+\begin{equation}
+  \mathrm{head}_i = \mathrm{Attention}(\mathbf{Q}\mathbf{W}_i^Q, \mathbf{K}\mathbf{W}_i^K, \mathbf{V}\mathbf{W}_i^V),
+\end{equation}
+\begin{equation}
+  \mathrm{MultiHead}(\mathbf{Q}, \mathbf{K}, \mathbf{V}) = \mathrm{Concat}(\mathrm{head}_1, \ldots, \mathrm{head}_h) \mathbf{W}^O.
+  \label{eq:multi-head}
+\end{equation}
+
+各ヘッドは異なる部分空間で注意を学習し，
+「構文的な依存」と「意味的な依存」を同時に捉えることができる．
+
+\subsection{位置エンコーディング}
+
+Self-Attentionは入力の順序に対して不変であるため，
+\textbf{位置エンコーディング}を加算して位置情報を導入する：
+\begin{equation}
+  \tilde{\mathbf{X}} = \mathbf{X} + \mathbf{PE}.
+\end{equation}
+
+元論文では，正弦波による確定的エンコーディングが提案された：
+\begin{align}
+  PE_{pos, 2i} &= \sin\left(\frac{pos}{10000^{2i/d}}\right), \\
+  PE_{pos, 2i+1} &= \cos\left(\frac{pos}{10000^{2i/d}}\right).
+\end{align}
+
+\subsection{Transformer ブロック}
+
+Transformerのエンコーダブロックは以下の構成を持つ：
+\begin{align}
+  \mathbf{H}^{(l)} &= \mathrm{LayerNorm}(\mathbf{H}^{(l-1)} + \mathrm{MultiHead}(\mathbf{H}^{(l-1)})), \\
+  \mathbf{H}^{(l+1)} &= \mathrm{LayerNorm}(\mathbf{H}^{(l)} + \mathrm{FFN}(\mathbf{H}^{(l)})).
+\end{align}
+
+各サブレイヤーには\textbf{残差接続}と\textbf{層正規化}が適用される．
+
+\textbf{フィードフォーワードネットワーク（FFN）}は位置ごとに独立に適用される：
+\begin{equation}
+  \mathrm{FFN}(\mathbf{x}) = \mathrm{ReLU}(\mathbf{x}\mathbf{W}_1 + \boldsymbol{b}_1)\mathbf{W}_2 + \boldsymbol{b}_2.
+\end{equation}
+
+\subsection{計算量の比較}
+
+表\ref{tab:complexity}にRNNとSelf-Attentionの計算量を比較する．
+
+\begin{table}[hbtp]
+  \centering
+  \caption{RNN と Self-Attention の計算量比較．}
+  \label{tab:complexity}
+  \begin{tabular}{lcc}
+    \toprule
+    指標 & RNN & Self-Attention \\
+    \midrule
+    逐次ステップ & $O(T)$ & $O(1)$ \\
+    最大パス長 & $O(T)$ & $O(1)$ \\
+    計算複雑度 & $O(T d^2)$ & $O(T^2 d)$ \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+Self-Attentionは完全並列化可能であり，長距離依存性を直接学習できる．
+
+% ------------------------------------------------------------------
+\section{大規模言語モデル}
+\label{sec:llm}
+% ------------------------------------------------------------------
+
+\subsection{スケーリング則}
+
+Transformerのスケーリング特性に関する重要な発見が報告されている\cite{Kaplan2020}．
+モデルサイズ $N$，訓練データサイズ $D$，計算量 $C$ と損失 $L$ の関係：
+\begin{equation}
+  L(N) \propto N^{-\alpha}, \quad L(D) \propto D^{-\beta}, \quad L(C) \propto C^{-\gamma}.
+\end{equation}
+
+\subsection{BERT と GPT}
+
+\textbf{BERT}\cite{Devlin2018}はEncoder-onlyモデルであり，
+Masked Language Modeling（MLM）により双方向の文脈を学習する．
+
+\textbf{GPT}シリーズはDecoder-onlyモデルであり，
+自己回帰的な言語モデリングを学習する．
+大規模化により，少ショット学習能力を獲得している．
+
+% ------------------------------------------------------------------
+\section{交通分野への応用}
+\label{sec:traffic-application}
+% ------------------------------------------------------------------
+
+\subsection{交通流予測}
+
+時系列としての交通データ（流量，速度，密度）の予測にTransformerが活用される．
+空間的な依存性と時間的な依存性を同時にモデル化することが重要である．
+
+\subsection{経路選択モデル}
+
+経路選択問題への応用として，\textbf{RoutesFormer}のような
+Transformerベースのモデルが提案されている．
+エンコーダが道路ネットワークの特徴を学習し，
+デコーダが経路を逐次的に生成する．
+
+\begin{example}
+  交通流予測問題において，過去 $T$ 時刻の交通データ
+  $\mathbf{X} = (\boldsymbol{x}_1, \ldots, \boldsymbol{x}_T)$ が与えられたとき，
+  将来 $H$ 時刻の予測 $\hat{\mathbf{Y}} = (\hat{\boldsymbol{y}}_1, \ldots, \hat{\boldsymbol{y}}_H)$ を
+  Transformerで行う場合のアーキテクチャを設計せよ．
+\end{example}

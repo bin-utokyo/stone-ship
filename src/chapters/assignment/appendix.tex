@@ -1,0 +1,573 @@
+%% chapters/assignment/appendix.tex
+%% 補足A–D　交通量配分テキスト付録
+
+% ===============================================================
+\section{補足A\quad 黄金分割法（ステップサイズ探索）}
+\label{sec:appendix-A}
+% ===============================================================
+
+Frank-Wolfe 法（\sref{sec:ch3-ue} \ssref{subsec:frank-wolfe} 参照）の各反復では，
+補助解 $\boldsymbol{y}^{(n)}$ が得られた後，
+現在の解 $\boldsymbol{x}^{(n)}$ から $\boldsymbol{y}^{(n)}$ 方向への最適なステップサイズ
+$\alpha^* \in [0,1]$ を1次元最適化によって求める：
+
+\begin{equation}
+  \alpha^* = \mathop{\rm arg~min}_{0 \leq \alpha \leq 1}
+    Z\bigl(\boldsymbol{x}^{(n)} + \alpha\,(\boldsymbol{y}^{(n)} - \boldsymbol{x}^{(n)})\bigr).
+  \label{eq:appendix-A-linesearch}
+\end{equation}
+
+目的関数 $Z$ は BPR 関数のような凸関数の積分であるため，
+式\eqref{eq:appendix-A-linesearch}の右辺は $\alpha$ に関して一変数の凸関数となる．
+したがって，区間二分法や\textbf{黄金分割法}（golden section search）によって
+高精度かつ効率的に解を求めることができる\cite{Sheffi1985}．
+
+% ---------------------------------------------------------------
+\subsection{黄金分割法のアルゴリズム}
+\label{subsec:appendix-A-algorithm}
+% ---------------------------------------------------------------
+
+\subsubsection*{準備}
+
+黄金分割法は，一変数の\textbf{単峰性（unimodal）な関数}
+$\phi: [a, b] \to \mathbb{R}$ の最小値（または最大値）を求める区間縮小法である．
+$\phi$ の評価のみに基づき（微分情報を使わず），
+各反復で区間長を一定の比率で縮小して解に収束させる．
+
+ステップサイズ探索に適用する場合は，
+$\phi(\alpha) = Z\bigl(\boldsymbol{x}^{(n)} + \alpha(\boldsymbol{y}^{(n)} - \boldsymbol{x}^{(n)})\bigr)$，
+$[a, b] = [0, 1]$ として出発する．
+
+\subsubsection*{黄金分割比}
+
+黄金分割法のアルゴリズムでは，区間 $[a_k, b_k]$ の内側に2点
+\begin{align}
+  g_k &= b_k - s\,(b_k - a_k), \label{eq:appendix-A-gk} \\
+  h_k &= a_k + s\,(b_k - a_k)  \label{eq:appendix-A-hk}
+\end{align}
+を配置する．ここで $s$ は\textbf{黄金分割比}（golden ratio）と呼ばれる定数であり，
+
+\begin{equation}
+  s = \frac{\sqrt{5} - 1}{2} \approx 0.618
+  \label{eq:appendix-A-goldenratio}
+\end{equation}
+
+と定義される．$s$ は $s^2 + s - 1 = 0$ の正の根であり，
+$s + s^2 = 1$，すなわち $1 - s = s^2 \approx 0.382$ が成り立つ．
+
+この比率を選ぶ動機は，次の反復で区間の内点を1点だけ新たに評価すれば，
+もう1点は前の反復から流用できるという\textbf{計算効率の最大化}にある．
+
+\subsubsection*{反復手順}
+
+\begin{enumerate}
+  \item \textbf{初期化}：$a_0 = 0$，$b_0 = 1$，$\phi(g_0)$，$\phi(h_0)$ を計算する（$k = 0$）．
+  \item \textbf{縮小}：
+    \begin{itemize}
+      \item $\phi(g_k) > \phi(h_k)$ の場合：\;
+            最小値は $[g_k, b_k]$ にある．
+            $[a_{k+1}, b_{k+1}] \leftarrow [g_k, b_k]$．\\
+            次の反復では $g_{k+1} = h_k$（流用），$h_{k+1}$ のみ新たに計算する．
+      \item $\phi(g_k) < \phi(h_k)$ の場合：\;
+            最小値は $[a_k, h_k]$ にある．
+            $[a_{k+1}, b_{k+1}] \leftarrow [a_k, h_k]$．\\
+            次の反復では $h_{k+1} = g_k$（流用），$g_{k+1}$ のみ新たに計算する．
+      \item $\phi(g_k) = \phi(h_k)$ の場合：\;
+            どちらの縮小を行ってもよい（通常は $[a_k, h_k]$ に縮小）．
+    \end{itemize}
+  \item \textbf{収束判定}：$b_{k+1} - a_{k+1} < \epsilon$（許容誤差）であれば終了し，
+        $\alpha^* \approx (a_{k+1} + b_{k+1}) / 2$ を出力する．
+        そうでなければ $k \leftarrow k+1$ として 2. へ戻る．
+\end{enumerate}
+
+% ===============================================================
+\section{補足B\quad All-or-Nothing 配分の効率的アルゴリズム}
+\label{sec:appendix-B}
+% ===============================================================
+
+Frank-Wolfe 法の各反復（第2ステップ）では，
+現在の旅行時間 $t_a(x_a^{(n)})$ を確定的費用とみなして
+\textbf{All-or-Nothing（AoN）配分}を実行し，補助解 $\boldsymbol{y}^{(n)}$ を求める
+（\sref{sec:ch3-ue} \ssref{subsec:frank-wolfe} 参照）．
+AoN 配分は「各ODペアの全需要を最短経路に集中させる」操作であり，
+以下で述べる効率的な実装が計算コストを大幅に削減する．
+
+% ---------------------------------------------------------------
+\subsection{直感的アイデア}
+\label{subsec:appendix-B-idea}
+% ---------------------------------------------------------------
+
+ネットワーク上に $|R|$ 個の起点が存在し，各起点 $r$ について
+すべての目的地への最短経路を求めた場合，得られる最短経路の全体は
+\textbf{最短経路ツリー（shortest path tree）}と呼ばれる根付き木をなす．
+
+このツリー構造を活用すると，経路を陽に列挙することなく，
+ツリー上の葉ノードから根ノード（起点 $r$）方向へ\textbf{逆向きに流量を集計}することで，
+各リンクへの AoN 配分量を効率的に計算できる．
+
+% ---------------------------------------------------------------
+\subsection{アルゴリズムの詳細}
+\label{subsec:appendix-B-algorithm}
+% ---------------------------------------------------------------
+
+\subsubsection*{前準備：記号の定義}
+
+\begin{description}
+  \item[$c(j)$] 起点 $r$ からノード $j$ への最短経路費用（ダイクストラ法で計算）
+  \item[$\mathrm{pred}(j)$] ノード $j$ への最短経路上の直前ノード（先行ポインタ）
+  \item[$O_j$] 最短経路ツリー上でノード $j$ の直接の子ノード集合，
+               すなわち $O_j = \{m \mid \mathrm{pred}(m) = j\}$
+  \item[$q_{rj}$] 起点 $r$，目的地 $j$ の OD 交通量
+  \item[$y_{ij}$] ノード $i \to j$ リンクを経由する AoN 配分量の作業変数
+\end{description}
+
+\subsubsection*{アルゴリズム本体}
+
+\begin{enumerate}
+  \item \textbf{初期化}：すべてのリンクの補助フローを 0 に設定する：
+        $y_{ij} \leftarrow 0 \;\; (\forall (i,j) \in A)$．
+  \item \textbf{起点ループ}：各起点 $r \in R$ について以下を実行する：
+    \begin{enumerate}
+      \item \textbf{最短経路の計算}：ダイクストラ法によって，
+            起点 $r$ から全ノード $j \in N$ への最短経路費用 $c(j)$ と
+            先行ポインタ $\mathrm{pred}(j)$ を求める．
+      \item \textbf{ノードの逆順処理}：
+            $c(j)$ の\textbf{降順}（目的地 $j$ が起点 $r$ から遠い順）に
+            各ノード $j$ を処理し，リンクフロー $y_{\mathrm{pred}(j), j}$ を次式で更新する：
+            \begin{equation}
+              y_{\mathrm{pred}(j),\, j}
+              \;\leftarrow\;
+              y_{\mathrm{pred}(j),\, j}
+              + q_{rj}
+              + \sum_{m \in O_j} y_{j m}.
+              \label{eq:appendix-B-flow}
+            \end{equation}
+            式\eqref{eq:appendix-B-flow}の右辺は，(i) 目的地 $j$ 向けの需要 $q_{rj}$，
+            および (ii) $j$ の下流ノードからの合計フロー $\sum_{m \in O_j} y_{jm}$，
+            を合算した値である（目的地が $j$ の利用者と，$j$ を通過して
+            さらに下流を目指す利用者の両方をリンク $(\mathrm{pred}(j), j)$ に集計する）．
+    \end{enumerate}
+  \item \textbf{補助フローの確定}：起点 $r$ のループが終わったら，
+        $y_{ij}$ を All-or-Nothing 補助解 $y_{ij}^{(n)}$ としてリンクフローに加算する：
+        $x_{ij}^{\text{AoN}} \leftarrow x_{ij}^{\text{AoN}} + y_{ij} \;\; (\forall (i,j) \in A)$．
+\end{enumerate}
+
+\subsubsection*{計算量}
+
+起点ごとのダイクストラ法の計算量は $O(|N|^2)$（優先度付きキューを用いれば $O((|N|+|A|)\log|N|)$）であり，
+ツリー上の集計は $O(|N|)$ で完了する．これを $|R|$ 起点に対して繰り返すため，
+全体の計算量は $O(|R| \cdot (|N|+|A|)\log|N|)$ となる．
+経路を用いて直接配分する単純実装（$O(|K_{rs}| \cdot |A|)$ のオーダーで経路数が指数的に多くなる）
+と比べて，実用的なネットワーク規模で大幅な高速化が可能である．
+
+% ===============================================================
+\section{補足C\quad 利用者均衡と Nash 均衡の等価性}
+\label{sec:appendix-C}
+% ===============================================================
+
+\sref{sec:ch3-ue}では「UE解は交通配分のNash均衡に対応する」と述べた．
+本補足では，まず Wardrop 均衡と Nash 均衡の定義を対比的に整理し（\ssref{subsec:appendix-C-definitions}），
+次に $n$ 人非協力ゲームの枠組みで等価性を厳密に定式化して命題として示す（\ssref{subsec:appendix-C-proposition}）\cite{Sheffi1985}．
+
+% ---------------------------------------------------------------
+\subsection{定義：Wardrop 均衡と Nash 均衡}
+\label{subsec:appendix-C-definitions}
+% ---------------------------------------------------------------
+
+交通配分における均衡概念として，以下の2つの定義が中心的な役割を果たす．
+
+\subsubsection*{Wardrop 均衡（連続体モデル）}
+
+利用者を\textbf{無限小の原子なし連続体}として扱い，
+1人の利用者がリンク交通量に及ぼす影響が厳密にゼロと仮定する．
+
+\begin{description}
+  \item[定義（Wardrop 均衡）\cite{Wardrop1952}]
+    交通量配分 $\boldsymbol{f}^*$ が\textbf{Wardrop 均衡}（利用者均衡，UE）であるとは，
+    任意の ODペア $rs \in \Omega$ について以下が成立することをいう：
+    \begin{equation}
+      f_k^{rs} > 0 \;\Rightarrow\; c_k^{rs}(\boldsymbol{f}^*) = u_{rs},
+      \qquad
+      f_k^{rs} = 0 \;\Rightarrow\; c_k^{rs}(\boldsymbol{f}^*) \geq u_{rs}
+      \label{eq:appendix-C-wardrop-def}
+    \end{equation}
+    ここで $u_{rs} = \min_k c_k^{rs}(\boldsymbol{f}^*)$ は均衡最小経路費用である．
+    すなわち，Wardrop の第1原則（\sref{sec:ch3-ue} \ssref{subsec:wardrop}参照）そのものである．
+\end{description}
+
+各利用者は\textbf{自分の選択がリンク費用に影響しない}と仮定して
+最短経路を選ぶ（価格受容者的行動）．フロー $f_k^{rs}$ は確定量であり，
+混合戦略の概念を用いずに定式化される．
+
+\subsubsection*{Nash 均衡（有限 $n$ 人ゲーム）}
+
+利用者数 $n$ を有限・明示的に扱い，
+各利用者の1回の経路変更がリンク交通量を $O(1/n)$ だけ変化させると仮定する．
+
+\begin{description}
+  \item[定義（混合戦略 Nash 均衡）\cite{Nash1950,Nash1951}]
+    $n$ 人非協力ゲームにおいて，混合戦略プロファイル $(\boldsymbol{\pi}_1, \ldots, \boldsymbol{\pi}_n)$
+    が\textbf{Nash 均衡}であるとは，
+    他のすべてのプレーヤーの戦略を所与として，
+    どの利用者 $a$ も自分の戦略を変更することで\textbf{期待旅行時間を改善できない}
+    ことをいう：
+    \begin{equation}
+      \pi_{aj} > 0 \;\Rightarrow\;
+      j \in \mathop{\rm arg~min}_{k}\,\mathbb{E}\bigl[g_k(\boldsymbol{h})\bigm| \boldsymbol{\pi}_{-a}\bigr]
+      \label{eq:appendix-C-nash-def}
+    \end{equation}
+    ここで $\boldsymbol{\pi}_{-a}$ は利用者 $a$ 以外の戦略プロファイルを表す．
+\end{description}
+
+Nash 均衡では，各利用者は自分の選択が他者に与える影響（$O(1/n)$）を原理的に認識した
+上で意思決定する点が Wardrop 均衡と本質的に異なる．
+
+\subsubsection*{2定義の対比と連続体極限}
+
+\begin{center}
+\small
+\begin{tabular}{lp{0.35\textwidth}p{0.37\textwidth}}
+  \toprule
+  & Wardrop 均衡 & Nash 均衡（$n$ 人） \\
+  \midrule
+  プレーヤー数 & 連続体（無限大） & 有限 $n$ \\
+  1人の影響 & 厳密にゼロ & $O(1/n)$ \\
+  均衡変数 & 確定的フロー $f_k^{rs}$ & 混合戦略確率 $\pi_{aj}$ \\
+  均衡条件 & 使用経路の費用が等しい（式\eqref{eq:appendix-C-wardrop-def}） &
+             期待費用最小の経路にのみ正確率（式\eqref{eq:appendix-C-nash-def}） \\
+  \bottomrule
+\end{tabular}
+\end{center}
+
+$n \to \infty$ の\textbf{連続体極限}では，各プレーヤーの影響が無限小となる．
+このとき大数の法則より経路交通量 $h_j \approx n\pi_j$ が確定的に定まり，
+期待費用が確定的費用と一致するため，
+Nash 均衡条件\eqref{eq:appendix-C-nash-def}は
+Wardrop 均衡条件\eqref{eq:appendix-C-wardrop-def}と等価になる．
+この等価性を次の\ssref{subsec:appendix-C-proposition}で命題として厳密に証明する．
+
+% ---------------------------------------------------------------
+\subsection{設定}
+\label{subsec:appendix-C-setup}
+% ---------------------------------------------------------------
+
+以下の設定を考える：
+
+\begin{description}
+  \item[ネットワーク] 単一の ODペア $(r, s)$，経路集合 $K_{rs} = \{1, 2, \ldots, J\}$．
+  \item[利用者] $n$ 人の同質な（homogeneous）通行者が存在し，全員が ODペア $(r,s)$
+                を利用する．したがって $q_{rs} = n$ とする．
+  \item[経路費用] 経路 $j$ の費用は経路交通量ベクトル $\boldsymbol{h} = (h_1, \ldots, h_J)$ に
+                  依存する連続関数 $g_j(\boldsymbol{h})$ で与えられる．
+                  ここで $h_j \geq 0$ は経路 $j$ の交通量，$\sum_j h_j = n$ が成立する．
+  \item[UE 条件] 交通量ベクトル $\boldsymbol{h}^*$ が UE であるための必要十分条件は：
+        \begin{equation}
+          h_j^* > 0 \;\Rightarrow\; g_j(\boldsymbol{h}^*) = g_{\min}(\boldsymbol{h}^*),
+          \qquad
+          h_j^* = 0 \;\Rightarrow\; g_j(\boldsymbol{h}^*) \geq g_{\min}(\boldsymbol{h}^*)
+          \label{eq:appendix-C-ue}
+        \end{equation}
+        ただし $g_{\min}(\boldsymbol{h}^*) = \min_k g_k(\boldsymbol{h}^*)$（均衡最小費用）．
+\end{description}
+
+% ---------------------------------------------------------------
+\subsection{Nash 均衡との等価性（命題 C.1）}
+\label{subsec:appendix-C-proposition}
+% ---------------------------------------------------------------
+
+\begin{description}
+  \item[命題 C.1] 上記の設定のもとで，\textbf{$n$ が大のとき
+    確定論的利用者均衡（UE）は $n$ 人非協力ゲームの（対称）混合戦略 Nash 均衡と等価である}．
+\end{description}
+
+\subsubsection*{証明}
+
+\paragraph*{ゲームの定式化．}
+利用者 $a$ ($a = 1, \ldots, n$) が各経路 $j \in K_{rs}$ を選択する確率を $\pi_{aj}$ とする．
+利用者の戦略は混合戦略 $(\pi_{a1}, \ldots, \pi_{aJ})$ であり，$\pi_{aj} \geq 0$，
+$\sum_j \pi_{aj} = 1$ を満たす．
+
+利用者 $a$ が経路 $j$ を選択したときの旅行時間は $g_j(\boldsymbol{h})$ であり，
+$\boldsymbol{h}$ は全$n$人の戦略の実現値によって決まる確率変数である．
+$n$ が十分大の極限では，大数の法則より
+
+\begin{equation}
+  h_j \;\approx\; n\,\pi_j
+  \label{eq:appendix-C-lln}
+\end{equation}
+
+が成立する（$\pi_j$ は全利用者に共通の経路 $j$ の選択確率）．
+式\eqref{eq:appendix-C-lln} のもとで，経路 $j$ の期待旅行時間は確定的に
+$g_j(\boldsymbol{h}^*)$ で近似される（$h_j^* = n\pi_j$）．
+
+\paragraph*{Nash 均衡条件．}
+利用者 $a$ が旅行時間を最小化する合理的エージェントであるとすると，
+混合戦略 Nash 均衡においては：
+\begin{equation}
+  \pi_j > 0 \;\Rightarrow\; g_j(\boldsymbol{h}^*) = \min_k g_k(\boldsymbol{h}^*),
+  \qquad
+  \pi_j = 0 \;\Rightarrow\; g_j(\boldsymbol{h}^*) \geq \min_k g_k(\boldsymbol{h}^*)
+  \label{eq:appendix-C-nash}
+\end{equation}
+が成立しなければならない（最適反応条件）．
+
+\paragraph*{等価性．}
+式\eqref{eq:appendix-C-lln}より $h_j^* = n\pi_j$ であるから，
+Nash 均衡条件\eqref{eq:appendix-C-nash}を $h_j^*$ で書き直せば，
+$h_j^* > 0 \Leftrightarrow \pi_j > 0$ および $h_j^* = 0 \Leftrightarrow \pi_j = 0$ より，
+UE 条件\eqref{eq:appendix-C-ue}と完全に一致する．
+\hfill$\square$
+
+\subsubsection*{含意}
+
+命題 C.1 は，Wardrop が（交通工学の観点から規範的に）定義したUE条件が，
+ゲーム理論の意味でも Nash 均衡として正当化できることを示す．
+すなわち，多数の自律的な利用者がそれぞれ旅行時間を最小化した結果として
+到達する均衡状態が，まさにWardrop 均衡に他ならない．
+
+また，UEがポテンシャルゲームの最小化問題（Beckmann 変換）と等価であることは
+\sref{sec:ch7-evogame}でも改めて論じる（\ssref{subsec:potential-game}参照）．
+
+% ===============================================================
+\section{補足D\quad 相補性条件と KKT 条件}
+\label{sec:appendix-D}
+% ===============================================================
+
+本補足では，不等式制約つき最適化問題の\textbf{最適性条件}として広く用いられる
+\textbf{Karush-Kuhn-Tucker（KKT）条件}を概説し，
+UE/FD-Primal（Beckmann 変換）および SUE/FD-path への適用を通じて，
+それぞれが Wardrop UE 条件・ロジット選択確率と等価であることを示す．
+
+% ---------------------------------------------------------------
+\subsection{KKT 条件の一般形}
+\label{subsec:appendix-D-kkt}
+% ---------------------------------------------------------------
+
+\subsubsection*{最適化問題の標準形}
+
+不等式制約・等式制約を含む一般の最適化問題を以下の標準形で定義する：
+
+\begin{equation}
+  \min_{\boldsymbol{z}} \; \phi(\boldsymbol{z})
+  \quad \text{s.t.} \quad
+  g_i(\boldsymbol{z}) \leq 0 \;(i=1,\ldots,m),
+  \quad
+  h_j(\boldsymbol{z}) = 0 \;(j=1,\ldots,p).
+  \label{eq:appendix-D-general}
+\end{equation}
+
+$\phi,\, g_i$ が凸，$h_j$ が線形のとき，KKT 条件は最適性の\textbf{必要十分条件}となる．
+
+\subsubsection*{ラグランジアン}
+
+式\eqref{eq:appendix-D-general}に対して\textbf{ラグランジアン}を定義する：
+
+\begin{equation}
+  L(\boldsymbol{z}, \boldsymbol{\lambda}, \boldsymbol{\nu})
+  = \phi(\boldsymbol{z})
+    + \sum_{i=1}^m \lambda_i\, g_i(\boldsymbol{z})
+    + \sum_{j=1}^p \nu_j\, h_j(\boldsymbol{z}).
+  \label{eq:appendix-D-lagrangian}
+\end{equation}
+
+ここで $\lambda_i$ は\textbf{不等式制約}に対応する Lagrange 乗数（双対変数），
+$\nu_j$ は\textbf{等式制約}に対応する Lagrange 乗数である．
+
+\subsubsection*{KKT 条件}
+
+\begin{center}
+\small
+\begin{tabular}{l p{0.24\textwidth} p{0.43\textwidth}}
+  \toprule
+  条件名 & 式 & 意味 \\
+  \midrule
+  停留条件（stationarity） & $\nabla_{\boldsymbol{z}} L = \boldsymbol{0}$ &
+    目的関数の勾配が制約関数の勾配の線形結合で表される \\[3pt]
+  主問題実行可能性 & $g_i(\boldsymbol{z}) \leq 0$，$h_j(\boldsymbol{z}) = 0$ &
+    元の制約をすべて満たす \\[3pt]
+  双対問題実行可能性 & $\lambda_i \geq 0$ &
+    不等式制約の Lagrange 乗数は非負 \\[3pt]
+  相補性条件 & $\lambda_i\, g_i(\boldsymbol{z}) = 0$ &
+    「制約が活性」か「乗数がゼロ」の少なくとも一方が成立 \\
+  \bottomrule
+\end{tabular}
+\end{center}
+
+\subsubsection*{相補性条件の直観}
+
+相補性条件 $\lambda_i\, g_i(\boldsymbol{z}) = 0$ は以下のように解釈できる：
+
+\begin{itemize}
+  \item $g_i(\boldsymbol{z}) < 0$（制約が\textbf{非活性}，余白がある）ならば
+        $\lambda_i = 0$：この制約は最適解に影響を与えないため，
+        対応する「影の価格」はゼロ．
+  \item $\lambda_i > 0$（最適解がこの制約によって\textbf{拘束}されている）ならば
+        $g_i(\boldsymbol{z}) = 0$：制約は必ず等号で成立（活性制約）．
+\end{itemize}
+
+% ---------------------------------------------------------------
+\subsection{UE/FD-Primal への適用（Wardrop 条件との等価性）}
+\label{subsec:appendix-D-ue}
+% ---------------------------------------------------------------
+
+\subsubsection*{問題の再掲}
+
+UE/FD-Primal（式\eqref{eq:ue-primal}）を再掲する：
+
+\begin{equation}
+  \min_{\boldsymbol{f}} \;
+  Z(\boldsymbol{f}) = \sum_{a \in A} \int_0^{x_a(\boldsymbol{f})} t_a(w)\,dw
+  \label{eq:appendix-D-ue-primal}
+\end{equation}
+\[
+  \text{s.t.} \quad
+  \sum_{k \in K_{rs}} f_k^{rs} = q_{rs} \;\; (\forall rs),
+  \quad
+  f_k^{rs} \geq 0 \;\; (\forall k,\, \forall rs),
+  \quad
+  x_a = \sum_{rs} \sum_k f_k^{rs}\,\delta_{a,k}^{rs}.
+\]
+
+等式制約の Lagrange 乗数を $u_{rs}$（ODペア $rs$ ごと），
+非負制約 $-f_k^{rs} \leq 0$ の乗数を $\mu_k^{rs} \geq 0$ とすると，
+ラグランジアンは
+
+\begin{equation}
+  L = Z(\boldsymbol{f})
+    - \sum_{rs} u_{rs}\Bigl(\sum_k f_k^{rs} - q_{rs}\Bigr)
+    - \sum_{rs} \sum_k \mu_k^{rs}\, f_k^{rs}
+  \label{eq:appendix-D-ue-lagrangian}
+\end{equation}
+
+となる．
+
+\subsubsection*{停留条件の導出}
+
+連鎖律より
+$\partial Z / \partial f_k^{rs}
+= \sum_a t_a(x_a)\,\partial x_a / \partial f_k^{rs}
+= \sum_a t_a(x_a)\,\delta_{a,k}^{rs}
+= c_k^{rs}$（経路 $k^{rs}$ の旅行時間）である．
+停留条件 $\partial L / \partial f_k^{rs} = 0$ は
+
+\begin{equation}
+  c_k^{rs} - u_{rs} - \mu_k^{rs} = 0
+  \quad \Longrightarrow \quad
+  c_k^{rs} = u_{rs} + \mu_k^{rs}.
+  \label{eq:appendix-D-stationarity}
+\end{equation}
+
+\subsubsection*{相補性条件の場合分けと Wardrop 条件}
+
+相補性条件 $\mu_k^{rs}\,f_k^{rs} = 0$（$\mu_k^{rs} \geq 0$，$f_k^{rs} \geq 0$）を
+式\eqref{eq:appendix-D-stationarity}と合わせて場合分けすると：
+
+\begin{itemize}
+  \item $f_k^{rs} > 0$（経路 $k$ が\textbf{使用されている}）
+        $\Rightarrow$ $\mu_k^{rs} = 0$
+        $\Rightarrow$ $c_k^{rs} = u_{rs}$
+  \item $f_k^{rs} = 0$（経路 $k$ が\textbf{使用されていない}）
+        $\Rightarrow$ $\mu_k^{rs} \geq 0$
+        $\Rightarrow$ $c_k^{rs} = u_{rs} + \mu_k^{rs} \geq u_{rs}$
+\end{itemize}
+
+これはまさに Wardrop の第1原則（\sref{sec:ch3-ue} \ssref{subsec:wardrop}，
+式\eqref{eq:wardrop-condition}）に他ならない．
+$u_{rs}$ が均衡最小旅行時間（均衡経路費用）に対応している．
+
+\begin{description}
+  \item[結論（命題 D.1）]
+    BPR 関数のような単調増加・凸な費用関数のもとでは，
+    UE/FD-Primal の KKT 条件と Wardrop の第1原則は完全に等価である．
+    すなわち，UE/FD-Primal の最適解は Wardrop UE 解である．
+\end{description}
+
+% ---------------------------------------------------------------
+\subsection{SUE/FD-path への適用（ロジット確率との等価性）}
+\label{subsec:appendix-D-sue}
+% ---------------------------------------------------------------
+
+\subsubsection*{問題の再掲}
+
+ロジット型 SUE の等価最適化問題（SUE/FD-path，\sref{sec:ch4-sue} \ssref{subsec:sue-optimization}参照）は，
+エントロピー項を加えた以下の形をとる：
+
+\begin{align}
+  \min_{\boldsymbol{f}} \;\;
+  Z(\boldsymbol{f})
+  &= \sum_a \int_0^{x_a} t_a(w)\,dw
+     - \frac{1}{\theta}\sum_{rs} q_{rs}\, H_{rs}(\boldsymbol{f}^{rs}),
+  \label{eq:appendix-D-sue-obj} \\
+  H_{rs}
+  &= -\sum_k \frac{f_k^{rs}}{q_{rs}} \ln \frac{f_k^{rs}}{q_{rs}},
+  \quad \text{s.t.} \quad
+  \sum_k f_k^{rs} = q_{rs},\;\; f_k^{rs} \geq 0.
+  \label{eq:appendix-D-sue-entropy}
+\end{align}
+
+SUE では全経路にフローが分散する（$f_k^{rs} > 0$，$\forall k$）ため，
+停留条件のみ導けばよい（非負制約は活性化しない：$\mu_k^{rs} = 0$）．
+
+\subsubsection*{停留条件の導出}
+
+$\partial H_{rs} / \partial f_k^{rs} = -(\ln(f_k^{rs}/q_{rs}) + 1)/q_{rs}$ を利用すると，
+停留条件 $\partial Z / \partial f_k^{rs} = 0$ は
+
+\begin{equation}
+  c_k^{rs}
+  + \frac{1}{\theta}\left(\ln\frac{f_k^{rs}}{q_{rs}} + 1\right)
+  = u_{rs}
+  \label{eq:appendix-D-sue-stationarity}
+\end{equation}
+
+となる（$u_{rs}$ は等式制約 $\sum_k f_k^{rs} = q_{rs}$ の Lagrange 乗数）．
+
+整理すると
+\begin{equation}
+  \ln\frac{f_k^{rs}}{q_{rs}}
+  = \theta(u_{rs} - c_k^{rs}) - 1
+  \quad \Longrightarrow \quad
+  f_k^{rs} = q_{rs}\,e^{-1}\,e^{\theta u_{rs}}\,e^{-\theta c_k^{rs}}.
+  \label{eq:appendix-D-sue-exp}
+\end{equation}
+
+全経路 $k'$ について式\eqref{eq:appendix-D-sue-exp}の両辺を和をとり，
+流量保存条件 $\sum_{k'} f_{k'}^{rs} = q_{rs}$ を代入すると，
+$e^{-1}e^{\theta u_{rs}}$ が消えて
+
+\begin{equation}
+  \boxed{
+    \frac{f_k^{rs}}{q_{rs}}
+    = \frac{e^{-\theta c_k^{rs}}}
+           {\displaystyle\sum_{k'} e^{-\theta c_{k'}^{rs}}}
+  }
+  \label{eq:appendix-D-sue-logit}
+\end{equation}
+
+を得る．これはロジット型の確率的経路選択確率（\sref{sec:ch4-sue} \ssref{subsec:sue-relaxation}，
+式\eqref{eq:logit-prob}）そのものである．
+
+\begin{description}
+  \item[結論（命題 D.2）]
+    SUE/FD-path の KKT 停留条件はロジット選択確率と一致する．
+    すなわち，SUE/FD-path の最適解は SUE 均衡であることが
+    最適性条件から直接確認できる．
+\end{description}
+
+\subsubsection*{UE との対比}
+
+\begin{center}
+\small
+\begin{tabular}{l p{0.37\textwidth} p{0.40\textwidth}}
+  \toprule
+  & UE/FD-Primal & SUE/FD-path \\
+  \midrule
+  目的関数の違い & なし（エントロピー項なし）& エントロピー項 $-H_{rs}/\theta$ あり \\[2pt]
+  KKT 停留条件 & $c_k^{rs} = u_{rs} + \mu_k^{rs}$ & $c_k^{rs} + \theta^{-1}(\ln p_k^{rs}+1) = u_{rs}$ \\[2pt]
+  相補性条件 & $\mu_k^{rs}\,f_k^{rs} = 0$（有意） & $\mu_k^{rs} = 0$（全経路正フロー） \\[2pt]
+  均衡条件 & Wardrop 第1原則 & ロジット確率的選択 \\[2pt]
+  $\theta \to \infty$ & — & UE に収束 \\[2pt]
+  $\theta \to 0$ & — & 均等配分に収束 \\
+  \bottomrule
+\end{tabular}
+\end{center}

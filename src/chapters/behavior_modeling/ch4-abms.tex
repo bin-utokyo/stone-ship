@@ -1,0 +1,280 @@
+%% chapters/behavior_modeling/ch4_abms.tex
+%% 第4章　アクティビティモデルと離散連続モデル
+
+\section{アクティビティモデル}\label{sec:activity_models}
+本節では，行動モデルが記述する選択行動を単独のトリップから一日の活動スケジュール全体へと拡張する．
+前節までは交通手段選択や経路選択といった個別のトリップに関する離散選択を扱ってきたが，そもそもトリップは活動の派生需要であり，個人の行動をより包括的に記述するには活動スケジュール全体を対象とする必要がある．
+このような視点に立つモデルを総称して\textbf{Activity-Based Model; ABMs}と呼ぶ．
+
+本節の構成は以下の通りである．
+まず\ref{ssec:abms_basic}項でABMsの基本的な考え方を導入する．
+\ref{ssec:route_choice_extension}項では前節までの経路選択モデルを活動スケジューリングへ拡張するアプローチを紹介し，\ref{ssec:activity_needs_model}項では日間変動を捉える活動ニーズモデルを概説する．
+最後に\ref{ssec:discrete_continuous}項で，活動種類の選択（離散選択）と時間配分（連続選択）を同時に扱う離散連続モデルについて，構造型（MDCEV）と誘導型（Tobit）の両系譜を対比しながら解説する．
+
+\subsection{Activity-Based Models (ABMs) の基本的な考え方}\label{ssec:abms_basic}
+
+従来の交通需要予測で広く用いられてきた四段階推定法は，生成・分布・分担・配分の各段階を順に解くことで交通需要を推定する．
+しかしこの枠組みではトリップを独立した単位として扱うため，一日の中で活動がどのように連鎖し，トリップがいかにして生じるかという行動の文脈を十分に捉えることができない．
+
+ABMsは，トリップそのものではなく個人の活動スケジュールを分析の基本単位とする枠組みである．
+その基本的な考え方は以下の通りである．
+
+\begin{description}
+  \item[派生需要としてのトリップ]
+    個人は通勤，買い物，余暇などの活動に参加するためにトリップを行う．
+    すなわちトリップは活動の派生需要であり，活動スケジュールが決まればトリップのパタンも決まる．
+
+  \item[一日の活動スケジュール]
+    個人の行動は「活動種類・開始時刻・終了時刻・活動場所」の系列として記述される．
+    この系列を\textbf{活動経路}（Activity Path）と呼ぶ．
+
+  \item[制約の考慮]
+    活動スケジュールは時間的制約（一日は24時間），空間的制約（移動には時間がかかる），
+    および個人属性による制約（自動車免許の有無など）のもとで決定される．
+\end{description}
+
+活動ベースアプローチの利点は，活動間の連鎖や時間配分の制約を明示的に扱える点にある．
+例えば，通勤帰りに買い物に立ち寄る行動（トリップチェイン）や，勤務時間の変更が余暇活動に与える影響などは，トリップ単位の分析では捉えにくいが，活動スケジュール全体を対象とすることで自然に記述できる．
+
+\subsection{経路選択モデルの拡張}\label{ssec:route_choice_extension}
+これまでに導入した経路選択モデルを用いて活動スケジュールを記述することも可能である．
+
+\subsubsection{階層的選択モデル}
+Bowman and Ben-Akiva \cite{BOWMAN20011} に代表される階層的選択モデルは，活動スケジュールの決定を階層的なNLモデルとして記述する．
+具体的には，まず一日の活動パタン（在宅・通勤・買い物など）を1次ネスト，主活動の時間帯を2次ネスト，目的地や交通手段を3次ネストといった具合に階層構造を設定する．
+この枠組みは理論的整合性と解釈可能性に優れるが，階層構造の設定は分析者の事前知識に依存するため，複雑な活動パタンの表現には限界がある．
+
+\subsubsection{逐次的選択モデル}
+Zimmermann et al. \cite{ZIMMERMANN2018273} は，Recursive Logitモデル \cite{Fosgerau2013,Oyama2017dRLeng} を活動スケジューリングに適用し，活動の逐次的な選択過程を記述するモデルを提案した．
+このアプローチでは，各時点において次に行う活動を逐次的に選択していくことで活動スケジュールを生成する．
+前節で紹介した経路非列挙型モデルと同様の発想であり，活動経路の列挙を必要とせず，選択肢集合の爆発を回避できるという利点がある．
+
+\subsection{日間変動を捉えるモデル：活動ニーズモデル}\label{ssec:activity_needs_model}
+上記モデルは単独日の活動スケジューリングを対象としているが，実際の個人の活動スケジュールは日ごと(day by day)に変動する．
+例えば毎日の通勤パタンは概ね規則的であるが，買い物や余暇活動は曜日や直近の活動履歴によって変化する．
+このような日間変動を捉えるための代表的なアプローチとして，活動ニーズ（Activity Needs）に基づくモデルがある \cite{ARENTZE2009251, ARENTZE2011447}．
+このモデルでは，各活動種類に対して「前回の実施からの経過時間」に応じて活動ニーズが蓄積し，ニーズが閾値を超えたときに活動が発生すると仮定する．
+またHabib \cite{habib2008modelling} は活動ニーズの充足を効用として定式化し，効用最大化の枠組みの中で活動発生を記述するモデルを提案した．
+これらのモデルは日間変動の構造を明示的に表現できる一方，閾値やニーズ蓄積関数の設定が分析者の事前知識に依存すること，また活動場所を同時に扱う場合に次元の呪いが顕著になることが課題として挙げられる．
+
+\subsection{離散連続モデル}\label{ssec:discrete_continuous}
+
+前項までのモデルは主に「どの活動を行うか」という離散選択に焦点を当てていた．
+しかし，活動スケジューリングにおいては活動種類の選択（離散選択）と同時に，
+各活動への時間配分（連続選択）も決定される．
+このような離散選択と連続選択を同時に扱うモデルを\textbf{離散連続モデル}（Discrete-Continuous Model）と呼ぶ \cite{FukudaChikaraishi2013}．
+
+\subsubsection{Corner Solution の問題}
+
+離散連続モデルの必要性を理解するために，まず\textbf{Corner Solution}の問題を考える．
+
+個人が一日の時間を複数の活動種類に配分する状況を考えよう．
+全部で $K$ 種類の活動が存在するとき，個人は各活動 $k$ に対して時間 $t_k \ge 0$ を配分し，
+$\sum_{k=1}^{K} t_k = T$（$T$ は総利用可能時間）という制約のもとで効用を最大化する．
+
+ここで重要な点は，多くの活動種類に対して配分時間が $t_k = 0$ となることである．
+例えば，ある日に買い物をしなかった個人にとって，買い物への時間配分は $t_k = 0$ である．
+このように最適解が定義域の境界上に位置する状況をCorner Solutionと呼ぶ．
+
+通常の連続最適化では内点解を前提とするため，Corner Solutionを適切に扱うことができない．
+離散連続モデルはこの問題に対処するために開発されたものであり，
+「どの活動を行うか（離散選択）」と「行う活動にどれだけ時間を配分するか（連続選択）」を
+統一的な枠組みで記述する．
+
+\subsubsection{離散連続モデルの系譜：構造型と誘導型}\label{sssec:dc_taxonomy}
+
+福田・力石 \cite{FukudaChikaraishi2013} による包括的なレビューに従えば，離散連続モデルは大きく二つの系譜に分類される（図\ref{fig:dc_taxonomy}）．
+
+\begin{figure}[htb]
+  \centering
+  \begin{tikzpicture}[
+    every node/.style={font=\small},
+    box/.style={draw, rounded corners, minimum width=3.2cm, minimum height=0.8cm, align=center},
+    level 1/.style={sibling distance=6.5cm},
+    level 2/.style={sibling distance=3.5cm},
+    edge from parent/.style={draw, ->, thick}
+  ]
+    \node[box, fill=gray!15] {離散連続モデル}
+      child {
+        node[box, fill=blue!10] {構造型\\（Structural）}
+        child {
+          node[box] {ロワの恒等式\\ベース}
+          edge from parent
+        }
+        child {
+          node[box] {KT条件\\ベース\\（MDCEV等）}
+          edge from parent
+        }
+        edge from parent
+      }
+      child {
+        node[box, fill=orange!10] {誘導型\\（Reduced-form）}
+        child {
+          node[box] {Tobitモデル\\（Type I--V）}
+          edge from parent
+        }
+        child {
+          node[box] {コピュラ\\ベース}
+          edge from parent
+        }
+        edge from parent
+      };
+  \end{tikzpicture}
+  \caption{離散連続モデルの系譜．福田・力石 \cite{FukudaChikaraishi2013} に基づく分類．}
+  \label{fig:dc_taxonomy}
+\end{figure}
+
+\begin{description}
+  \item[構造型（Structural Model）]
+    ミクロ経済理論に立脚し，資源制約下での効用最大化問題から演繹的にモデルを導出する．
+    導出の方法として，条件付き間接効用関数にロワの恒等式を適用して需要関数を得る方法（Dubin and McFadden \cite{DubinMcFadden1984} 等）と，直接効用関数の最大化問題にキューン・タッカー（KT）条件を適用する方法（Wales and Woodland \cite{WalesWoodland1983}，Bhat \cite{BHAT2008274} 等）がある．
+    経済理論との整合性が高い一方で，効用関数の関数形が制約されるため，現象記述の自由度が限られる．
+    特に，離散選択と連続選択に同一の評価関数を用いるため，「活動頻度は低いが1回あたりの活動時間は長い」といった離散・連続間の非対称な関係の記述が困難である．
+  \item[誘導型（Reduced-form Model）]
+    統計モデルによる現象の直接的記述に主眼を置く．
+    代表的なものとして，Tobin \cite{Tobin1958} に端を発するTobitモデルやその拡張（Type I--V），コピュラ関数を用いた誤差相関の柔軟な記述を行うモデルがある．
+    資源制約を明示的に課さないため現象記述の自由度が高く，離散選択と連続選択に異なる評価関数を用いることもできる．
+    一方で，経済理論との整合性は必ずしも保証されない．
+\end{description}
+
+以下ではこの分類に従い，構造型の代表としてMDCEVモデルを，誘導型の代表としてType II Tobitモデルをそれぞれ解説し，両者の違いと使い分けを論じる．
+
+\subsubsection{構造型：MDCEVモデル}
+
+構造型離散連続モデルの中でも広く用いられているのが，Bhat \cite{BHAT2008274} によって提案された\textbf{Multiple Discrete-Continuous Extreme Value}（MDCEV）モデルである．
+MDCEVモデルはKT条件に基づく構造型モデルであり，$K$ 個の財（活動種類）の消費量を資源制約のもとで同時に決定する．
+
+個人 $i$ は以下の直接効用関数を資源制約のもとで最大化する．
+\begin{equation}\label{eq:mdcev_utility}
+  \max_{\bm{t}} \; U(\bm{t}) = \sum_{k=1}^{K} \frac{\gamma_k}{\alpha_k} \psi_k \left[ \left( \frac{t_k}{\gamma_k} + 1 \right)^{\alpha_k} - 1 \right], \quad \text{s.t.} \quad \sum_{k=1}^{K} t_k = T, \; t_k \geq 0
+\end{equation}
+ここで $\bm{t} = (t_1, \dots, t_K)$ は各活動への時間配分ベクトル，$\psi_k = \exp(\bm{\beta}^\top \bm{x}_k + \varepsilon_k)$ は活動 $k$ の基本効用（ベースライン効用），$\gamma_k > 0$ は活動 $k$ の消費単位を調整する変換（translation）パラメータ，$\alpha_k \le 1$ は飽和パラメータである．
+
+KT条件を適用すると，活動 $k$ に正の時間が配分される（$t_k > 0$）ための条件は，その活動の限界効用が影の価格（ラグランジュ乗数）$\lambda$ 以上であることとなる．
+\begin{align}
+  \frac{\partial U}{\partial t_k} = \lambda &\quad \text{if } t_k > 0 \label{eq:mdcev_kt_interior} \\
+  \frac{\partial U}{\partial t_k} < \lambda &\quad \text{if } t_k = 0 \label{eq:mdcev_kt_corner}
+\end{align}
+すなわち，限界効用が影の価格に達しない活動には時間が配分されず（$t_k = 0$），Corner Solutionが内生的に生じる．
+
+この効用関数の特徴は以下の通りである．
+\begin{description}
+  \item[飽和効果]
+    $\alpha_k < 1$ のとき，活動 $k$ への時間配分が増加するにつれて限界効用が逓減する．
+    これにより，一つの活動に全ての時間を配分するのではなく，複数の活動に時間を分散させる行動が自然に表現される．
+  \item[Corner Solutionの許容]
+    $t_k = 0$ が最適解となることをKT条件によって内生的に許容する．
+    基本効用 $\psi_k$ が十分に小さい活動には時間が配分されないという行動を記述できる．
+  \item[閉じた形の選択確率]
+    誤差項 $\varepsilon_k$ にi.i.d. ガンベル分布を仮定することで，
+    どの活動の組合せが選択されるかの確率が閉じた形で得られる．
+\end{description}
+
+MDCEVモデルは活動種類と時間配分の同時決定を統一的に扱えるため，
+アクティビティモデルにおける時間配分の記述に広く応用されている \cite{BHAT2008274, habib2011random}．
+その一方で，\textbf{離散選択と連続選択が同一の効用関数から導出される}という構造的制約があり，両者に異なるメカニズムが働く現象の記述には注意が必要である．
+
+\subsubsection{誘導型：Tobitモデルの体系}\label{sssec:tobit_family}
+
+誘導型の離散連続モデルの原型は，Tobin \cite{Tobin1958} が提案したTobitモデルである．
+Tobitモデルは，潜在変数が閾値を超えた場合にのみ正の値が観測されるという\textbf{打ち切り}（censoring）の構造を持つ．
+福田・力石 \cite{FukudaChikaraishi2013} の整理に従えば，Tobitモデルには以下の類型がある（表\ref{tab:tobit_types}）．
+
+\begin{table}[htb]
+\centering
+\caption{Tobitモデルの類型（福田・力石 \cite{FukudaChikaraishi2013} に基づく）}
+\label{tab:tobit_types}
+\begin{tabular}{l l l}
+\hline
+類型 & 離散問題と連続問題の関係 & 代表的研究 \\
+\hline
+Type I  & 同一の評価関数・同一のパラメータ & Tobin (1958) \cite{Tobin1958} \\
+Type II & 異なる評価関数を許容 & Heckman (1979) \cite{Heckman1979} \\
+Type V  & 2項選択それぞれに連続問題が観測 & Lee (1983) \\
+\hline
+\end{tabular}
+\end{table}
+
+\paragraph{Type I Tobitモデル}は最も基本的な形であり，離散問題と連続問題を同一の評価関数で記述する．
+\begin{equation}\label{eq:tobit_typeI}
+  t_k = \max(0, \, t_k^*), \quad t_k^* = \bm{\beta}^\top \bm{x}_k + \varepsilon_k
+\end{equation}
+潜在変数 $t_k^* > 0$ のとき活動が実行され，その値がそのまま活動時間として観測される．
+端点解（$t_k = 0$）を離散選択問題と解釈すれば，KT条件に基づく構造型モデルと同様の性質を持つ．
+しかし離散選択と連続選択に同一のパラメータ $\bm{\beta}$ を用いるため，「活動の実行しやすさ」と「実行した場合の時間の長さ」に異なる要因が影響する状況を記述できない．
+
+\paragraph{Type II Tobitモデル（Heckmanモデル）}は，離散問題と連続問題に\textbf{異なる評価関数}を許容するモデルであり，Heckman \cite{Heckman1979} によって提案された．
+離散選択（活動を実行するか否か）と連続選択（活動時間）にそれぞれ独立な潜在変数を設定する．
+\begin{align}
+  y^*_{\mathrm{act}} &= \bm{\alpha}^\top \bm{w} + \epsilon_{\mathrm{act}} \label{eq:tobit2_discrete} \\
+  y^*_{\mathrm{time}} &= \bm{\beta}^\top \bm{x} + \epsilon_{\mathrm{time}} \label{eq:tobit2_continuous} \\
+  y_{\mathrm{time}} &= \begin{cases} y^*_{\mathrm{time}}, & \text{if } y^*_{\mathrm{act}} > 0 \\ 0, & \text{if } y^*_{\mathrm{act}} \leq 0 \end{cases} \label{eq:tobit2_observe}
+\end{align}
+ここで $y^*_{\mathrm{act}}$ は活動実行に関する潜在変数（判別関数），$y^*_{\mathrm{time}}$ は活動時間に関する潜在変数であり，
+$\bm{w}$ と $\bm{x}$ はそれぞれ異なる説明変数ベクトル，$\bm{\alpha}$ と $\bm{\beta}$ は異なるパラメータベクトルである．
+誤差項 $\epsilon_{\mathrm{act}}$, $\epsilon_{\mathrm{time}}$ は二変量正規分布に従い，相関係数 $\rho$ を持つ．
+
+Type II Tobitモデルの重要な特徴は以下の点にある．
+\begin{description}
+  \item[異なる評価関数]
+    離散選択と連続選択にそれぞれ独立な説明変数とパラメータを設定できる．これにより，「活動の発生確率は高いが1回あたりの活動時間は短い」といった，離散・連続間の非対称な関係を自然に記述できる．
+  \item[誤差相関]
+    $\rho \neq 0$ のとき，離散問題と連続問題の誤差項に相関があり，活動実行の判断と活動時間の決定が共通の非観測要因によって結びつけられる．$\rho = 0$ かつ同一の評価関数を用いた場合，Type Iに帰着する．
+  \item[資源制約の不要]
+    構造型のように総時間制約 $\sum t_k = T$ を課す必要がなく，個々の活動の実行・時間決定を逐次的に記述できる．
+\end{description}
+
+\subsubsection{活動欲求を判別関数としたType II Tobitモデルの応用}\label{sssec:tobit_activity_needs}
+
+大山ら \cite{OyamaFukuyamaHato2014} は，Type II Tobitモデルの判別関数に\textbf{活動欲求}（Activity Needs）の概念を導入し，まちなかの回遊行動における活動発生メカニズムを分析した．
+
+このモデルでは，個人がまちなかに流入してから退出するまでの一連の活動を対象とし，活動欲求の「閾値」と「充足度」の差として活動発生を記述する．$n$ 回目の活動終了後の活動欲求 $V_{\mathrm{act}, n}$ は以下で定義される．
+\begin{equation}\label{eq:activity_needs}
+  V_{\mathrm{act}, n} = N^* - N_n, \quad
+  N_n = \sum_{t=1}^{n} \left( \beta_{\mathrm{act}} T_t + \sum_i \gamma_{ti} I_{ti} \right) + \sum_j \delta_{nj} s_{nj}
+\end{equation}
+ここで $N^*$ は活動欲求の閾値（個人属性・ツアー変数で決定），$N_n$ は $n$ 回の活動によって蓄積された充足度，$T_t$ は $t$ 回目の活動の滞在時間，$I_{ti}$ は活動履歴変数，$s_{nj}$ は空間特性変数である．
+$V_{\mathrm{act}, n} > 0$ であれば活動欲求が残存しており次の活動が発生し，$V_{\mathrm{act}, n} \leq 0$ であれば欲求が充足されて回遊が終了する．
+
+この活動欲求 $V_{\mathrm{act}, n}$ をType II Tobitモデルの判別関数として用いることで，以下のモデルが定式化される．
+\begin{align}
+  y^*_{\mathrm{act}}(n) &= V_{\mathrm{act}, n} + \epsilon_{\mathrm{act}} \label{eq:tobit2_needs_disc}\\
+  y^*_{\mathrm{time}}(n) &= \bm{\beta}_{\mathrm{time}}^\top \bm{x}_{\mathrm{time}, n} + \epsilon_{\mathrm{time}} \label{eq:tobit2_needs_cont}\\
+  y_{\mathrm{time}}(n) &= \begin{cases} y^*_{\mathrm{time}}(n), & \text{if } y^*_{\mathrm{act}}(n) > 0 \\ 0, & \text{if } y^*_{\mathrm{act}}(n) \leq 0 \end{cases} \label{eq:tobit2_needs_obs}
+\end{align}
+尤度関数は，誤差項に二変量正規分布を仮定して以下のように導出される．
+\begin{equation}\label{eq:tobit2_likelihood}
+  L = \prod_{y_{\mathrm{act}}=0} \bigl(1 - \Phi(V_{\mathrm{act},n})\bigr)
+  \times \prod_{y_{\mathrm{act}}>0} \left[ \frac{1}{\sigma} \phi\!\left(\frac{y_{\mathrm{time}} - \bm{\beta}_{\mathrm{time}}^\top \bm{x}}{\ \sigma\ }\right) \Phi\!\left(\frac{V_{\mathrm{act},n} + \sigma^{-1}\rho(y_{\mathrm{time}} - \bm{\beta}_{\mathrm{time}}^\top \bm{x})}{\sqrt{1-\rho^2}}\right) \right]
+\end{equation}
+ここで $\Phi(\cdot)$, $\phi(\cdot)$ はそれぞれ標準正規分布の分布関数と密度関数，$\sigma$ は $\epsilon_{\mathrm{time}}$ の標準偏差，$\rho$ は $\epsilon_{\mathrm{act}}$ と $\epsilon_{\mathrm{time}}$ の相関係数である．
+
+このモデルの特徴は，活動欲求の充足過程を判別関数に組み込むことで，\textbf{活動履歴が次の活動の発生確率に与える影響}と\textbf{活動時間の決定}を統一的に扱える点にある．
+推定の結果，買い物・娯楽活動の累積が次の活動発生を促進すること，主目的地（Main）での活動後に回遊が終了しやすいこと等が明らかにされた．
+
+\subsubsection{構造型と誘導型の対比}
+
+以上をまとめると，MDCEVモデルとType II Tobitモデルは表\ref{tab:mdcev_vs_tobit}のように対比される．
+
+\begin{table}[htb]
+\centering
+\caption{MDCEVモデルとType II Tobitモデルの比較}
+\label{tab:mdcev_vs_tobit}
+\begin{tabular}{l p{5.5cm} p{5.5cm}}
+\hline
+ & \textbf{MDCEV}（構造型） & \textbf{Type II Tobit}（誘導型） \\
+\hline
+理論的基盤 & KT条件に基づく効用最大化 & 統計モデルによる現象記述 \\
+評価関数 & 離散・連続に同一の効用関数 & 離散・連続に異なる関数を許容 \\
+資源制約 & $\sum t_k = T$ を明示的に課す & 資源制約を必要としない \\
+誤差分布 & ガンベル分布（閉じた形の確率） & 正規分布（二変量正規で相関を記述） \\
+Corner Solution & KT条件から内生的に導出 & 潜在変数の閾値構造で記述 \\
+活動間相互作用 & 飽和パラメータで間接的に表現 & 判別関数への履歴変数導入で直接表現可能 \\
+適用場面 & 複数活動の同時配分 & 逐次的な活動実行・時間決定 \\
+\hline
+\end{tabular}
+\end{table}
+
+どちらのモデルを採用すべきかは対象とする現象に依存する \cite{FukudaChikaraishi2013}．
+一般に，(a) 経済理論との整合性を重視し，資源制約下での配分問題として記述する場合にはKT条件に基づく構造型が，(b) 現象記述の自由度や観測の不完全性への対処を重視する場合には誘導型が適している．
+さらに，(c) 両系譜の特徴を折衷した折衷型モデルの構築も試みられており，構造型の理論的基盤と誘導型の記述の柔軟さを両立させる方向が模索されている．

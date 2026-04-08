@@ -1,0 +1,330 @@
+% 第3節 選択肢集合の困難とネットワーク型選択モデル
+%% chapters/behavior_modeling/ch3_choiceset.tex
+
+\section{選択肢非列挙型モデル}\label{sec:choiceset}
+本節では，選択肢集合の問題と選択肢非列挙型の経路選択モデルについて解説する．
+
+本節の構成は以下の通りである．
+まず\ref{ssec:choiceset_explosion}項で経路選択肢集合の爆発問題を示し，列挙型モデルの限界を説明する．
+次に\ref{ssec:recursive_logit}項で逐次的リンク選択に基づくRecursive Logit（RL）モデルとその一般化を導入する．
+\ref{ssec:time_structured_rl}項では，時間構造化ネットワークの導入によりサイクリック経路の扱いと動的計画法による効率的な求解が可能になることを示し，プリズム制約による選択肢集合の限定についても述べる．
+最後に\ref{ssec:purc}項で，摂動効用理論に基づくPerturbed Utility Route Choice（PURC）モデルを紹介し，RLモデルとの共役関係を論じる．
+
+\subsection{選択肢集合の爆発}\label{ssec:choiceset_explosion}
+経路選択肢集合は簡単に爆発する．
+例えばサイズ$n \times n$のグリッドネットワーク（図 \ref{fig:grid-paths}）における単純なODペアに対して，同じ点を2度通らないような単純経路の数は表 \ref{tab:simple-paths}のように $n$ に対して急激に増加する．
+MNLモデルのような選択肢集合を全て列挙してから一括で経路を選択するモデル（選択肢列挙型モデル）ではこのような爆発する選択肢集合を扱うことは明らかに困難である．
+これに対する対象法としてk番目の最短経路までを選択肢集合とする方法などが用いられてきたが，kの決め方は恣意的であるため，選択肢集合の定義の難しさは根本的な問題として残る．
+
+\begin{figure}[htb]
+  \centering
+  \resizebox{.4\linewidth}{!}{\input{assets/behavior_modeling/fig_grid_paths.tex}}
+  \caption{格子ネットワークと単純経路数の例.}
+  \label{fig:grid-paths}
+\end{figure}
+
+\begin{table}[tb]
+\centering
+\caption{格子ネットワークにおける単純経路数の爆発}
+\label{tab:simple-paths}
+\begin{tabular}{r r}
+\hline
+$n$ & 経路数 \\
+\hline
+1  & 2 \\
+2  & 12 \\
+3  & 184 \\
+4  & 8,512 \\
+5  & 1,262,816 \\
+6  & 575,780,564 \\
+7  & 789,360,053,252 \\
+8  & 3,266,598,486,981,640 \\
+9  & 41,044,208,702,632,496,804 \\
+10 & 1,568,758,030,464,750,013,214,100 \\
+11 & 182,413,291,514,248,049,241,470,885,236 \\
+12 & 64,528,039,343,270,018,963,357,185,158,482,118 \\
+13 & 69,450,664,761,521,361,664,274,701,548,907,358,996,488 \\
+14 & 227,449,714,676,812,739,631,826,459,327,989,863,387,613,323,440 \\
+15 & 2,266,745,568,862,672,746,374,567,396,713,098,934,866,324,885,408,319,028 \\
+\hline
+\end{tabular}
+\end{table}
+
+
+\subsection{動的離散選択モデルとRecursive Logitモデル}\label{ssec:recursive_logit}
+以降では選択対象を経路に絞り，経路選択モデルの文脈において議論する．
+経路列挙の困難さに対処するために，経路非列挙型の経路選択モデルが提案されてきた．
+その基本的な着想は，経路を一体的な選択肢として扱うのではなく，交差点ごとに次のリンクを逐次的に選択するマルコフ過程として表現することにある．
+\textbf{マルコフ性}とは，次の選択が現在の状態にのみ依存し，過去の選択 $y_0, y_1, \ldots, y_{t-1}$ には依存しないという性質であり，
+\begin{equation}
+  \text{Pr}(y_{t+1} | y_t, y_{t-1}, \ldots, y_0) = \text{Pr}(y_{t+1} | y_t)
+\end{equation}
+と表される．
+図\ref{fig:grid-paths}のようなネットワークでの経路選択をこのマルコフ連鎖モデルで表現すると，毎回の選択肢集合は高々隣接ノード数に限定されるため，選択肢集合の爆発を回避できる．
+現象論的には，毎交差点で次の進行方向を選択するような意思決定過程を記述したモデルと言える．
+
+しかしより現実的には，経路選択者は目の前の交差点における次のリンクだけでなく，目的地までの下流リンクの効用も考慮して経路を選択していると考えられる．
+この先読みを伴う逐次的な最適意思決定を定式化したモデルが，Fosgerau et al. (2013) \cite{Fosgerau2013} によるRecursive Logit（RL）モデルである．
+
+\subsubsection{Recursive Logitモデルの定式化}
+有向ネットワーク $\mathcal{G} = (\mathcal{A}, \mathcal{N})$（$\mathcal{A}$: リンク集合，$\mathcal{N}$: ノード集合）を考える．
+RLモデルでは，経路 $\sigma = [a_1, \ldots, a_J]$ の選択確率を，マルコフ性の仮定のもとでリンク遷移確率の積として表す．
+\begin{equation}\label{eq:rl-path}
+  \mathbb{P}(\sigma = [a_1, \ldots, a_J]) = \prod_{j=1}^{J-1} p(a_{j+1} \mid a_j)
+\end{equation}
+各リンク遷移において，リンク $k$ にいるドライバーは接続リンク集合 $\mathcal{A}(k)$ から次のリンク $a$ を選択する．
+このとき，リンク間遷移に関する直接的な効用（遷移効用）$v(a \mid k; \theta)$ と，リンク $a$ から目的地 $d$ までの最大期待効用 $V^d(a)$（価値関数）の和を最大化する．
+価値関数 $V^d$ は以下のBellman方程式で定式化される．
+\begin{equation}\label{eq:rl-bellman}
+  V^d(k) = \mathbb{E}\left[\max_{a \in \mathcal{A}(k)} \left\{ v(a \mid k; \theta) + V^d(a) + \mu \varepsilon(a) \right\} \right], \quad \forall k \in \mathcal{A}
+\end{equation}
+ここで $v(a \mid k; \theta) = \bm{\theta}^\top \bm{x}_{a \mid k}$ は遷移効用の確定項（$\bm{x}_{a \mid k}$: リンクの組 $(k,a)$ の属性変数ベクトル，$\bm{\theta}$: 推定パラメータベクトル），$\varepsilon$ は平均 0 の i.i.d. ガンベル分布に従う誤差項である．
+目的地リンク $d$ は後続リンクを持たないため $V^d(d) = 0$ とする．
+
+誤差項にガンベル分布を仮定しているため，前節までと同様のLogit構造が得られ，リンク $k$ からリンク $a$ への遷移確率はMNL型の式で記述される．
+\begin{equation}\label{eq:rl-linkprob}
+  p(a \mid k) = \frac{\exp\bigl(\frac{1}{\mu}\{v(a \mid k; \theta) + V^d(a)\}\bigr)}{\displaystyle\sum_{a' \in \mathcal{A}(k)} \exp\bigl(\frac{1}{\mu}\{v(a' \mid k; \theta) + V^d(a')\}\bigr)}
+\end{equation}
+また，ガンベル分布の最大値の性質（ログサムの構造）により，式(\ref{eq:rl-bellman})の価値関数は以下のように変形できる．
+\begin{equation}\label{eq:rl-value-logsum}
+  V^d(k) = \begin{cases}
+    \mu \ln \displaystyle\sum_{a \in \mathcal{A}(k)} \exp\bigl(\frac{1}{\mu}\{v(a \mid k; \theta) + V^d(a)\}\bigr), & k \neq d \\
+    0, & k = d
+  \end{cases}
+\end{equation}
+これは第2節で導入したログサム変数と同じ構造であり，ネスト内の選択肢の「魅力度」を集約する操作が，ここでは下流リンク群の期待効用の集約として再帰的に適用されている．
+
+\subsubsection{価値関数の行列表現と求解}
+リンク選択確率の計算には式(\ref{eq:rl-value-logsum})の価値関数を求解する必要がある．
+式(\ref{eq:rl-value-logsum})の両辺に指数関数を取り $z_k = e^{V^d(k)/\mu}$ とおくと，以下の行列表現が得られる．
+\begin{equation}\label{eq:rl-matrix}
+  \bm{z} = \bm{M}\bm{z} + \bm{b}
+\end{equation}
+ここで $\bm{M}$（$|\mathcal{A}| \times |\mathcal{A}|$）の各要素は $M_{ka} = \delta(a \mid k) \exp\bigl(\frac{1}{\mu} v(a \mid k; \theta)\bigr)$ であり，$\delta(a \mid k)$ は $a \in \mathcal{A}(k)$ のとき 1，それ以外で 0 となる接続条件の指示変数である．
+$\bm{b}$ は目的地リンクに対応する要素のみ 1，それ以外は 0 のベクトルである．
+式(\ref{eq:rl-matrix})は連立一次方程式であり，反復計算によって価値関数を求めることができる．
+
+\subsubsection{RLモデルの意義と一般化}
+RLモデルは，将来期待効用である価値関数をリンク効用に加えることで，逐次的な判断と先読み行動を同一の枠組みで記述するモデルである．
+ただし，標準的なRLモデルでは価値関数 $V^d$ と遷移効用 $v$ を等価な重みで評価するため，選択確率はプレトリップ型のMNL経路選択モデルと一致することが知られている．
+すなわち，ネットワーク全域のリンク効用を大局的に認知・評価可能な状態での先読み行動を表しており，習慣的なドライバーの経路選択行動しか記述できない．
+
+Oyama and Hato (2017) \cite{Oyama2017dRLeng} はこの点に着目し，将来期待効用に空間割引率 $\beta$（$0 \leq \beta \leq 1$）を導入した一般化RLモデルを提案した．
+Bellman方程式は以下のように拡張される．
+\begin{equation}\label{eq:grl-bellman}
+  V^d(k) = \mathbb{E}\left[\max_{a \in \mathcal{A}(k)} \left\{ v(a \mid k; \theta) + \beta V^d(a) + \mu \varepsilon(a) \right\} \right]
+\end{equation}
+$\beta = 1$ のとき標準的なRLモデル（大局的な意思決定）に一致し，$\beta = 0$ のときドライバーは直近の遷移効用 $v$ のみに基づいて近視眼的にリンクを選択する．
+$0 < \beta < 1$ では両者の中間的な意思決定を表現でき，$\beta$ を推定することで意思決定の動学性を定量的に把握できる．
+\subsection{時間構造化ネットワークとRecursive Logit}\label{ssec:time_structured_rl}
+前節のRLモデルは強力な枠組みであるが，標準的な空間ネットワーク上の定式化にはいくつかの実用上の課題がある．
+第一に，ネットワークにサイクリック構造（同じノードを再訪する経路）が存在する場合，価値関数の求解が困難になる．
+式(\ref{eq:rl-matrix})の行列 $\bm{M}$ のスペクトル半径が1以上となると，連立方程式の解が発散し得るからである．
+第二に，出発地と目的地が同じ回遊行動や，途中で立ち寄りを伴う経路など，サイクルを含む現実的な行動パターンを扱えない．
+第三に，時間帯による施設の利用可能性（店舗の営業時間など）や，時間制約のもとでの意思決定を明示的にモデルに組み込むことができない．
+
+これらの問題を根本的に解決するのが，\textbf{時間構造化ネットワーク}（time-structured network）の導入である \cite{OyamaHato2016, Oyama2019}．
+
+\subsubsection{時間構造化ネットワークの定義}
+時間構造化ネットワークとは，空間ネットワークに離散時間軸を加えて展開したネットワークである．
+空間集合 $\mathcal{A}$（ノードまたはリンク）と離散時点 $t = 0, 1, \ldots, T$ に対し，時間構造化ネットワーク $\mathcal{G}^{\mathrm{TS}} = (\mathcal{S}, \mathcal{E})$ を定義する．
+ここで $\mathcal{S}$ は\textbf{状態}（state）の集合であり，各状態は時点と空間位置の組 $s_t = (t, a)$（$a \in \mathcal{A}$）で表される．
+$\mathcal{E}$ はアーク（状態間の遷移）の集合であり，$e_t = (s_t, s_{t+1})$ の形をとる．$T$ は時間制約（終了時点）を表す．
+
+時間構造化ネットワーク上の経路は，状態の系列 $\psi = [s_0, s_1, \ldots, s_T]$ として記述される．
+ここで重要な性質は，各状態が時点 $t$ を含むため，\textbf{いかなる経路においても同一の状態を2度以上通ることがない}という点である．
+すなわち，空間的には同じノードを複数回訪れるサイクリック経路（回遊行動）を表現できる一方で，時間構造化ネットワーク自体にはサイクリック構造が存在しない（図\ref{fig:time-structured-network}）．
+
+\begin{figure}[htb]
+  \centering
+  \begin{tikzpicture}[scale=0.75, every node/.style={font=\small}]
+    % 空間ネットワーク（下部）
+    \node[draw, circle, fill=gray!20, minimum size=6mm] (A) at (0, 0) {$a$};
+    \node[draw, circle, minimum size=6mm] (B) at (3, 0) {$b$};
+    \node[draw, circle, minimum size=6mm] (C) at (6, 0) {$c$};
+    \draw[->, thick] (A) -- (B);
+    \draw[->, thick] (B) -- (C);
+    \draw[->, thick] (B) to[bend left=30] (A);
+    \draw[->, thick] (C) to[bend left=30] (B);
+    \node at (3, -1.2) {(A) 空間ネットワーク（サイクルあり）};
+
+    % 時間構造化ネットワーク（右部）
+    \begin{scope}[xshift=9cm]
+      \foreach \t in {0,1,2,3} {
+        \node at (-1.5, \t*1.5) {$t=\t$};
+      }
+      \foreach \t in {0,1,2,3} {
+        \node[draw, circle, fill=gray!20, minimum size=5mm] (a\t) at (0, \t*1.5) {\tiny $a$};
+        \node[draw, circle, minimum size=5mm] (b\t) at (2.5, \t*1.5) {\tiny $b$};
+        \node[draw, circle, minimum size=5mm] (c\t) at (5, \t*1.5) {\tiny $c$};
+      }
+      % 遷移アーク（下から上へ）
+      \foreach \t/\tnext in {0/1,1/2,2/3} {
+        \draw[->, gray!50] (a\t) -- (a\tnext);
+        \draw[->, gray!50] (b\t) -- (b\tnext);
+        \draw[->, gray!50] (c\t) -- (c\tnext);
+        \draw[->] (a\t) -- (b\tnext);
+        \draw[->] (b\t) -- (c\tnext);
+        \draw[->] (b\t) -- (a\tnext);
+        \draw[->] (c\t) -- (b\tnext);
+      }
+      % 例示経路を強調
+      \draw[->, red, very thick] (a0) -- (b1);
+      \draw[->, red, very thick] (b1) -- (c2);
+      \draw[->, red, very thick] (c2) -- (b3);
+      \node at (2.5, -1.2) {(B) 時間構造化ネットワーク（DAG）};
+    \end{scope}
+  \end{tikzpicture}
+  \caption{空間ネットワークと時間構造化ネットワーク．(A)では $a \to b \to a$ のようなサイクルが存在するが，(B)では時間軸の展開によりサイクルが除去される．赤線は活動経路 $[a, b, c, b]$ の例（$t=2$で$c$を訪問後，$t=3$で$b$に戻る）．}
+  \label{fig:time-structured-network}
+\end{figure}
+
+\subsubsection{プリズム制約による選択肢集合の限定}\label{sec:prism}
+時間構造化ネットワークのもう一つの重要な特徴は，\textbf{時空間プリズム制約}（time-space prism constraint）を自然に組み込めることである．
+時空間プリズムとは，H\"{a}gerstrand (1970) によって提唱された概念であり，起点 $o$ から出発して終点 $d$ に時刻 $T$ までに到着するという制約のもとで，個人が到達可能な時空間領域を表す．
+
+具体的には，起点 $o$ から状態 $a$ までの最小ステップ数 $D^o(a)$ と，$a$ から終点 $d$ までの最小ステップ数 $D^d(a)$ を用いて，時点 $t$ における状態 $a$ の\textbf{到達可能性}を指示変数 $I_t(a)$ で定義する．
+\begin{equation}\label{eq:prism-indicator}
+  I_t(a) = \begin{cases} 1, & \text{if } D^o(a) \leq t \text{ かつ } D^d(a) \leq T - t \\ 0, & \text{otherwise} \end{cases}
+\end{equation}
+すなわち，時間制約 $T$ のもとで $o$ を出発して $d$ に帰着可能な場合にのみ $I_t(a) = 1$ となる．
+さらに，状態 $s_t = a$ から $s_{t+1} = a'$ への遷移の存在条件は次のように書ける．
+\begin{equation}\label{eq:prism-transition}
+  \Delta_t(a' \mid a) = I_t(a) \cdot \delta(a' \mid a) \cdot I_{t+1}(a')
+\end{equation}
+$\Delta_t(a' \mid a) = 1$ のときのみ遷移が許容される．この制約により，到達不可能な状態が事前に除去され，計算対象となるネットワークの規模が大幅に削減される．
+
+プリズム制約の利点は，物理的に到達不可能な状態を排除するだけでなく，以下のような現実的な制約を統一的に表現できる点にある．
+\begin{description}
+  \item[バンドル制約] 特定の時間帯に特定の場所に滞在しなければならない制約（例：会議への出席）を表現する．中間地点の通過条件を追加すれば，プリズムを分割して複数区間の制約を課すことができる．
+  \item[ドメイン制約] 特定の時空間領域への立入りを禁止する制約（例：店舗の閉店時間帯にその店舗状態への遷移を不許容とする）を表現する．$I_t(a) = 0$ と設定するだけで実装できる．
+\end{description}
+
+\subsubsection{時間構造化ネットワーク上のRecursive Logit}
+時間構造化ネットワーク上では，RLモデルのBellman方程式を以下のように再定式化する．状態 $s_t = a$ における価値関数 $V_t(a)$ は，
+\begin{equation}\label{eq:tsrl-bellman}
+  V_t(a) = \mathbb{E}\left[\max_{a' \in \mathcal{A}_t(a)} \left\{ v_t(a' \mid a) + \beta V_{t+1}(a') + \mu \varepsilon_{t+1}(a') \right\} \right]
+\end{equation}
+ここで $\mathcal{A}_t(a) = \{a' \in \mathcal{A} \mid \Delta_t(a' \mid a) = 1\}$ はプリズム制約を満たす遷移先の集合，$\beta$（$0 \leq \beta \leq 1$）は時間割引率である．
+前節と同様にガンベル分布の仮定のもとで，遷移確率はMNL型となる．
+\begin{equation}\label{eq:tsrl-prob}
+  p_t(a' \mid a) = \frac{\exp\bigl(\frac{1}{\mu}\{v_t(a' \mid a) + \beta V_{t+1}(a')\}\bigr)}{\displaystyle\sum_{a'' \in \mathcal{A}_t(a)} \exp\bigl(\frac{1}{\mu}\{v_t(a'' \mid a) + \beta V_{t+1}(a'')\}\bigr)}
+\end{equation}
+価値関数のログサム表現は以下のようになる．
+\begin{equation}\label{eq:tsrl-logsum}
+  V_t(a) = \begin{cases}
+    \mu \ln \displaystyle\sum_{a' \in \mathcal{A}} \Delta_t(a' \mid a) \exp\bigl(\frac{1}{\mu}\{v_t(a' \mid a) + \beta V_{t+1}(a')\}\bigr), & t \neq T \text{ かつ } a \neq d \\
+    0, & t = T \text{ または } a = d
+  \end{cases}
+\end{equation}
+活動経路 $\psi = [s_0, \ldots, s_T]$ の選択確率は，各時点の遷移確率の積として $p(\psi) = \prod_{t=0}^{T-1} p_t(a_{t+1} \mid a_t)$ で与えられる．
+
+\subsubsection{動的計画法による求解}
+時間構造化ネットワーク上のRLモデルの最大の計算上の利点は，価値関数の求解が\textbf{動的計画法}（Dynamic Programming; DP）による単純な後ろ向き帰納法で完結する点にある．
+
+標準的な空間ネットワーク上のRLモデルでは，ネットワークにサイクリック構造が含まれるため，式(\ref{eq:rl-matrix})の連立方程式を逆行列計算や反復法で解く必要があった．
+しかし時間構造化ネットワークでは，時間軸の導入によりネットワークが有向非巡回グラフ（DAG: Directed Acyclic Graph）となるため，終了時点 $T$ から初期時点 $0$ に向かって式(\ref{eq:tsrl-logsum})を順次適用するだけで全ての価値関数が確定する．
+
+具体的なアルゴリズムは以下の通りである．
+\begin{enumerate}
+  \item \textbf{初期化:} $V_T(a) = 0$（$\forall a \in \mathcal{A}$）とする．
+  \item \textbf{後ろ向き計算:} $t = T-1, T-2, \ldots, 0$ の順に，式(\ref{eq:tsrl-logsum})を用いて各状態の価値関数 $V_t(a)$ を計算する．
+  \item \textbf{遷移確率の計算:} 得られた価値関数を式(\ref{eq:tsrl-prob})に代入し，各時点の遷移確率を求める．
+\end{enumerate}
+この後ろ向き帰納法の計算量は $O(T \cdot |\mathcal{A}|^2)$ であり，反復計算や収束判定が不要なため，実装も容易である．
+
+\subsubsection{時間構造化の意義のまとめ}
+以上をまとめると，時間構造化ネットワークの導入には以下の利点がある．
+\begin{enumerate}
+  \item \textbf{サイクリック経路の扱い:} 空間的なサイクル（回遊行動）を保持しつつ，ネットワーク構造としてはDAGとなるため，価値関数の求解が保証される．
+  \item \textbf{DPによる効率的な求解:} 反復計算や逆行列計算が不要となり，後ろ向き帰納法で厳密に解ける．
+  \item \textbf{時空間制約の明示的な導入:} プリズム制約・バンドル制約・ドメイン制約を指示変数 $I_t(a)$ の設定だけで柔軟に表現できる．
+  \item \textbf{時間依存の効用・パラメータ:} 遷移効用 $v_t$ や割引率 $\beta$ を時点に依存させることで，時間帯による行動変化や営業時間制約を自然に反映できる．
+\end{enumerate}
+
+
+\subsection{摂動効用型経路選択モデル}\label{ssec:purc}
+前節のRecursive Logitモデルは，ARUMの枠組みの中でBellman方程式を用いて経路列挙を回避するアプローチであった．
+本項では，冒頭で導入したもう一つの理論的系譜である摂動効用理論の観点から選択肢非列挙型の経路選択問題にアプローチするモデルを紹介する．
+
+\subsubsection{摂動効用理論の再訪：経路選択への動機}
+冒頭3.1章で述べたように，Logitモデルの選択確率は二つの共役な問題から導出される．
+ARUMでは個人の効用に確率的な誤差項（ガンベル分布）を加え，効用最大の選択肢が選ばれる確率を求める．
+一方，摂動効用理論では，需要ベクトル $\bm{p}$（各選択肢の選択確率）に対する直接効用関数
+\begin{equation}
+  \max_{\bm{p} \in \Delta} \left\{ \sum_{j} p_j V_j + G^\bullet(\bm{p}) \right\}
+\end{equation}
+を最適化する（$\Delta$ は単位シンプレックス，$G^\bullet$ は正則化項）．
+正則化項に修正版Shannon entropy $G^\bullet(\bm{p}) = -\frac{1}{\mu}\sum_j p_j \ln p_j - p_j$ を用いれば，最適解としてLogit選択確率が得られる．
+
+この二つのアプローチは，離散選択肢が少数かつ明示的に列挙可能な場合にはどちらも同じ結果を与える．
+しかし経路選択のように選択肢集合が膨大な場合，両者の実用上の違いが際立つ．
+ARUMでは各選択肢（経路）の効用を個別に評価する必要があるため，何らかの形で経路の列挙または再帰的構造（RLモデル）が必要となる．
+これに対し摂動効用理論では，最適化問題の決定変数を経路ではなくリンクフローとして定式化できるため，経路の列挙自体が不要となる．
+
+\subsubsection{Perturbed Utility Route Choice（PURC）モデル}
+Fosgerau et al. (2022) \cite{fosgerau2022perturbed}はこの着想を経路選択問題に適用し，\textbf{Perturbed Utility Route Choice}（PURC）モデルを提案した．
+
+\paragraph{定式化}
+有向ネットワーク $\mathcal{G} = (\mathcal{A}, \mathcal{N})$ 上で起点 $o$ から終点 $d$ への経路選択を考える．
+PURCモデルでは，経路の選択確率を直接求めるのではなく，リンクフローベクトル $\bm{x} = (x_a)_{a \in \mathcal{A}}$ を決定変数とする以下の最適化問題を解く．
+\begin{equation}\label{eq:purc}
+  \max_{\bm{x} \geq \bm{0}} \left\{ \sum_{a \in \mathcal{A}} v_a x_a + G^\bullet(\bm{x}) \right\} \quad \text{s.t.} \quad \bm{A}\bm{x} = \bm{b}
+\end{equation}
+ここで $v_a$ はリンク $a$ の効用，$G^\bullet(\bm{x})$ は正則化項（摂動項），$\bm{A}$ はノード・リンク接続行列，$\bm{b}$ は各ノードでの外生的な流入出量を表すベクトル（起点 $o$ で $+1$，終点 $d$ で $-1$，他は $0$）であり，$\bm{A}\bm{x} = \bm{b}$ はフロー保存制約（各ノードでの流入量と流出量の均衡）を表す．
+
+この定式化の本質は，\textbf{経路空間上の最適化をフロー保存制約付きのリンク空間上の最適化に変換}している点にある．
+リンクの数はネットワーク規模に対して線形（$|\mathcal{A}|$）に増加するのに対し，経路の数は指数的に爆発するため，この変換により計算量が劇的に削減される．
+
+\paragraph{正則化項と選択モデルの対応}
+正則化項 $G^\bullet$ の形状が，PURCモデルが表現する選択モデルの構造を規定する．
+
+Shannon entropy型の正則化項
+\begin{equation}\label{eq:purc_entropy}
+  G^\bullet(\bm{x}) = -\mu \sum_{a \in \mathcal{A}} (x_a \ln x_a - x_a)
+\end{equation}
+を用いた場合，式(\ref{eq:purc})の最適解として得られるリンクフローは\textbf{Logit型の経路選択確率}と整合的になることが示されている．
+直感的には，この正則化項はフローの集中を抑制する効果を持ち，効用の高い経路にフローが偏りつつも，それ以外の経路にも確率的にフローが配分される状況を生む．これはまさにLogitモデルの「確率的選択」に対応する．
+
+さらに $G^\bullet$ の形状を変えることで，Logit以外の選択モデルも表現できる．
+例えばNested Logit型の相関構造や，PSL（Path Size Logit）型の経路重複補正も，適切な正則化項の設計によって実現可能である．
+このように，$G^\bullet$ の選択がモデルの行動仮説を規定するという構造は，ARUMにおける誤差項の分布仮定に対応する「摂動効用側の設計自由度」であるといえる．
+
+\paragraph{解法：双対問題とノードポテンシャル}
+PURCモデルのもう一つの重要な特徴は，その\textbf{解法が最適化問題の双対構造}から自然に導かれる点にある．
+
+式(\ref{eq:purc})のラグランジュ関数を書き下すと，フロー保存制約に対するラグランジュ乗数 $\bm{\lambda} = (\lambda_n)_{n \in \mathcal{N}}$ が導入される．
+\begin{equation}\label{eq:purc_lagrangian}
+  \mathcal{L}(\bm{x}, \bm{\lambda}) = \sum_{a \in \mathcal{A}} v_a x_a + G^\bullet(\bm{x}) + \bm{\lambda}^\top (\bm{b} - \bm{A}\bm{x})
+\end{equation}
+KKT条件（$\partial \mathcal{L} / \partial x_a = 0$ for $x_a > 0$）を適用すると，最適フローは各リンクの効用 $v_a$ とラグランジュ乗数の差分によって陽に表現される．
+
+Shannon entropy型の正則化項の場合，KKT条件から最適リンクフローは
+\begin{equation}\label{eq:purc_optimal_flow}
+  x_a^* = \exp\!\left(\frac{v_a + \lambda_{h(a)} - \lambda_{t(a)}}{\mu}\right)
+\end{equation}
+と求まる．ここで $h(a)$, $t(a)$ はリンク $a$ の始点・終点ノードである．
+$\lambda_n$ は各ノードにおける\textbf{ポテンシャル}（RLモデルにおける価値関数に相当）と解釈でき，フロー保存制約 $\bm{A}\bm{x}^* = \bm{b}$ に式(\ref{eq:purc_optimal_flow})を代入することで，ノードポテンシャルに関する非線形連立方程式が得られる．
+
+この連立方程式を解くことで全てのリンクフローが確定し，経路の列挙も再帰的な価値関数の後ろ向き計算も必要としない．
+RLモデルが各リンクで逐次的に価値関数を計算するのに対し，PURCモデルはネットワーク全体のフロー配分を一括的な最適化問題として解く点が本質的な違いである．
+
+\subsubsection{RLモデルとPURCモデルの対比}
+以上をまとめると，経路非列挙型モデルとして二つの異なるアプローチが存在する．
+
+\begin{description}
+  \item[Recursive Logitモデル（ARUM側）]
+    経路選択を逐次的なリンク選択のマルコフ過程として表現し，Bellman方程式の再帰構造によって経路列挙を回避する．
+    定式化にはガンベル分布の誤差項が現れ，価値関数の求解が必要となる．
+    個々の経路の選択確率が遷移確率の積として得られるため，経路レベルの行動分析に適している．
+
+  \item[PURCモデル（摂動効用側）]
+    経路選択をリンクフロー空間上の正則化付き最適化問題として定式化し，フロー保存制約のもとで解く．
+    誤差項の分布を仮定する代わりに正則化項の形状によってモデルが特徴づけられ，経路の列挙も再帰的な価値関数の計算も必要としない．
+    ネットワーク全体のフロー配分を凸最適化問題として一括的に求めるため，均衡配分問題や最適課金問題など，ネットワーク設計への応用に適している．
+\end{description}
+
+両者は理論的には共役関係にあり，Shannon entropy型の正則化項のもとで同一の選択確率（Logit型）を導く．
+RLモデルのノードごとの価値関数はPURCモデルのノードポテンシャル（ラグランジュ乗数）に対応し，両者の計算結果は等価である．
+しかし，計算構造が根本的に異なるため，応用場面に応じた使い分けが可能である．
+具体的には，RLモデルは個人の経路選択確率の計算やパラメータ推定に向いており，PURCモデルはネットワーク均衡配分や施策最適化（例：最適課金問題の定式化）において最適化問題としての構造が活用しやすいという利点がある．

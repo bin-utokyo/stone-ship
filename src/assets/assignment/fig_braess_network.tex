@@ -1,0 +1,87 @@
+%% fig_braess_network.tex
+%% Braessパラドックス — 典型的ネットワーク図（追加前・追加後の2パネル）
+%% Usage: \input{assets/assignment/fig_braess_network.tex}
+%%
+%% ネットワーク設定（OD交通量 q_{ST}=6）
+%%   リンク1: S->A, t_1=10x_1  リンク2: A->T, t_2=50
+%%   リンク3: S->B, t_3=50     リンク4: B->T, t_4=10x_4
+%%   リンク5: A->B, t_5=10 （新設，破線）
+%% 追加前UE: x1=x4=3, 旅行時間 = 80分
+%% 追加後UE: (x1,x2,x3,x4,x5)=(4,2,2,4,2), 旅行時間 = 90分
+
+\begin{tikzpicture}[
+  every node/.style={font=\small},
+  nd/.style={circle, draw, thick, minimum size=0.78cm,
+             font=\small\bfseries, inner sep=1pt, fill=white},
+  arr/.style={->, >=stealth, thick},
+  newarr/.style={->, >=stealth, thick, dashed},
+  lbl/.style={font=\footnotesize, fill=white, inner sep=1pt}
+]
+
+%% ===== (a) リンク5 追加前 =====
+\begin{scope}[xshift=0cm]
+  \node[nd] (Sa) at (0,   0  ) {$S$};
+  \node[nd] (Aa) at (2.5, 1.4) {$A$};
+  \node[nd] (Ba) at (2.5,-1.4) {$B$};
+  \node[nd] (Ta) at (5,   0  ) {$T$};
+
+  \draw[arr] (Sa) -- node[lbl, above, sloped] {$t_1\!=\!10x_1$} (Aa);
+  \draw[arr] (Aa) -- node[lbl, above, sloped] {$t_2\!=\!50$}    (Ta);
+  \draw[arr] (Sa) -- node[lbl, below, sloped] {$t_3\!=\!50$}    (Ba);
+  \draw[arr] (Ba) -- node[lbl, below, sloped] {$t_4\!=\!10x_4$} (Ta);
+
+  %% リンク番号
+  \node[font=\scriptsize, gray] at (1.0, 1.2)  {リンク1};
+  \node[font=\scriptsize, gray] at (4.0, 1.2)  {リンク2};
+  \node[font=\scriptsize, gray] at (1.0,-1.2)  {リンク3};
+  \node[font=\scriptsize, gray] at (4.0,-1.2)  {リンク4};
+
+  %% 均衡リンク交通量
+  \node[font=\scriptsize] at (1.5, 0.5) {$x_1\!=\!3$};
+  \node[font=\scriptsize] at (3.5, 0.5) {$x_2\!=\!3$};
+  \node[font=\scriptsize] at (1.5,-0.5) {$x_3\!=\!3$};
+  \node[font=\scriptsize] at (3.5,-0.5) {$x_4\!=\!3$};
+
+  \node[font=\small, align=center] at (2.5,-2.3)
+    {(a)~リンク5 追加\textbf{前}\\[2pt]
+     UE旅行時間：$10\!\times\!3+50=\mathbf{80}$分};
+\end{scope}
+
+%% ===== (a)->(b) の矢印 =====
+\draw[->, >=stealth, very thick]
+    (5.6, 0) -- node[above, font=\footnotesize, align=center]
+    {リンク5\\追加} (6.6, 0);
+
+%% ===== (b) リンク5 追加後 =====
+\begin{scope}[xshift=7.2cm]
+  \node[nd] (Sb) at (0,   0  ) {$S$};
+  \node[nd] (Ab) at (2.5, 1.4) {$A$};
+  \node[nd] (Bb) at (2.5,-1.4) {$B$};
+  \node[nd] (Tb) at (5,   0  ) {$T$};
+
+  \draw[arr]    (Sb) -- node[lbl, above, sloped] {$t_1\!=\!10x_1$} (Ab);
+  \draw[arr]    (Ab) -- node[lbl, above, sloped] {$t_2\!=\!50$}    (Tb);
+  \draw[arr]    (Sb) -- node[lbl, below, sloped] {$t_3\!=\!50$}    (Bb);
+  \draw[arr]    (Bb) -- node[lbl, below, sloped] {$t_4\!=\!10x_4$} (Tb);
+  \draw[newarr] (Ab) -- node[lbl, right] {$t_5\!=\!10$} (Bb);
+
+  %% リンク番号
+  \node[font=\scriptsize, gray] at (1.0, 1.2)  {リンク1};
+  \node[font=\scriptsize, gray] at (4.0, 1.2)  {リンク2};
+  \node[font=\scriptsize, gray] at (1.0,-1.2)  {リンク3};
+  \node[font=\scriptsize, gray] at (4.0,-1.2)  {リンク4};
+  \node[font=\scriptsize, gray] at (2.5, -0.8)  {リンク5};
+
+  %% 均衡リンク交通量
+  \node[font=\scriptsize] at (1.5, 0.5) {$x_1\!=\!4$};
+  \node[font=\scriptsize] at (3.5, 0.5) {$x_2\!=\!2$};
+  \node[font=\scriptsize] at (1.5,-0.5) {$x_3\!=\!2$};
+  \node[font=\scriptsize] at (3.5,-0.5) {$x_4\!=\!4$};
+  \node[font=\scriptsize] at (2.95, 0.21)  {$x_5\!=\!2$};
+
+  \node[font=\small, align=center] at (2.5,-2.3)
+    {(b)~リンク5 追加\textbf{後}\\[2pt]
+     UE旅行時間：$10\!\times\!4+50=\mathbf{90}$分（悪化）};
+\end{scope}
+
+\end{tikzpicture}

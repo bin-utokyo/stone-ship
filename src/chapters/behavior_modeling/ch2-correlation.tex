@@ -1,0 +1,146 @@
+%% chapters/behavior_modeling/ch2_correlation.tex
+%% 第2章　相関・異質性
+\section{MNLからの拡張: 相関・異質性}\label{sec:correlation}
+本節では，前節で導入したMNLモデルからの拡張として，選択肢間の相関や意思決定主体間の異質性を考慮したモデルを解説する．
+
+本節の構成は以下の通りである．
+まず\ref{ssec:iia_limit}項でMNLモデルのIIA特性がもたらす限界を赤バス・青バス問題を通じて示す．
+次に\ref{ssec:nested_logit}項で選択肢間の相関を部分的に許容するNested Logitモデルを導入し，
+\ref{ssec:mixed_logit}項で個人間の異質性を表現するMixed Logitモデルを解説する．
+
+\subsection{IIAの限界}\label{ssec:iia_limit}
+IIA（Independence of Irrelevant Alternatives）特性は直訳すると「無関係な選択肢との独立性」となるが，具体的には「任意の二つの選択肢の間の選択確率の比はその二つの選択肢の効用のみによって決まる」という性質のことである．
+例えば選択肢 $a$ と $b$ の間の選択確率の比は，以下の様に選択肢 $a$ と $b$ の効用のみによって決まる．
+\begin{equation}
+  \frac{P(a)}{P(b)} = \frac{\frac{\exp(V_a)}{Z}}{\frac{\exp(V_b)}{Z}} = \exp(V_a - V_b)
+\end{equation}
+ただし $Z = \sum_{a'} \exp(V_{a'})$ である．
+つまり選択肢 $a$, $b$ いづれとも異なる第三の選択肢 $c$ の効用 $V_c$ はこの比に影響を与えない．
+このIIA特性は，各選択肢効用の誤差項が独立であるとするi.i.d.の仮定に起因するものであり，MNLモデルの重要な特徴である．
+
+しかしながら選択肢間の相関，より厳密には誤差項の間に相関が存在する場合にはこのIIA特性が崩れる．
+代表的な例として次の\textbf{赤バス・青バス問題}が知られている．
+
+\begin{itembox}[l]{赤バス青バス問題}
+    「車」「赤バス」の二つの選択肢から選ぶ二項ロジットモデルにおいて，効用の確定部分が全く同じであれば両者の選択確率は $1/2, 1/2$ となる．
+    ここに「青バス」という選択肢を加えたとき，青バスの確定効用も他の二つの選択肢の確定効用と等しい場合，三つの選択肢の選択確率は $1/3, 1/3, 1/3$ となる．
+    ところが，色違いのバスが登場しただけでもともと車を利用していた人の三分の一もがバスに転移するのは不自然である．
+\end{itembox}
+
+この問題は，車と赤バスの選択確率の比が青バスの有無によらず $1:1$ であるというIIA特性によって生じる問題である．
+より根本的には，交通手段選択の文脈において暗に公共交通機関と自家用車という比較構造を上位に仮定する場合は，赤バスと青バスの効用の誤差項が独立であるというi.i.d.の仮定が現実には成立しないことに起因する．
+赤バス・青バスはともに車と比べて公共交通という性質を共有している点で類似した選択肢であるため，両者の効用の誤差項は相関していると考えるのが自然である．
+こうした選択肢間の相関を考慮するためには，\textbf{Nested Logit モデル}などのより発展的なモデルを用いる必要がある．
+
+
+\subsection{Nested Logitモデル}\label{ssec:nested_logit}
+上述した誤差項の相関に起因するIIA特性の限界を克服するためのモデルの一つがNested Logit（NL）モデル（Ben-Akiva, 1973）である．
+NLモデルでは，誤差項が互いに相関関係にある選択肢同士を\textbf{ネスト}（グループ）にまとめることで，一部の選択肢間に相関がある場合でも多項選択を記述可能にしている．
+例えば先の赤バス・青バス問題においては，公共交通という性質を共有する赤バスと青バスを同一のネストにまとめることができる．
+この時，車と公共交通という誤差項が相関しない（と仮定できる）二つの選択肢を上位ネスト，赤バスと青バスという誤差項が相関する二つの選択肢を下位ネストに配置する二層のツリー構造を考えることができる．
+
+より一般化して，上位ネストの選択肢を $d$、下位ネストの選択肢を $i$ として選択肢 $(d,i)$ の効用は以下のように定義される．
+\begin{equation}
+  U_{di} = V_d + V_i + V_{di} + \epsilon_d + \epsilon_{di}
+\end{equation}
+ここで，$V_d, V_i$ はそれぞれ選択肢 $d, i$ に固有の効用の確定部分，$V_{di}$ は $d, i$ の組合せで決まる効用の確定部分である．
+$\epsilon_{di}$ は $d, i$ の組合せで決まる効用の誤差項であり，スケールパラメータ $\mu$ のi.i.d. ガンベル分布に従うと仮定する．
+
+$\epsilon_d$ は選択肢 $d$ に固有の効用の誤差項であり，下位ネストの選択肢間で共通に持つ成分を表す．
+赤バス・青バス問題の例では，二つのバス間の誤差項のうち相関する部分が $\epsilon_d$ に吸収され，それぞれのバスに固有の誤差項が $\epsilon_{di}$ で表される．
+% これによって下位ネスト内での選択肢間の誤差項
+このネスティングによって，誤差項が相関関係にある場合も，相関成分を上位ネストの誤差項 $\epsilon_d$ に吸収することで、下位ネスト内の選択肢の誤差項 $\epsilon_{di}$ は互いに独立であると仮定できるようになる．
+
+選択確率は条件付き確率と周辺確率の積として表す．
+\begin{equation}
+  P(d,i) = P(i \mid d) \cdot P(d)
+\end{equation}
+
+\subsubsection{下位ネスト}
+まず下位ネスト内の条件付き確率 $P(i \mid d)$ を考える．
+ネスト $d$ が与えられた条件のもとでは，$\epsilon_d$ は全ての選択肢 $i$ に共通の定数として作用するため，選択肢間の比較において相殺される．
+したがって下位ネスト内の選択は $\epsilon_{di}$（i.i.d. ガンベル分布）のみに依存し，MNLと同様の形で与えられる．
+\begin{equation}\label{eq:nl-cond}
+  P(i \mid d) = \frac{\exp\bigl(\mu (V_i + V_{di})\bigr)}{\displaystyle\sum_{i'} \exp\bigl(\mu (V_{i'} + V_{di'})\bigr)}
+\end{equation}
+
+\subsubsection{上位ネスト}
+次に，上位ネストの周辺確率 $P(d)$ を導出する．
+上位ネストの選択は「ネスト $d$ を選んだときに得られる最大効用」同士の比較であり，次のように表される．
+\begin{equation}
+  P(d) = \Pr\Bigl[\max_i U_{di} \geq \max_i U_{d'i}, \quad \forall d' \neq d\Bigr]
+\end{equation}
+ここで，$\epsilon_{di}$ が i.i.d. ガンベル分布に従うとき，ガンベル分布の最大値もまたガンベル分布に従うという性質から，$\max_i (V_i + V_{di} + \epsilon_{di})$ はガンベル分布に従う．
+この項はネスト $d$ を選んだときに得られる期待効用がガンベル分布に従うことを意味しており，この最大期待効用がロケーションパラメータに該当する．
+この値はログサム変数 $V'_d$ として定義される．
+\begin{equation}\label{eq:nl-logsum}
+  V'_d \equiv \frac{1}{\mu} \ln \sum_{i} \exp\bigl(\mu (V_i + V_{di})\bigr)
+\end{equation}
+前節でガンベル分布を導入した際，ロケーションパラメータ $\eta$ は効用の確定項に吸収できるため $\eta = 0$ に正規化したが，ここでも同じ操作を行う．
+$\max_i(V_i + V_{di} + \epsilon_{di})$ が従うガンベル分布のロケーションパラメータは $V'_d$ であるから，これを確定項として分離し，残差を $\epsilon'_d \equiv \max_i(V_i + V_{di} + \epsilon_{di}) - V'_d$ とおけば，$\epsilon'_d$ はロケーション $0$ のガンベル分布に従う．
+この分離により，上位ネストの比較は次のように書き直せる．
+\begin{equation}
+  P(d) = \Pr\Bigl[V_d + V'_d + \epsilon_d + \epsilon'_d \geq V_{d'} + V'_{d'} + \epsilon_{d'} + \epsilon'_{d'}, \quad \forall d' \neq d\Bigr]
+\end{equation}
+これは確定項 $V_d + V'_d$，誤差項 $\epsilon_d + \epsilon'_d$ をもつ離散選択問題の構造となっている．
+すなわち，下位ネストの選択において相殺された $\epsilon_d$ は，ここで上位ネストの誤差項の一部として機能する．
+$\epsilon_d$ がスケールパラメータ $\mu^d$ のガンベル分布に従うと仮定すれば，周辺確率もMNLと同様の形で与えられる．
+\begin{equation}\label{eq:nl-marginal}
+  P(d) = \frac{\exp\bigl(\mu^d (V_d + V'_d)\bigr)}{\displaystyle\sum_{d'} \exp\bigl(\mu^d (V_{d'} + V'_{d'})\bigr)}
+\end{equation}
+
+\subsubsection{NLモデルの選択確率}
+以上をまとめると，各選択肢 $(d,i)$ の選択確率は次のようになる．
+\begin{equation}\label{eq:nl-joint}
+  P(d,i) = \frac{\exp\bigl(\mu (V_i + V_{di})\bigr)}{\displaystyle\sum_{i'} \exp\bigl(\mu (V_{i'} + V_{di'})\bigr)} \cdot \frac{\exp\bigl(\mu^d (V_d + V'_d)\bigr)}{\displaystyle\sum_{d'} \exp\bigl(\mu^d (V_{d'} + V'_{d'})\bigr)}
+\end{equation}
+
+なお，二つのスケールパラメータ $\mu^d$ と $\mu$ を同時に推定することはできないため，通常は条件付き確率のスケールパラメータ $\mu$ を 1 に正規化し，周辺確率のスケールパラメータ $\mu^d$ を推定する．
+ガンベル分布のスケールパラメータは分布のばらつきの程度を表しており，標準偏差に反比例する値であるため，$\mu^d / \mu$ は以下の関係を満たす必要がある．
+\begin{equation}
+  \frac{\mu^d}{\mu} = \sqrt{\frac{\mathrm{Var}(\epsilon_{di})}{\mathrm{Var}(\epsilon_d) + \mathrm{Var}(\epsilon_{di})}} \leq 1
+\end{equation}
+この条件はネスト構造が妥当であること，すなわち上位ネストの誤差分散が非負であることを保証するものである．
+$\mu^d / \mu = 1$ のとき上位・下位の誤差項間に相関がなくなり，NLモデルはMNLモデルに帰着する．
+
+
+% \subsection{経路相関とPath Size Logitモデル}
+
+
+\subsection{個人間の異質性とMixed Logit モデルの導入}\label{ssec:mixed_logit}
+MNLモデルでは，パラメータは母集団で一定であると仮定しており，個人間の選好の違い（異質性）を表現できない．
+もっとも，性別や年齢層などのダミー変数を説明変数に導入し交互作用項を設けることで，グループ間の異質性をある程度考慮することは可能である．
+しかしこのアプローチでは，あくまでダミー変数で区分されたグループ単位での平均的な違いを捉えるにとどまり，同一グループ内での個人単位の選好のばらつきは結局表現できない．
+\textbf{Mixed Logit（MXL）}モデルは，パラメータそのものを確率分布からサンプリングされるランダム係数として扱うことで，個人間のばらつきを連続的に表現できるように拡張したモデルである．
+ここで新たに導入する誤差項にガンベル分布ではなく正規分布を用いるのは，共分散行列 $\Omega$ を通じて変数間の相関構造や分散の大きさを自由に設計できるためである．
+ただしその代償として，正規分布の混合により選択確率がclosed-formでは得られなくなり，シミュレーションによる数値計算が必要となる．
+
+\subsubsection{Mixed Logitモデルの定式化}
+個人 $n$ が選択肢 $i$ を選ぶときの効用関数を以下のように定義する．
+\begin{equation}
+  U_{in} = V_{in} + \eta_{in} + \epsilon_{in}
+\end{equation}
+ここで，$V_{in}$ はパラメータ $\beta$ と説明変数ベクトル $X_{in}$ で表される効用の確定項，$\eta_{in}$ は共分散行列 $\Omega$ に従う正規分布の誤差項，$\epsilon_{in}$ はi.i.d.ガンベル分布に従う誤差項である．
+パラメータ $\beta$ はランダム係数として表され，母集団における期待値と分散によって特徴づけられる．
+
+$\eta_{in}$ の値が与えられたとき，選択確率はMNLモデルと同じ形式となる．
+\begin{equation}
+  P_{in}(\eta_{in}) = \frac{\exp(V_{in} + \eta_{in})}{\displaystyle\sum_{j} \exp(V_{jn} + \eta_{jn})}
+\end{equation}
+
+$\eta_{in}$ は確率変数であるため，共分散行列 $\Omega$ に従う確率密度関数 $f(\eta_{in} \mid \Omega)$ を用いて積分し，選択確率を求める．
+\begin{equation}\label{eq:mxl-prob}
+  P_{in} = \int \frac{\exp(V_{in} + \eta_{in})}{\displaystyle\sum_{j} \exp(V_{jn} + \eta_{jn})} \, f(\eta_{in} \mid \Omega) \, d\eta_{in}
+\end{equation}
+
+\subsubsection{シミュレーション推定}
+式(\ref{eq:mxl-prob})の積分は解析的に計算できないため，シミュレーションによる近似計算が必要となる．
+確率分布から $R$ 回の乱数を抽出し，シミュレーション対数尤度 $\ln SL$ を次のように構成する．
+\begin{equation}
+  \ln SL = \sum_{n=1}^{N} \sum_{i=1}^{J} \delta_{in} \ln \left( \frac{1}{R} \sum_{r=1}^{R} P_{in}^{(r)} \right)
+\end{equation}
+ここで $\delta_{in}$ は個人 $n$ が選択肢 $i$ を選んだとき 1，そうでないとき 0 をとる指示変数，$P_{in}^{(r)}$ は $r$ 回目の乱数抽出に基づく条件付き選択確率である．
+この対数尤度を最大化することで，ランダム係数の期待値と標準偏差を推定できる．
+
+MNLモデルでは時間価値などの指標は母集団に対して一意に仮定が置かれるが，Mixed Logitモデルでは個人間のばらつきを求めることができる．
+これにより，例えば時間パラメータの値を料金パラメータの値で除することで得られる時間価値の分布を把握でき，集団内の選好の異質性をより精緻に分析することが可能となる．

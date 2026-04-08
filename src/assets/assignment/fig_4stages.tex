@@ -1,0 +1,49 @@
+%% fig_4stages.tex
+%% 四段階推定法のフロー図
+%% Usage: \input{assets/assignment/fig_4stages.tex}
+\begin{tikzpicture}[
+    every node/.style={font=\small},
+    box/.style={
+        draw, rounded corners=2pt,
+        text width=4.5cm, align=center,
+        minimum height=1.1cm, inner sep=5pt
+    },
+    highlight/.style={
+        draw, rounded corners=2pt, thick,
+        text width=4.5cm, align=center,
+        minimum height=1.1cm, inner sep=5pt,
+        fill=gray!20
+    },
+    arrow/.style={->, >=stealth, thick},
+    side/.style={font=\footnotesize, align=left, text width=4.5cm}
+]
+
+%% ---- ノード（絶対座標）----
+\node[box] (S1) at (0, 0)
+    {\textbf{第1段階：発生・集中交通量}\\[2pt]各ゾーンの発生・集中交通量の推定};
+
+\node[box] (S2) at (0,-2.3)
+    {\textbf{第2段階：分布交通量}\\[2pt]ODペアごとの交通量\\（OD行列）の推定};
+
+\node[box] (S3) at (0,-4.6)
+    {\textbf{第3段階：分担交通量}\\[2pt]交通手段（自動車・公共交通等）\\の選択比率の推定};
+
+\node[highlight] (S4) at (0,-6.9)
+    {\textbf{第4段階：配分交通量}\\[2pt]OD交通量をネットワーク上の\\各リンクへ配分};
+
+%% ---- 矢印 ----
+\draw[arrow] (S1) -- (S2);
+\draw[arrow] (S2) -- (S3);
+\draw[arrow] (S3) -- (S4);
+
+%% ---- 補足ラベル（右側，絶対座標）----
+\node[side, anchor=west] at (2.9, 0)    {ゾーン人口・土地利用\\データを使用};
+\node[side, anchor=west] at (2.9,-2.3)  {重力モデル・フーリタ分布モデルなど};
+\node[side, anchor=west] at (2.9,-4.6)  {ロジットモデルなど離散選択モデル};
+\node[side, anchor=west] at (2.9,-6.9)  {\textbf{本章の主題}};
+
+%% ---- 囲み ----
+\draw[dashed, rounded corners=4pt, gray]
+    (-2.7, 0.75) rectangle (2.7,-8.0);
+
+\end{tikzpicture}

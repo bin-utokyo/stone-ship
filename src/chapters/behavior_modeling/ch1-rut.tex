@@ -1,0 +1,144 @@
+%% chapters/behavior_modeling/ch1_rut.tex
+%% 第1章　ランダム効用最大化理論の基礎
+\section{ランダム効用最大化理論}\label{sec:rut}
+
+本節では行動モデルの理解にあたり，ランダム効用最大化理論（Random Utility Maximization Theory, RUM）\cite{mcfadden1977modelling}を導入する．
+本教科書で扱う範囲ではより厳密には加法的ランダム効用最大化理論（Additive Random Utility Maximization Theory, ARUM）と呼ぶべきものであるが，以下では便宜上RUMと呼ぶことにする．
+RUM はミクロ経済学の重要な仮定であり，個人は効用を最大化するような合理的な選択行動を行うとするものである．
+
+本節の構成は以下の通りである．
+まず\ref{ssec:utility_random}項で効用関数の記述と誤差項の導入を行い，\ref{ssec:iid_assumption}項で誤差項の独立同一性の仮定を述べる．
+続いて\ref{ssec:error_distribution}項で誤差項の分布形状（正規分布・ガンベル分布）を具体的に示し，多項ロジット（MNL）モデルを導出する．
+最後に\ref{ssec:iia_intro}項で，MNLモデルが持つIIA特性の問題と，次節以降での拡張への動機を述べる．
+
+\subsection{効用の記述とランダム性の導入}\label{ssec:utility_random}
+まず選択肢の効用評価の記述方法を述べる．
+各選択肢 $a$ は分析者によって設定された説明変数 $x_{i}$ および対応するパラメータ $\beta_{i}$ を用いて評価される．
+その評価関数を効用関数と呼び，通常は線形な形式で表される．
+すなわち，選択肢 $a$ の効用 $U_{a}$ は以下のように表される．
+\begin{equation}\label{eq:utility_func_det}
+U_{a} = \sum_{i} \beta_{i} x_{i}
+\end{equation}
+なお本定式化では個人の異質性は考慮していない．
+例えば交通手段選択であれば，説明変数 $\bm{x}$ は「旅行時間」「旅行費用」「快適さ」などの属性を表し，パラメータ $\bm{\beta}$ はこれらの属性が効用に与える影響の大きさを表す．
+行動モデルの目的は，この効用関数を用いて個人の選択行動を記述することであり，それは各パタメータ $\beta_{i}$ を推定することに帰着する．
+
+個人 $k$ の選択行動結果を $y_k$ と表すと，効用最大化の仮定により
+\begin{equation}\label{eq:utility_max}
+y_k = \argmax_{a} U_{a}
+\end{equation}
+となる．
+これは毎回確定的な選択が行われることを示すが，実際にはこのように確定的に対象の選択行動を説明することは困難である．
+なぜなら，\eqref{eq:utility_func_det}は各選択肢が分析者によって選定された特定の説明変数 $\bm{x}$ に基づいて評価されることを前提としているが，真の効用関数は選択者毎の私的情報そのものであり，分析者が全ての構成を把握することは原理的に困難であるためである．
+このような不確実性を考慮するために，効用関数\eqref{eq:utility_func_det}にランダム性を加えるための誤差項 $\varepsilon_a$ を導入する．
+すなわち，選択肢 $a$ の効用は以下のように再定義される．
+\begin{equation}\label{eq:utility_func_random}
+U_{a} = \sum_{i} \beta_{i} x_{a, i} + \varepsilon_a
+\end{equation}
+$\varepsilon_a$ は選択肢 $a$ に特有のランダムな誤差項であり，上で述べた個人の選択行動に影響を与えるが分析者が観測できない要因を表す．
+なおこの誤差項に対し，従来の確定的な効用項 $V_a = \sum_i \beta_i x_{a, i}$ を確定項と呼ぶ．
+
+
+\subsection{誤差項の独立同一性の仮定}\label{ssec:iid_assumption}
+本項及び次項では誤差項に関する具体的な仮定を導入する．
+
+まず，誤差項の独立同一性（Independent Identical Distribution, i.i.d.）に関する仮定を導入する．
+
+効用関数\eqref{eq:utility_func_det}は最も一般的には個人 $k$ ，選択肢 $a$ に依存する値として表される．
+\begin{equation}
+U_{ka} = V_{ka} + \varepsilon_{ka}
+\end{equation}
+
+\textbf{独立同一性: Independent and Identically Distributed (i.i.d.)}は以下の二つの要素からなる．
+\begin{description}
+  \item[独立性] 各個人および選択肢の組 $k, a$ に対して $\varepsilon_{ka}$ は互いに独立である．
+  \item[同一分布] 各個人および各選択肢の組 $k, a$ に対して $\varepsilon_{ka}$ は同一の確率分布に従う．
+\end{description}
+ここで独立とは，ある選択肢に関する未観測要因が他の選択肢の未観測要因と相関を持たないことを意味し，同一分布とは，それらの未観測要因のばらつき方がすべての選択肢・個人で同じであることを意味する．
+
+\subsection{誤差項の分布形状}\label{ssec:error_distribution}
+続いて誤差項の分布形状を考える．
+誤差項によるランダム性の導入に伴い，\eqref{eq:utility_max}は次のように書き換えられる（個人 $k$ の識別子は省略）．
+\begin{equation}\label{eq:utility_max_random}
+y_k = \argmax_{a} \left( \sum_{i} \beta_{i} x_{a, i} + \varepsilon_a \right) = \argmax_{a} \left( V_a + \varepsilon_a \right)
+\end{equation}
+選択肢 $a$ の選択確率は次のように表される．
+\begin{equation}
+  \begin{aligned}
+    \text{Pr}(y_k = a) &= \text{Pr}\left( V_a + \varepsilon_a > V_{a'} + \varepsilon_{a'} \quad \forall a' \neq a \right) \\
+    &= \text{Pr}\left( V_a - V_{a'} > \varepsilon_{a'} - \varepsilon_a \quad \forall a' \neq a \right) \\
+    &= \text{Pr}_{\varepsilon}\left( V_a - V_{a'} > \varepsilon \quad \forall a' \neq a \right) \\
+    &= \int_{-\infty}^{V_a - V_{a'}} f(\varepsilon) d\varepsilon \\
+    &= F_{\varepsilon}(V_a - V_{a'})
+  \end{aligned}
+\end{equation}
+
+従って選択確率は誤差項 $\varepsilon$ の確率分布 $f(\varepsilon)$ および累積分布関数 $F_{\varepsilon}(\varepsilon)$ に明らかに依存する．
+
+では続いてこの誤差項 $\varepsilon$ の分布形状を具体的に与えてみよう．
+なお以下では前項で導入した通り誤差項はi.i.d.であると仮定する．
+
+\subsubsection{正規分布の場合}
+最も一般的な分布は正規分布である．
+ここで標準正規分布の確率密度関数を $\phi(\cdot)$，その累積分布関数を $\Phi(\cdot)$ と表すと，選択確率 $\text{Pr}(y_k = a)$ は次のように表される．
+\begin{equation}
+  \text{Pr}(y_k = a) = \int_{-\infty}^{V_a - V_{a'}} \phi(\varepsilon) \, d\varepsilon = \Phi(V_a - V_{a'})
+\end{equation}
+この選択確率は一般に閉じた形で表すことができないため，数値的な積分が必要となり計算コストが高い．
+なお，本モデルを \textbf{Probit Model}と呼ぶ．
+
+\subsubsection{ガンベル分布の場合}
+ガンベル分布は正規分布と類似の形状を持つが，累積分布関数がclosed-formで表されるという特徴がある．
+ガンベル分布の累積分布関数は次のように表される．
+\begin{equation}\label{eq:gumbel_cdf}
+  F(x) = \exp\bigl(-\exp(-\mu (x - \eta))\bigr)
+\end{equation}
+ここで $\eta$ はロケーションパラメータ（分布の最頻値に一致），$\mu > 0$ はスケールパラメータ（分布のばらつきに関係）である．
+離散選択モデルにおいては，通常 $\eta = 0$，$\mu = 1$ に正規化する．
+ロケーションパラメータ $\eta$ は効用の確定項 $V_a$ に吸収でき，スケールパラメータ $\mu$ はパラメータ $\beta_i$ と同時には識別できない（$\mu V_a = \mu \sum_i \beta_i x_{a,i}$ より，推定されるのは常に $\mu \beta_i$ の積である）ためである．
+
+この正規化のもとで，選択確率は次のように表される．
+\begin{equation}
+  \text{Pr}(y_k = a) = \frac{\exp(V_a)}{\sum_{a'} \exp(V_{a'})}
+\end{equation}
+
+これはclosed-formで表されるため，数値的な積分を必要とせず計算が容易である．
+従って離散選択モデルにおいてはガンベル分布を使用することが多い．
+ガンベル分布を用いたモデルを Probit Model と区別して \textbf{Logit Model}と呼ぶ．
+また選択肢が二つの場合は特に Binary Logit Model と呼び，複数の場合は \textbf{Multinomial Logit Model} と呼ぶ．
+
+一般に行動モデルの文脈で離散選択モデルを用いる際には，上記仮定を踏まえて誤差項に i.i.d. ガンベル分布を仮定することが多い．
+すなわち効用関数を以下のように宣言することが多い．
+\begin{equation}
+U_{ka} = V_{ka} + \varepsilon_{ka}, \quad \varepsilon_{ka} \sim \text{i.i.d. Gumbel}
+\end{equation}
+
+\subsubsection{摂動効用理論との関連}
+なお序章で述べたように，このLogit選択確率は摂動効用理論の観点からも導出できる．
+具体的には，需要ベクトル $\bm{p}$（各選択肢の選択確率）に対して，期待効用とShannon entropy正則化項からなる以下の直接効用関数
+\begin{equation}\label{eq:perturbed_utility}
+  \max_{\bm{p} \geq \bm{0},\, \sum_a p_a = 1} \left\{ \sum_a p_a V_a + \frac{1}{\mu}\mathcal{H}(\bm{p}) \right\}, \quad \mathcal{H}(\bm{p}) = -\sum_a \left( p_a \ln p_a - p_a \right)
+\end{equation}
+を最適化すると，最適解として上記のLogit選択確率が得られる．
+なおエントロピー項における $-p_a$ は，式変形の便宜上加えた項であり，最適解には影響を与えない．
+すなわち，ARUMにおける「誤差項にガンベル分布を仮定する」ことと，摂動効用理論における「正則化項にShannon entropyを仮定する」ことは\textbf{共役関係}にあり，同一の選択確率を導く．
+この双対的な見方は，第3節で摂動効用理論に基づく経路選択モデルを導入する際に重要となる．
+
+なお，ガンベル分布と正規分布の確率密度関数は図\ref{fig:gumbel-pdf}のような形状をしている．
+\begin{figure}[hbtp]
+  \centering
+    \resizebox{.9\linewidth}{!}{%
+      \input{assets/behavior_modeling/fig_gumbel_pdf.tex}%
+    }
+  \caption{ガンベル分布の確率密度関数(PDF)と，$\varepsilon \le 2$ の領域}
+  \label{fig:gumbel-pdf}
+\end{figure}
+
+
+\subsection{選択肢・個人間の相関・異質性の扱いとIIA性の問題}\label{ssec:iia_intro}
+上記では誤差項の独立同一性（i.i.d.）に関する仮定を導入したが，この仮定は現実の選択行動を記述する上でしばしば問題となる．
+例えば交通行動の文脈においては，互いに類似した交通手段や重複区間の多い経路どうしで未観測効用が似通うことが多く，独立性の仮定がしばしば問題となる．
+また隣接する複数の地点は，距離が離れた地点と比べて特徴が似通うことが多いため，目的地選択の文脈においても独立性の仮定が問題となる．
+さらに時間価値や混雑回避傾向は個人によって異なるため，個人間で同一の分布を仮定することも強い制約となる．
+こうした理由から，Nested Logit や Mixed Logit など，i.i.d. 仮定を緩和するモデルが導入されてきた．
+これらのモデルについては次節にて詳述する．

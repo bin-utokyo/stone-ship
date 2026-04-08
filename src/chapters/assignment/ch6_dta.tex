@@ -1,0 +1,451 @@
+%% chapters/assignment/ch6_dta.tex
+%% 第6章　動的交通配分（DTA）
+
+\section{動的交通配分（DTA）}
+\label{sec:ch6-dta}
+
+\sref{sec:ch3-ue}から\sref{sec:ch5-so}にかけて扱った交通配分モデルはいずれも，
+時刻に依存しない\textbf{静的}なモデルであった．
+静的モデルでは，OD交通量 $q_{rs}$ を時間的に一定な値として与え，
+ネットワーク全体が定常状態にあることを前提とする．
+しかし現実の道路交通は，朝のラッシュアワー，夕方のピーク，
+昼間のオフピークのように，時刻とともに著しく変動する．
+このような\textbf{時刻依存の需要}と，それに伴うキューの形成・伝播・解消を
+整合的に記述するのが\textbf{動的交通配分}（Dynamic Traffic Assignment, DTA）の枠組みである．
+
+本節では，まず静的UEとの対比を通じてDTAの位置づけを整理し
+（\ssref{subsec:static-dta-comparison}），
+続いて動的利用者均衡（DUE）の変分不等式（VI）定式化を導入する
+（\ssref{subsec:due-formulation}）．
+さらに，FIFO条件に基づく時間分解アルゴリズムによって
+DTA問題が効率的に解けることを説明し
+（\ssref{subsec:time-decomposition}），
+最後に主な解法を整理して静的TAとの相違点をまとめる
+（\ssref{subsec:dta-solution}）\cite{Friesz1993,KuwaharaAkamatsu2001}．
+
+本節で新たに用いる主要記号を表\ref{tab:ch6-notation}にまとめる（基本記号は表\ref{tab:notation}参照）．
+
+\begin{table}[hbtp]
+  \centering
+  \caption{動的交通配分の主要記号}
+  \label{tab:ch6-notation}
+  \begin{tabular}{cll}
+    \toprule
+    記号 & 意味 & 単位（例） \\
+    \midrule
+    $\tau$              & 出発時刻（departure time） & 分 \\
+    $t$                 & ネットワーク上の観測時刻（clock time） & 分 \\
+    $q_{rs}(\tau)$      & 出発時刻 $\tau$ のOD需要流率 & 台/分 \\
+    $f_k^{rs}(\tau)$    & 出発時刻 $\tau$ に経路 $k$ を利用する流率 & 台/分 \\
+    $x_a(t)$            & 時刻 $t$ のリンク $a$ の交通量（流率） & 台/分 \\
+    $t_a(x_a(t),\,t)$   & 時刻 $t$ のリンク $a$ の旅行時間 & 分 \\
+    $\theta_a(t)$        & リンク $a$ に時刻 $t$ に進入した車両の退出時刻 & 分 \\
+    $C_k^{rs}(\boldsymbol{f},\tau)$ & 出発時刻 $\tau$ の経路 $k^{rs}$ の所要時間 & 分 \\
+    $u_{rs}(\tau)$       & 出発時刻 $\tau$ のODペア $rs$ の均衡旅行時間 & 分 \\
+    $\Lambda$            & 実行可能フロー集合（FIFO・非負・需要充足を満たす） & -- \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+% ---------------------------------------------------------------
+\subsection{静的UEとDTAの対比}
+\label{subsec:static-dta-comparison}
+% ---------------------------------------------------------------
+
+\subsubsection*{静的UEの限界}
+
+静的UEモデルは，交通量が定常状態でリンクに均等に流れていると仮定する．
+その強みは，Beckmann変換（\sref{sec:ch3-ue} \ssref{subsec:beckmann}）による凸最適化問題への帰着と，
+Frank-Wolfe 法による効率的な求解が成立することにある．
+しかし，以下の点で現実の交通を記述する能力に限界がある：
+
+\begin{itemize}
+  \item OD交通量 $q_{rs}$ が時刻によって変化することを表現できない（朝ラッシュ・夕方ピーク等）．
+  \item リンク上でのキュー（渋滞の列）の形成・成長・解消という時空間的進展を記述できない．
+  \item 利用者の\textbf{出発時刻選択}（departure time choice）を内生的に扱えない．
+\end{itemize}
+
+\subsubsection*{DTAで導入される変数と概念}
+
+DTAはこれらの限界を克服するために，以下の時刻依存変数を陽に導入する：
+
+\begin{description}
+  \item[時刻依存需要] $q_{rs}(\tau)$：出発時刻 $\tau$ にODペア $rs$ を出発する交通流率．
+    静的UEのOD交通量 $q_{rs}$ は，$q_{rs} = \int q_{rs}(\tau)\,d\tau$ と解釈できる．
+  \item[時刻依存フロー] $f_k^{rs}(\tau)$：出発時刻 $\tau$ に経路 $k^{rs}$ を選択する流率．
+    需要充足条件は $\sum_{k} f_k^{rs}(\tau) = q_{rs}(\tau)$ となる．
+  \item[時刻依存リンクコスト] $t_a(x_a(t), t)$：時刻 $t$ のリンク $a$ の旅行時間．
+    リンク内のキュー状態を通じてフロー $x_a(t)$ に依存する．
+  \item[フロー伝播（Flow Propagation）] 車両がリンクを通過する際の入出力関係．
+    時刻 $t$ にリンク $a$ に進入した車両が退出する時刻 $\theta_a(t)$ は，
+    リンク旅行時間によって $\theta_a(t) = t + t_a(x_a(t), t)$ と定まる（リンク遅延モデル）．
+\end{description}
+
+\subsubsection*{FIFO条件}
+
+DTAの物理的整合性を保証する重要な制約が\textbf{FIFO条件}（First-In First-Out）である：
+
+\begin{quotation}
+  \noindent
+  リンク $a$ へ時刻 $t_1 < t_2$ に進入した2台の車両について，
+  退出時刻 $\theta_a(t_1) \leq \theta_a(t_2)$ が成立する．
+\end{quotation}
+
+FIFO条件は，後から進入した車両が先行車両を追い越せないという当然の物理的制約である．
+これが満たされないと，現実に観察されない「早出しほど遅くなる」という矛盾が生じる．
+DTAにおいてFIFO条件が特に重要な役割を果たすのは，
+\textbf{時間方向の一方向依存性}，すなわち「過去の状態が未来に影響するが，逆はない」ことを保証するためである．
+この性質が後述の時間分解アルゴリズム（\ssref{subsec:time-decomposition}）の成立根拠となる．
+
+\subsubsection*{時刻依存Wardrop条件}
+
+静的UEにおけるWardropの第1原則（\sref{sec:ch3-ue} \ssref{subsec:wardrop}）は，
+DUEにおいて次のように拡張される：
+
+\begin{quotation}
+  \noindent
+  出発時刻 $\tau$ に正のフローを持つすべての使用経路の旅行時間
+  $C_k^{rs}(\boldsymbol{f}, \tau)$ は等しく，
+  未使用経路の旅行時間以下である．
+\end{quotation}
+
+静的UEとの本質的な相違は，この均衡条件が「出発時刻 $\tau$ ごとに」成立することに加え，
+旅行時間 $C_k^{rs}$ の計算がフロー伝播（FIFO制約）を介してネットワーク全体の
+時刻依存フロー $\boldsymbol{f}$ に複雑に依存する点にある．
+
+% ---------------------------------------------------------------
+\subsection{動的利用者均衡（DUE）の定式化}
+\label{subsec:due-formulation}
+% ---------------------------------------------------------------
+
+\subsubsection*{DUE条件の相補性表現}
+
+静的UEと同様に，DUE条件は相補性スラック条件として書ける：
+各出発時刻 $\tau$ について需要 $q_{rs}(\tau) > 0$ が存在するとき，
+
+\begin{align}
+  u_{rs}(\tau) &\leq C_k^{rs}(\boldsymbol{f}^*,\, \tau) \qquad \forall k \in K_{rs} \label{eq:due-ineq} \\
+  f_k^{rs}(\tau)\,\bigl[C_k^{rs}(\boldsymbol{f}^*,\, \tau) - u_{rs}(\tau)\bigr] &= 0
+  \qquad \forall k \in K_{rs} \label{eq:due-comp}
+\end{align}
+
+ここで $u_{rs}(\tau)$ は出発時刻 $\tau$ の均衡旅行時間，
+$C_k^{rs}(\boldsymbol{f}^*, \tau)$ は均衡フロー $\boldsymbol{f}^*$ のもとでの経路旅行時間である．
+式\eqref{eq:due-ineq}は「すべての経路の旅行時間は均衡値以上（未使用経路では不等号が成立し得る）」，
+式\eqref{eq:due-comp}は「使用経路の旅行時間は均衡値に一致」
+という条件を表す点で，静的UEのKKT条件（\sref{sec:ch3-ue} \ssref{subsec:beckmann}参照）と構造的に同一である．
+
+\subsubsection*{変分不等式定式化}
+
+Friesz et al.（1993）は，このDUE条件が次の\textbf{変分不等式}（Variational Inequality, VI）として等価に表現できることを示した\cite{Friesz1993}：
+
+\begin{equation}
+  \langle\, C(\boldsymbol{f}^*),\; \boldsymbol{f} - \boldsymbol{f}^* \rangle
+  \;\geq\; 0
+  \qquad \forall \boldsymbol{f} \in \Lambda
+  \label{eq:due-vi}
+\end{equation}
+
+ここで $\langle \cdot, \cdot \rangle$ は関数内積（各出発時刻 $\tau$ についての積分），
+$C(\boldsymbol{f})$ は経路旅行時間ベクトル，
+$\Lambda$ はFIFO条件・非負条件・需要充足条件を満たす実行可能フロー集合である．
+式\eqref{eq:due-vi}の直感は，「均衡フロー $\boldsymbol{f}^*$ において，
+他の実行可能フロー $\boldsymbol{f}$ の方向へ移動しても
+旅行時間コスト $\langle C(\boldsymbol{f}^*), \boldsymbol{f} - \boldsymbol{f}^* \rangle$ は減少しない」
+という条件である．
+
+\subsubsection*{静的UEとの本質的な相違}
+
+静的UEはBeckmann変換によってポテンシャル関数を持つ凸最適化問題（最小化問題）に帰着できた（\ssref{subsec:beckmann}）．
+これはリンク費用行列 $\partial C_k / \partial f_l$ が対称であることに起因する．
+一方，DUEでは時刻依存のフロー伝播を通じて，
+ある経路・出発時刻の変化が他の経路・出発時刻の旅行時間に\textbf{非対称}に影響する．
+このため費用ヤコビアンは一般に非対称となり，ポテンシャル関数が存在しない．
+
+変分不等式定式化はこの非対称性を正面から受け入れることで，
+Beckmann変換なしに解の\textbf{存在}を議論できる枠組みを与える：
+$C$ の連続性と $\Lambda$ のコンパクト凸性から不動点定理によって
+少なくとも1つの解の存在が保証される（表\ref{tab:ue-due-comparison}）．
+ただし\textbf{一意性}については，$C$ の強単調性
+$\langle C(\boldsymbol{f}) - C(\boldsymbol{g}),\, \boldsymbol{f} - \boldsymbol{g} \rangle > 0$
+（$\boldsymbol{f} \neq \boldsymbol{g}$）が追加で成立する場合にのみ保証され，
+一般のDTAでは保証されない．
+
+\begin{table}[hbtp]
+  \centering
+  \caption{静的利用者均衡（UE）と動的利用者均衡（DUE）の比較}
+  \label{tab:ue-due-comparison}
+  \begin{tabular}{lll}
+    \toprule
+    比較項目 & 静的UE（\sref{sec:ch3-ue}） & 動的UE（本節） \\
+    \midrule
+    需要の表現   & 一定 $q_{rs}$                  & 時刻依存 $q_{rs}(\tau)$ \\
+    フロー変数   & $f_k^{rs}$（スカラー）         & $f_k^{rs}(\tau)$（関数） \\
+    フロー伝播   & なし                           & FIFO制約あり \\
+    費用行列     & 対称（凸ポテンシャル存在）     & 一般に非対称 \\
+    定式化       & 凸最適化（Beckmann変換）       & 変分不等式（VI） \\
+    解の存在     & 凸問題ゆえ保証                 & 不動点定理で保証 \\
+    解の一意性   & 費用関数が狭義単調増加なら一意 & 強単調性が必要（一般不保証） \\
+    計算コスト   & 低〜中                         & 高（時間分解で緩和可） \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+% ---------------------------------------------------------------
+\subsection{時間分解と効率的アルゴリズム}
+\label{subsec:time-decomposition}
+% ---------------------------------------------------------------
+
+\subsubsection*{基本的考え方}
+
+DTA問題を「全時刻帯を一括で解く」のではなく，\textbf{時刻スライスを順番に処理する}方式
+（時間分解，Time Decomposition）に変換することで計算を大幅に効率化できる\cite{KuwaharaAkamatsu2001}．
+この方式の成立根拠はFIFO条件（\ssref{subsec:static-dta-comparison}）にある：
+出発時刻 $\tau_1 < \tau_2$ の2台の車両について退出時刻の順序
+$\theta_a(\tau_1) \leq \theta_a(\tau_2)$ が保存されるため，
+早い時刻に出発した車両がリンクに与えた影響は，
+遅い時刻の出発を処理する段階ですでに確定している．
+したがって，\textbf{各時刻スライスは前スライスまでの処理結果を入力として受け取るだけでよい}という
+時間方向の一方向依存性が成立し，全時刻帯を連立させることなくスライスを逐次的に処理できる．
+
+時刻スライスを $\tau_1 < \tau_2 < \cdots < \tau_T$（スライス幅 $\Delta\tau$）とし，
+各スライスで出発する需要をリンク遅延モデルを通じて伝播させる．
+以下では，ある固定した起点 $r \in \mathcal{R}$ について1スライスずつ処理する基本手順を示す．
+
+\subsubsection*{アルゴリズムの詳細}
+
+Kuwahara \& Akamatsu（2001）は，物理的キューを伴う多対多OD問題に対して
+時間分解アルゴリズムを厳密に定式化した\cite{KuwaharaAkamatsu2001}．
+以下では，$\mathcal{O}_i = \{j \in \mathcal{N}: (i,j) \in \mathcal{A}\}$（ノード $i$ の後継ノード集合），
+$\mathcal{I}_i = \{j \in \mathcal{N}: (j,i) \in \mathcal{A}\}$（ノード $i$ の先行ノード集合）と記す．
+
+\begin{description}
+  \item[\textsf{Step 1}（初期化）]
+    $\ell \leftarrow 1$（最初の時刻スライス）を選択する．
+    全リンク・全時刻において進入フローをゼロに初期化する：
+    \[
+      x_a(t) = 0, \qquad \forall a \in \mathcal{A},\; t \in [0, T_{\max}]
+    \]
+    各リンクのリンク遅延関数 $t_a(\cdot,\,\cdot)$ および自由走行時間 $t_a^0$ を
+    入力データとして読み込む\footnote{Step 1 の計算量は $O(|\mathcal{A}|)$（全リンクのフロー初期化）．}．
+
+  \item[\textsf{Step 2}（リンク旅行時間の更新）]
+    時刻スライス $\ell$ の処理開始時点において，
+    $\tau_1, \ldots, \tau_{\ell-1}$ に出発した車両によって各リンクに蓄積された
+    フロー $\{x_a(t)\}$ をもとに，\textbf{リンク遅延モデル}を用いて
+    各リンク $a$ の退出時刻を更新する：
+    \begin{equation}
+      \theta_a(t) = t + t_a\bigl(x_a(t),\, t\bigr) \qquad \forall a \in \mathcal{A},\; \forall t
+      \label{eq:link-delay-update}
+    \end{equation}
+    物理的キューを陽に扱う場合は，LWR 理論に基づく累積車両台数曲線
+    （Newell--Daganzo モデル）を用いて $\theta_a(t)$ を計算する\footnote{Step 2 の計算量は $O(|\mathcal{A}|)$（全リンクのリンク遅延関数更新）．}．
+
+  \item[\textsf{Step 3}（時刻依存最短経路計算）]
+    起点 $r$ からの出発時刻を $\tau_\ell$ に固定して，
+    \textbf{時刻依存 Dijkstra 法}にて各ノード $i$ への最早到着時刻 $\pi_r(i)$ を計算する．
+    ラベル更新規則は，静的 Dijkstra 法（\sref{sec:ch2-uncongested}）において
+    リンク費用を「進入時刻に依存する退出時刻」に置き換えたものである：
+    \begin{equation}
+      \pi_r(r) = \tau_\ell, \qquad
+      \pi_r(j) = \min_{a=(i,j) \in \mathcal{A}}\; \theta_a\!\bigl(\pi_r(i)\bigr)
+      \label{eq:time-dep-dijkstra}
+    \end{equation}
+    ノード $i$ に時刻 $\pi_r(i)$ に到着した車両はリンク $a=(i,j)$ に進入し，
+    時刻 $\theta_a(\pi_r(i))$ にノード $j$ へ退出するとみなす．
+    FIFO 条件 $\partial\theta_a/\partial t \geq 0$ のもとではラベル値が単調増加し，
+    静的 Dijkstra 法と同様の貪欲選択が有効であるため，
+    一度確定したラベルを再更新する必要がない．
+    各ノード $j$ で先行ポインタ $F_j \leftarrow \arg\min_{(i,j)} \theta_a(\pi_r(i))$ を記録する\footnote{Step 3 の計算量は $O\!\bigl((|\mathcal{N}|+|\mathcal{A}|)\log|\mathcal{N}|\bigr)$（優先度付きキューを用いた Dijkstra 法）．FIFO 条件が破れる場合は動的計画法により $O(T \cdot |\mathcal{A}|)$ となる．}．
+
+  \item[\textsf{Step 4}（AoN 配分）]
+    Step 3 で得た最短経路ツリーに需要 $q_{rs}(\tau_\ell)$ を集中させる
+    （All-or-Nothing 配分，\sref{sec:ch2-uncongested}参照）．
+    最短経路ツリーを $\pi_r(j)$ の降順（起点 $r$ から遠い順）にたどりながら，
+    先行ポインタ $F_j$ で定まるリンク $a_j = (F_j,\, j)$ への配分フロー $y_{a_j}$ を集計する：
+    \begin{equation}
+      y_{a_j} = q_{rj}(\tau_\ell)
+                + \sum_{m \in \mathcal{O}_j^{\mathrm{tree}}} y_{a_m}
+      \label{eq:dta-aon-agg}
+    \end{equation}
+    ここで $q_{rj}(\tau_\ell)$ は起点 $r$・目的地 $j$・出発時刻 $\tau_\ell$ のOD需要流率，
+    $\mathcal{O}_j^{\mathrm{tree}}$ は最短経路ツリー上でノード $j$ から流出するリンクの
+    終点集合である（式\eqref{eq:aon-flow-agg}と同構造）\footnote{Step 4 の計算量は $O(|\mathcal{N}|)$（最短経路ツリー上の後退走査）．}．
+
+  \item[\textsf{Step 5}（フロー伝播）]
+    Step 4 で各リンク $a$ に配分された進入フロー $y_a$ を
+    FIFO 制約のもとで前方伝播させ，リンク交通量 $x_a(t)$ を更新する．
+    経路上のリンクを出発地側から目的地側へ順に走査し，
+    車両がリンク $a=(i,j)$ に進入する時刻 $t_a^{\mathrm{in}}$
+    （直前リンク $a^-=(h,i)$ の退出時刻 $\theta_{a^-}(t_{a^-}^{\mathrm{in}})$）において
+    フローを加算する：
+    \begin{equation}
+      x_a\!\bigl(t_a^{\mathrm{in}}\bigr) \;\mathrel{+}=\; y_a
+      \label{eq:flow-update}
+    \end{equation}
+    フロー加算後，式\eqref{eq:link-delay-update}によりリンク遅延関数 $\theta_a$ が更新され，
+    後続リンクへの影響が順次前方に伝播する（連鎖更新）．
+    この処理は経路上のリンクを順に走査するだけで完了する\footnote{Step 5 の計算量は $O(|\mathcal{N}|)$（経路長 $|P| \leq |\mathcal{N}|-1$ のリンク走査とフロー加算）．}．
+
+  \item[\textsf{Step 6}（繰り返し）]
+    $\ell < T$ ならば $\ell \leftarrow \ell + 1$ として \textsf{Step 2} へ戻る．
+    全スライス $\tau_1, \ldots, \tau_T$ を処理したら終了する．
+\end{description}
+
+全スライスの処理完了後，各スライスで蓄積されたリンクフロー $x_a(t)$ が
+出発時刻ごとの動的 AoN 配分結果を表す．
+DUE 条件を達成する均衡解は，本アルゴリズムを内側ルーティングとして，
+外側で MSA 等の均衡探索反復と組み合わせることで求める
+（詳細は \ssref{subsec:dta-solution} 参照）．
+
+\subsubsection*{時刻依存Dijkstraと静的Dijkstraの比較}
+
+Step 3 の時刻依存 Dijkstra 法は，静的 Dijkstra 法（\sref{sec:ch2-uncongested}）と
+アルゴリズム構造を共有しつつ，表\ref{tab:dijkstra-comparison}の点で異なる．
+
+\begin{table}[hbtp]
+  \centering
+  \caption{静的・時刻依存 Dijkstra 法の比較}
+  \label{tab:dijkstra-comparison}
+  \begin{tabular}{lll}
+    \toprule
+    比較項目 & 静的 Dijkstra（\sref{sec:ch2-uncongested}） & 時刻依存 Dijkstra（Step 3） \\
+    \midrule
+    ラベル $\pi(i)$ の意味
+      & 起点からの最短費用
+      & 起点からの最早到着時刻 \\
+    リンク評価値
+      & 定数リンク費用 $t_{ij}$
+      & 退出時刻 $\theta_a(\pi_r(i))$ \\
+    ラベル更新式
+      & $\pi(j) \leftarrow \pi(i) + t_{ij}$
+      & $\pi(j) \leftarrow \theta_a\!\bigl(\pi_r(i)\bigr)$ \\
+    貪欲選択の正当性
+      & リンク費用の非負性
+      & FIFO 条件（$\partial\theta_a/\partial t \geq 0$） \\
+    計算量
+      & $O\!\bigl((|\mathcal{N}|+|\mathcal{A}|)\log|\mathcal{N}|\bigr)$
+      & 同じ（FIFO 成立時） \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+FIFO 条件が破れる状況（例：過飽和キューでの到着順序逆転）では貪欲選択が有効でなくなり，
+動的計画法を用いた $O(T \cdot |\mathcal{A}|)$ のアルゴリズムに切り替える必要がある\cite{Friesz1993}．
+
+\subsubsection*{多対多ODへの拡張}
+
+複数起点 $r \in \mathcal{R}$ を持つ多対多OD問題では，
+\textbf{起点別分解}と\textbf{流量加算原理}を用いて
+アルゴリズムを $|\mathcal{R}|$ 回のループとして実装できる．
+各起点 $r$ について Step 3〜5 を独立に実行して起点別リンクフロー $x_a^{(r)}(t)$ を求め，
+全起点にわたって累計する：
+\begin{equation}
+  x_a(t) = \sum_{r \in \mathcal{R}} x_a^{(r)}(t)
+  \label{eq:flow-superposition}
+\end{equation}
+この重ね合わせは，リンクフローが各起点フローの線形和として定義されるという
+加法性に基づいており，FIFO 条件とは独立に成立する．
+FIFO 条件が起点別分解に必要な理由は，同一リンク上で
+各起点のフローが整合したリンク遅延関数 $\theta_a$ のもとで伝播することを保証するためである．
+一方，リンク旅行時間 $t_a(x_a(t), t)$ は合計フロー $x_a(t)$ に依存するため，
+Step 2 のリンク旅行時間更新には累計フローを使用する点に注意する．
+この分解による全体の計算量は，1スライス・1起点あたりの支配的コスト（Step 3 の Dijkstra 法）に
+$T \times |\mathcal{R}|$ を乗じて次式で与えられる\cite{KuwaharaAkamatsu2001}：
+\begin{equation}
+  O\!\Bigl(T \cdot |\mathcal{R}| \cdot \bigl(|\mathcal{N}|+|\mathcal{A}|\bigr)\log|\mathcal{N}|\Bigr).
+  \label{eq:dta-complexity}
+\end{equation}
+ネットワーク規模 $|\mathcal{N}|, |\mathcal{A}|$ を定数とみなせば，$T$ と $|\mathcal{R}|$ に対して線形であり，
+全時刻帯を連立して解く一括法（サイズ $T \cdot |\mathcal{A}|$ の連立方程式を解く方式）と比べて
+計算量を大幅に抑えられる．
+
+% ---------------------------------------------------------------
+\subsection{解法と静的TAとの比較}
+\label{subsec:dta-solution}
+% ---------------------------------------------------------------
+
+\subsubsection*{主な解法アプローチ}
+
+DTA問題に対しては，静的TAと同様に反復的な数値解法が用いられる．
+代表的なアプローチを表\ref{tab:dta-methods}に示す．
+
+\begin{table}[hbtp]
+  \centering
+  \caption{DTAの主な解法アプローチ}
+  \label{tab:dta-methods}
+  \begin{tabular}{lll}
+    \toprule
+    アプローチ & 代表手法 & 特徴 \\
+    \midrule
+    逐次代入法   & MSA（逐次平均法）& 実装が容易；収束保証が弱い \\
+    VI解法       & Gap function 最小化 & 理論的に厳密；計算コスト大 \\
+    時間分解法   & 時刻スライス逐次処理 & FIFO前提；実用的な計算効率 \\
+    シミュレーション基盤 & MATSim，VISSIM & 大規模ネットワーク向き \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\subsubsection*{MSA（逐次平均法）}
+
+MSAは，Frank-Wolfe 法の線探索ステップサイズを
+$\alpha^{(n)} = 1/n$ に固定した特殊ケースと見なせる反復法である（\sref{sec:ch3-ue} \ssref{subsec:frank-wolfe}参照）：
+
+\begin{equation}
+  \boldsymbol{f}^{(n+1)}
+  = \left(1 - \frac{1}{n}\right)\boldsymbol{f}^{(n)}
+    + \frac{1}{n}\,\boldsymbol{h}^{(n)}
+  \label{eq:msa-update}
+\end{equation}
+
+ここで $\boldsymbol{h}^{(n)}$ は現在のフロー $\boldsymbol{f}^{(n)}$ のもとでのAll-or-Nothing配分結果である．
+MSAは実装が単純なため広く用いられるが，
+ステップサイズが固定されているため，一般に最適収束率を保証しない．
+
+\subsubsection*{Gap function による収束判定}
+
+DUEの収束指標として，静的UEの相対ギャップ（\sref{sec:ch3-ue} \ssref{subsec:frank-wolfe}参照）を時刻依存に拡張した
+\textbf{Gap function} が用いられる：
+
+\begin{equation}
+  \mathrm{Gap}(\boldsymbol{f})
+  = \int \sum_{rs} \sum_k
+    f_k^{rs}(\tau)\,
+    \bigl[C_k^{rs}(\boldsymbol{f}, \tau) - u_{rs}(\tau)\bigr]\,d\tau
+  \;\geq\; 0
+  \label{eq:gap-function}
+\end{equation}
+
+DUE解 $\boldsymbol{f}^*$ では $\mathrm{Gap}(\boldsymbol{f}^*) = 0$ が成立する（式\eqref{eq:due-comp}より）．
+数値解法では $\mathrm{Gap}(\boldsymbol{f}^{(n)}) / \int \sum_{rs} u_{rs}(\tau) q_{rs}(\tau)\,d\tau$
+が規定の閾値 $\varepsilon$ 以下になった時点で収束と判定する．
+
+\subsubsection*{本節のまとめ}
+
+本節で示した主要な結果を整理する：
+
+\begin{enumerate}
+  \item \textbf{動的交通配分}（DTA）は，時刻依存の需要 $q_{rs}(\tau)$，
+        フロー伝播，リンクコスト $t_a(x_a(t),t)$ を明示的に扱い，
+        時刻依存Wardrop条件を満たす動的利用者均衡（DUE）を求める枠組みである；
+        FIFO条件が時間方向の一方向依存性を保証し，問題の解析可能性を支える
+        （\ssref{subsec:static-dta-comparison}）．
+  \item DUE条件は\textbf{変分不等式}
+        $\langle C(\boldsymbol{f}^*), \boldsymbol{f} - \boldsymbol{f}^* \rangle \geq 0$
+        として定式化でき（Friesz et al., 1993），
+        $C$ の連続性と $\Lambda$ のコンパクト凸性から解の存在が保証される；
+        ただし費用ヤコビアンの非対称性により，
+        静的UEと異なりポテンシャル関数は一般に存在せず，
+        解の一意性も強単調性がなければ保証されない
+        （\ssref{subsec:due-formulation}）．
+  \item FIFO条件に基づく\textbf{時間分解アルゴリズム}
+        （Kuwahara \& Akamatsu, 2001）は，
+        全時刻一括処理を時刻スライスの逐次処理に変換し，
+        計算量を時刻数と起点数に対して線形オーダーに抑える；
+        多対多ODへの拡張では起点別分解と流量加算原理が成立根拠となる
+        （\ssref{subsec:time-decomposition}）．
+  \item DTAの解法には逐次代入法（MSA），VI解法（Gap function 最小化），
+        時間分解法，シミュレーション基盤の4種類があり，
+        それぞれ計算効率と理論的厳密さのトレードオフを持つ
+        （\ssref{subsec:dta-solution}）．
+\end{enumerate}

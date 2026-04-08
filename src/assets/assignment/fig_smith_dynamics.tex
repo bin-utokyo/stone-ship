@@ -1,0 +1,79 @@
+%% fig_smith_dynamics.tex
+%% Smith ダイナミクスの位相図（2 経路例）
+%%
+%% 同じ 2 経路モデル（OD 交通量 q=6，c_1=10+f_1，c_2=23-3f_1）。
+%% Smith ダイナミクスの ODE：
+%%   ḟ_1 = f_2 [c_2 - c_1]_+  -  f_1 [c_1 - c_2]_+
+%%        = (6-f_1)(13-4f_1)_+  -  f_1(4f_1-13)_+
+%%
+%%  f_1 < 3.25: ḟ_1 = (6-f_1)(13-4f_1) > 0  （経路 2 → 経路 1 への乗り換え）
+%%  f_1 > 3.25: ḟ_1 = -f_1(4f_1-13)    < 0  （経路 1 → 経路 2 への乗り換え）
+%%  f_1 = 3.25: ḟ_1 = 0                       （Nash均衡 = UE）
+%%
+%%  x 軸：f_1 ∈ [0, 6]，y 軸：ḟ_1 ∈ (-75, 65)
+%%
+%% Usage: \input{assets/assignment/fig_smith_dynamics.tex}
+
+\begin{tikzpicture}[
+  every node/.style={font=\small},
+  xscale=1.7,
+  yscale=0.030
+]
+
+%% ===== 軸 =====
+\draw[->] (-0.15, 0) -- (6.5, 0) node[right] {$f_1$};
+\draw[->] (0, -70)   -- (0, 82)  node[above] {$\dot{f}_1$};
+
+%% ===== Smith ダイナミクス dF1/dt =====
+%% f_1 ∈ [0, 3.25]：ḟ_1 = (6-f_1)(13-4f_1)
+\draw[very thick, blue!75!black, samples=34, domain=0:3.25,
+      variable=\f]
+  plot ({\f}, {(6-\f)*(13-4*\f)});
+
+%% f_1 ∈ [3.25, 6]：ḟ_1 = -f_1*(4*f_1-13)
+\draw[very thick, blue!75!black, samples=29, domain=3.25:6,
+      variable=\f]
+  plot ({\f}, {-\f*(4*\f-13)});
+
+%% ===== UE 平衡点 f_1^* = 3.25 =====
+\fill[red!70!black] (3.25, 0) circle [radius=2.2pt];
+\node[above right, font=\small, red!70!black] at (3.25, 2)
+  {UE\;$f_1^{*}$};
+
+%% ===== 方向矢印（ḟ_1 > 0 → f_1 増加方向，ḟ_1 < 0 → f_1 減少方向）=====
+%% 左側（f_1 = 1.5, ḟ_1 = 4.5*7 = 31.5）
+\draw[->, thick, green!55!black]
+  (1.5, 0) -- (1.9, 0)
+  node[above, font=\scriptsize, green!55!black] {$\dot{f}_1>0$};
+
+%% 右側（f_1 = 5.0, ḟ_1 = -5*7 = -35）
+\draw[->, thick, green!55!black]
+  (5.0, 0) -- (4.6, 0)
+  node[above, font=\scriptsize, green!55!black] {$\dot{f}_1<0$};
+
+%% ===== 特徴点のラベル =====
+%% 最大値付近：f_1=0 での ḟ_1 = 6*13 = 78
+\node[above left, font=\scriptsize] at (0, 78)
+  {$f_2 (c_2 - c_1)_+$};
+
+%% f_1=6 での ḟ_1 = -6*(24-13) = -6*11 = -66
+\node[below right, font=\scriptsize] at (6, -66)
+  {$-f_1(c_1-c_2)_+$};
+
+%% ===== 軸目盛り =====
+\node[below, font=\small] at (3.25, 0) {$f_1^{*}$};
+\node[below, font=\small] at (0, 0)    {$0$};
+\node[below, font=\small] at (6, 0)    {$q$};
+\draw[thin, gray] (-0.05, 30) -- (0.05, 30)
+  node[left, font=\scriptsize] {$30$};
+\draw[thin, gray] (-0.05, 60) -- (0.05, 60)
+  node[left, font=\scriptsize] {$60$};
+\draw[thin, gray] (-0.05, -30) -- (0.05, -30)
+  node[left, font=\scriptsize] {$-30$};
+\draw[thin, gray] (-0.05, -60) -- (0.05, -60)
+  node[left, font=\scriptsize] {$-60$};
+
+%% ===== ゼロ線（目立つように） =====
+\draw[thin, gray!60] (0, 0) -- (6.3, 0);
+
+\end{tikzpicture}

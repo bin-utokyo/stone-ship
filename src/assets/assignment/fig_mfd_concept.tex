@@ -1,0 +1,74 @@
+%% fig_mfd_concept.tex
+%% マクロ基本ダイアグラム（MFD）の概念図
+%% Production G(n) [台・km/h] vs Accumulation n [台]
+%%
+%% パラメータ（正規化単位）:
+%%   G(n) = 3n - n²/2 = n(3 - n/2)  （TikZ座標）
+%%   → 実際の G(n) = (n/n_j)(1 - n/n_j) × G_max に相当
+%%   臨界集積: n* = 3 (TikZ x), G(n*) = 4.5 (TikZ y)
+%%   ジャム: n_j = 6 (TikZ x)
+%%
+%% Usage: \input{assets/assignment/fig_mfd_concept.tex}
+
+\begin{tikzpicture}[
+  every node/.style={font=\small},
+  xscale=1.0,
+  yscale=1.0
+]
+
+%% ===== 背景：自由流領域（水色）・過密領域（橙） =====
+\fill[cyan!10]  (0, 0) -- plot[domain=0:3, samples=60]
+    (\x, {3*\x - 0.5*\x*\x}) -- (3, 0) -- cycle;
+\fill[orange!12] (3, 0) -- plot[domain=3:6, samples=60]
+    (\x, {3*\x - 0.5*\x*\x}) -- (6, 0) -- cycle;
+
+%% ===== MFD 曲線 =====
+\draw[very thick, blue!70!black]
+  plot[domain=0:6, samples=100]
+  (\x, {3*\x - 0.5*\x*\x});
+
+%% ===== 補助破線：n* と G_max =====
+\draw[gray, dashed, thin] (3, 0) -- (3, 4.5);
+\draw[gray, dashed, thin] (0, 4.5) -- (3, 4.5);
+
+%% ===== x 軸 =====
+\draw[->] (-0.3, 0) -- (6.9, 0)
+    node[right] {Accumulation $n$ [台]};
+
+%% x 軸目盛り
+\draw (3, 0.08) -- (3, -0.12)
+    node[below] {$n^*$};
+\draw (6, 0.08) -- (6, -0.12)
+    node[below] {$n_{\rm jam}$};
+\node[below] at (0, -0.12) {$0$};
+
+%% ===== y 軸 =====
+\draw[->] (0, -0.3) -- (0, 5.3)
+    node[above, align=center] {Production\\$G(n)$ [台・km/h]};
+
+%% y 軸目盛り
+\draw (-0.08, 4.5) -- (0.08, 4.5)
+    node[left, xshift=-0.05cm] {$G_{\max}$};
+\node[left] at (-0.05, 0) {$0$};
+
+%% ===== G_max 点にマーカー =====
+\fill[blue!70!black] (3, 4.5) circle (2.5pt);
+
+%% ===== 領域ラベル =====
+\node[align=center, font=\footnotesize, cyan!60!black]
+    at (1.5, 1.2) {自由流\\領域};
+\node[align=center, font=\footnotesize, orange!70!black]
+    at (4.5, 1.2) {過密\\（グリッドロック）};
+
+%% ===== n 方向の注釈 =====
+\node[font=\footnotesize, align=center, blue!60!black]
+    at (3.2, 4.8) {$n = n^*$（臨界）};
+
+%% ===== 平均速度の参考ライン（原点からの傾きが平均速度に比例） =====
+%% 自由流域の代表点 n=1: G(1)=2.5 なので slope=2.5
+\draw[gray!80, dotted, thin, ->]
+    (0, 0) -- (2.0, 5.0)
+    node[above right=-0.1cm, font=\footnotesize, gray!90]
+    {$\bar{v} \propto G(n)/n$};
+
+\end{tikzpicture}

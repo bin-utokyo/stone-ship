@@ -1,0 +1,88 @@
+%% fig_potential_z.tex
+%% ポテンシャル関数 Z(f_1) の形状と UE 最小値（2 経路モデル例）
+%%
+%% 設定（2 経路，OD 交通量 q = 6）：
+%%   経路 1 費用：c_1(f_1) = 10 + f_1
+%%   経路 2 費用：c_2(f_2) = 5 + 3 f_2 = 5 + 3(6 - f_1) = 23 - 3 f_1
+%%   ポテンシャル関数：
+%%     Z(f_1) = ∫₀^{f_1}(10+w)dw + ∫₀^{6-f_1}(5+3w)dw
+%%            = 2 f_1² - 13 f_1 + 84     (f_1 ∈ [0, 6])
+%%   UE 解：f_1^* = 13/4 = 3.25，Z(f_1^*) = 62.875
+%%
+%% Usage: \input{assets/assignment/fig_potential_z.tex}
+
+\begin{tikzpicture}[
+  every node/.style={font=\small},
+  xscale=1.7,   %% f_1 軸 [0, 6]
+  yscale=0.045  %% Z 軸 [60, 90]
+]
+
+%% ===== 軸 =====
+\draw[->] (-0.1, 60) -- (6.5, 60) node[right] {$f_1$};
+\draw[->] (0, 57)    -- (0, 90)   node[above] {$Z(\boldsymbol{f})$};
+
+%% ===== ポテンシャル関数 Z(f_1) = 2f_1^2 - 13f_1 + 84 =====
+%% f_1 = 0→6 を 0.1 刻みで折れ線近似（\draw plot）
+\draw[very thick, blue!75!black, samples=61, domain=0:6,
+      variable=\f]
+  plot ({\f}, {2*\f*\f - 13*\f + 84});
+
+%% ===== UE 最適点 f_1^* = 3.25, Z^* ≈ 62.875 =====
+\fill[red!70!black] (3.25, 62.875) circle [radius=2.2pt];
+\draw[red!70!black, dashed, thin]
+  (3.25, 60) -- (3.25, 62.875);
+\node[above right, font=\small, red!70!black] at (3.25, 62.875)
+  {UE 最小値 $f_1^{*}$};
+
+%% --- UE 点から Z 軸への水平破線
+\draw[red!70!black, dashed, thin]
+  (0, 62.875) -- (3.25, 62.875);
+
+%% ===== 収束軌跡の例（Smith ダイナミクスのイメージ）=====
+%% 初期値 f_1^{(0)} = 1.0 から UE=3.25 へ単調収束する点列を示す
+%% Z 値：Z(1.0)=73, Z(1.7)=69.96, Z(2.3)=67.98, Z(2.8)=66.88,
+%%        Z(3.1)=63.82, Z(3.22)=62.94, Z(3.25)=62.875
+\coordinate (T0) at (1.0, 73.00);
+\coordinate (T1) at (1.7, 69.96);
+\coordinate (T2) at (2.3, 67.98);
+\coordinate (T3) at (2.8, 66.88);
+\coordinate (T4) at (3.1, 63.82);
+\coordinate (T5) at (3.22, 62.94);
+
+\foreach \pt in {T0,T1,T2,T3,T4,T5}{
+  \fill[orange!80!black] (\pt) circle [radius=2.2pt];
+}
+\draw[->, orange!80!black, thick, shorten >=3pt]
+  (T0) -- (T1);
+\draw[->, orange!80!black, thick, shorten >=3pt]
+  (T1) -- (T2);
+\draw[->, orange!80!black, thick, shorten >=3pt]
+  (T2) -- (T3);
+\draw[->, orange!80!black, thick, shorten >=3pt]
+  (T3) -- (T4);
+\draw[->, orange!80!black, thick, shorten >=3pt]
+  (T4) -- (T5);
+\draw[->, orange!80!black, thick, shorten >=3pt]
+  (T5) -- (3.25, 62.875);
+
+%% 初期値ラベル
+\node[above left, font=\small, orange!80!black] at (T0)
+  {$\boldsymbol{f}^{(0)}$};
+
+%% ===== 軸ラベル =====
+\node[below, font=\small] at (3.25, 60) {$f_1^{*}$};
+\node[left, font=\small]  at (0, 62.875) {$Z^{*}$};
+
+\node[below, font=\small] at (0, 60) {$0$};
+\node[below, font=\small] at (6, 60) {$q$};
+
+%% y 軸目盛り（参考）
+\draw[thin, gray] (-0.05, 70) -- (0.05, 70)
+  node[left, font=\scriptsize] {$70$};
+\draw[thin, gray] (-0.05, 80) -- (0.05, 80)
+  node[left, font=\scriptsize] {$80$};
+
+%% ===== 図注 =====
+%% （キャプション内に記載のため省略）
+
+\end{tikzpicture}

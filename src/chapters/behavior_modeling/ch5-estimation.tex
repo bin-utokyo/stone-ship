@@ -1,0 +1,405 @@
+%% chapters/behavior_modeling/ch5_estimation.tex
+%% 第5章　モデルの推定と検定
+
+\section{モデルの推定と検定}\label{sec:estimation}
+前章まででMNLモデルをはじめとした行動モデルを構築したが，行動モデルを用いた分析の真髄は実データをもとにモデルパラメータを推定することにある．
+モデル推定の目標は効用関数内の未知パラメータ $\beta_i$ を統計的に尤もらしい値として推定することであるが，同時にその値がどの程度信頼できるのかを検定することも重要である．
+本章では，効用最大化理論に基づく行動モデルの推定と検定について，特に離散選択モデルを中心に解説する．
+
+本節の構成は以下の通りである．
+まず\ref{sec:likelihood}項で尤度関数と最尤推定法の基礎を導入し，\ref{ssec:est_unique}項でパラメータの識別可能性について述べる．
+\ref{ch:testing}項では推定結果の統計的信頼性を評価するためのt検定・尤度比検定・擬似決定係数を解説する．
+最後に\ref{sec:observation_uncertainty}項では，前項までの議論が暗黙に仮定していた「観測データは真の行動を正確に反映している」という前提を問い直し，GPSやBLEなどのセンサデータに含まれる計測誤差のもとでの推定手法——経路計測モデル，構造推定，量子化と観測多様体——を紹介する．
+
+\subsection{尤度と最尤推定}\label{sec:likelihood}
+モデル推定の目標は，モデルの出力が実データにできるだけ近くなるようなパラメータ $\bm{\beta}$ を見つけることである．
+離散選択モデルでは，この問題は\textbf{尤度}を最大化するようなパラメータを求める\textbf{最尤推定法}によって解かれる．
+尤度とは，あるパラメータの値のもとで実際に観測されたデータが得られる確率のことを指し，より正解分布に近い出力を与えるパラメータがより高い尤度を持つ．
+
+MNLモデルにおける尤度関数を導出する．
+$M$ 人が $N$ 個の選択肢の中から独立に選択行動を行うとし，$k$ 番目の個人にとっての説明変数を $\bm{x_k}$，選択結果を $y_k$ とする．
+各人の選択行動が独立であることから，観測データ全体の同時確率は各個人の選択確率の積として表される．
+\begin{equation}
+    \label{eq:joint_prob}
+    P(y_1;\bm{x_1},y_2;\bm{x_2},\ldots,y_M;\bm{x_M}) = \prod_{k=1}^M P(y_k;\bm{x_k})
+\end{equation}
+これはパラメータ $\bm{\beta}$ の下で観測データが得られる確率そのものであるから，尤度関数 $L(\bm\beta)$ として定義できる．
+MNLの選択確率を代入すると次のようになる．
+\begin{equation}
+    \label{eq:likelihood}
+    L(\bm\beta) \coloneq \prod_{k=1}^M P(y_k;\bm{x_k}) = \prod_{k=1}^M\frac{\exp(V_{y_k})}{\sum_{a=1}^N \exp(V_a)}
+\end{equation}
+この尤度を最大化するパラメータ $\hat{\bm\beta} = \argmax_{\bm\beta} L(\bm\beta)$ を求める手法が最尤推定法である．
+
+実際の計算では，尤度 $L(\bm\beta)$ は 1 より小さい値を大量に掛け合わせるため非常に小さな値をとり，数値計算上アンダーフローを起こす恐れがある．
+そこで尤度の対数を取った\textbf{対数尤度}を最大化する（対数は単調増加関数であるため，最大化の結果は変わらない）．
+\begin{equation}
+    \label{eq:log_likelihood}
+    LL(\bm\beta) \coloneq\log L(\bm\beta) = \sum_{k=1}^M \log P(y_k;\bm{x_k})
+\end{equation}
+
+\subsection{識別可能性}\label{ssec:est_unique}
+最尤推定が意味のある結果を返すためには，尤度を最大化するパラメータの組が一意に定まる必要がある．
+この条件が満たされないとき，尤度関数の最大化が収束せずパラメータ推定に失敗する．
+
+離散選択モデルにおいて識別の問題が典型的に生じるのは，選択肢固有の定数項（ASC: Alternative-Specific Constant）の扱いである．
+例えば，鉄道 $S$，バス $B$，自家用車 $P$ の3選択肢に対し，効用の確定項を以下のように立式したとする．
+\begin{equation}
+    \label{eq:utility_bad}
+    \begin{aligned}
+        V_S & =\beta_{time}x_{S,time}+\beta_{cost} x_{S,cost}+\beta_{S,age}x_{age}+\beta_S \\
+        V_B & =\beta_{time}x_{B,time}+\beta_{cost} x_{B,cost}+\beta_{B,age}x_{age}+\beta_B \\
+        V_P & =\beta_{time}x_{P,time}+\beta_{cost} x_{P,cost}+\beta_{P,age}x_{age}+\beta_P
+    \end{aligned}
+\end{equation}
+MNLの選択確率は $\exp(V)$ の比で決まるため，全選択肢のASCに同じ定数 $c$ を加えても選択確率は変化しない．
+すなわち $(\beta_S, \beta_B, \beta_P)$ と $(\beta_S + c, \beta_B + c, \beta_P + c)$ は同一の選択確率を与え，尤度を最大化するパラメータの組が無限に存在してしまう．
+これを回避するには，1つの選択肢を基準として ASC を 0 に固定し，自由度を1つ下げればよい．
+\begin{equation}
+    \label{eq:utility_good}
+    \begin{aligned}
+        V_S & =\beta_{time}x_{S,time}+\beta_{cost} x_{S,cost}+\beta_{S,age}x_{age}         \\
+        V_B & =\beta_{time}x_{B,time}+\beta_{cost} x_{B,cost}+\beta_{B,age}x_{age}+\beta_B \\
+        V_P & =\beta_{time}x_{P,time}+\beta_{cost} x_{P,cost}+\beta_{P,age}x_{age}+\beta_P
+    \end{aligned}
+\end{equation}
+この問題は，第1節でガンベル分布のスケールパラメータ $\mu$ を 1 に正規化した理由と本質的に同じである．
+効用の絶対値には意味がなく，差だけが選択確率を決定するという離散選択モデルの根本的性質に起因する．
+
+
+\subsection{検定}\label{ch:testing}
+パラメータの推定値が得られたとしても，その値が統計的に信頼できるかは別問題である．
+検定では大きく二つの問いに答える必要がある．
+第一に，推定された各パラメータが $0$ と有意に異なるかどうか（個々の説明変数が選択行動に影響しているか）を判定する\textbf{t検定}，
+第二に，推定モデル全体がNull model（全パラメータ $0$ のモデル）に比べて有意に適合度が高いかを判定する\textbf{尤度比検定}である．
+いずれの検定も，推定量が確率変数であることを利用してその分布を考え，帰無仮説のもとで観測結果がどの程度起こりうるかを評価する．
+
+以下ではまず検定の前提となる統計量と推定量の概念を整理し，次にt検定と尤度比検定の手順を述べる．
+
+\subsubsection{推定値と推定量}\label{ssec:estimator}
+前節で最尤推定法によって求めた $\hat{\bm\beta}$ の具体的な数値を\textbf{最尤推定値}と呼ぶ．
+しかし，最尤推定値は標本の選び方によって変わるため，「尤度を最大化する操作によって得られる量」として抽象化すれば，これは標本変量の関数すなわち\textbf{統計量}であり，確率変数としての分布を持つ．
+このように推定のために構成される統計量を\textbf{推定量}と呼び $\hat\beta$ と記す．
+最尤推定量は以下の漸近的な性質を満たすことが知られている．
+\begin{description}
+    \item[一致性] 標本数を無限に増やすと，最尤推定値はパラメータの真値に収束する．
+    \item[漸近正規性] 標本数が十分に多いとき，最尤推定量の分布は正規分布に近づく．
+    \item[漸近有効性] 標本数が十分に多いとき，最尤推定量の分散は不偏推定量の分散の下限（クラメール・ラオの下限）に近付く．
+\end{description}
+
+\subsubsection{最尤推定量の分散とフィッシャー情報行列}\label{ssec:variance_estimator}
+推定量の期待値がパラメータの真値に一致するとき\textbf{不偏推定量}，さらにその不偏推定量が他のどの不偏推定量よりも分散が小さいとき\textbf{有効推定量}と呼ぶ．
+最尤推定量は厳密には不偏ではないが，標本が十分に多ければ漸近的に有効推定量と同等のふるまいを示す（漸近有効性）．
+不偏推定量の分散の下限を与えるのがクラメール・ラオの不等式である．
+
+\begin{itembox}[l]{クラメール・ラオの不等式}
+    \label{it:cramer_rao}
+    $\bm{\hat\beta}$ をパラメータ $\bm\beta$ の不偏推定量とし，$\mathrm{Cov}(\bm{\hat\beta})$ は $\bm{\hat\beta}$ の分散共分散行列，$LL$ は対数尤度関数とする．このとき以下の行列に対する不等式が成り立つ．
+
+    \begin{align}
+        \label{eq:fisher_information}
+        I(\bm\beta) &\coloneqq -\mathbb{E}\left[\nabla\nabla^\top LL(\bm\beta)\right] \\
+        \label{eq:cramer_rao}
+        \mathrm{Cov}(\bm{\hat\beta}) &\ge I(\bm\beta)^{-1}
+    \end{align}
+    ただし，\eqref{eq:cramer_rao}の不等号は，左辺から右辺を引いた行列 $\mathrm{Cov}(\bm{\hat\beta})-I(\bm\beta)^{-1}$ が半正定値行列であることを意味する\footnote{もし $\bm\beta$ が1変数のパラメータであれば，この不等号は単に実数の不等号と同じ意味になる．}．
+\end{itembox}
+% \noindent\textbf{証明}\quad \ref{prf:cramer_rao}を参照．
+
+$I(\bm\beta)$は\textbf{フィッシャー情報行列}と呼ばれる．なお，$\nabla\nabla^\top LL(\bm\beta)$ は書き出すと下の\eqref{eq:hessian_matrix}のようになり，特に行列部分には\textbf{ヘッセ行列}という名前がつけられている．
+
+\begin{equation}
+    \label{eq:hessian_matrix}
+    \nabla\nabla^\top LL(\bm\beta) = \begin{bmatrix}
+        \frac{\partial^2 LL}{\partial {\beta_1}^2}              & \frac{\partial^2 LL}{\partial \beta_1 \partial \beta_2} & \cdots & \frac{\partial^2 LL}{\partial \beta_1 \partial \beta_n}  \\
+        \frac{\partial^2 LL}{\partial \beta_2 \partial \beta_1} & \frac{\partial^2 LL}{\partial {\beta_2}^2}              & \cdots & \frac{\partial^2 LL}{\partial \beta_2 \partial \beta_n } \\
+        \vdots                                                  & \vdots                                                  & \ddots & \vdots                                                   \\
+        \frac{\partial^2 LL}{\partial \beta_n \beta_1}          & \frac{\partial^2 LL}{\partial \beta_n \partial \beta_2} & \cdots & \frac{\partial^2 LL}{\partial {\beta_n}^2}
+    \end{bmatrix} \bm\beta
+\end{equation}
+
+等号が成立するとき，$\bm{\hat\beta}$ は分散の下限を達成しているので，$\bm{\hat\beta}$ は有効推定量となる．最尤推定量の場合は，漸近有効性により，標本が十分多ければ等号成立，すなわち
+
+\begin{equation}
+    \label{eq:fisher_information_inv}
+    \mathrm{Cov}(\bm{\hat\beta}) \simeq I(\bm\beta)^{-1}
+\end{equation}
+
+としてよい．
+このように，フィッシャー情報行列を求めることで，最尤推定量の分散を求めることができる．
+フィッシャー情報行列を確率変数である$\bm\beta$の分布から直接計算することもできるが，フィッシャー情報行列に代えて\textbf{観測された情報行列}を用いる方が計算が簡単かつ有用である．観測された情報行列$J(\bm{\hat\beta})$は次のように定義される．
+
+\begin{equation}
+    \label{eq:observed_information}
+    J(\bm{\hat\beta}) \coloneqq -\nabla\nabla^\top LL(\bm{\hat\beta})
+\end{equation}
+
+\eqref{eq:observed_information}を用いると，\eqref{eq:fisher_information_inv}の代わりに次の式が得られる．
+
+\begin{equation}
+    \label{eq:observed_information_inv}
+    \mathrm{Cov}(\bm{\hat\beta}) \simeq J(\bm{\hat\beta})^{-1}
+\end{equation}
+
+\subsubsection{t検定}\label{ssec:interval_est}
+t検定では，各パラメータについて「$\beta_i = 0$」（その説明変数は効用に影響しない）という帰無仮説を立て，これを棄却できるかどうかを判定する．
+具体的には，\eqref{eq:observed_information_inv}から得られる各パラメータの標準誤差 $s_i$ を用いて推定量を標準化した\textbf{t値}
+\begin{equation}
+    t_i \coloneq \frac{\hat\beta_i}{s_i}
+\end{equation}
+を計算する．
+漸近正規性により，$|t_i| > 1.96$ であれば帰無仮説は $5\%$ 有意水準で棄却され，$|t_i| > 2.58$ であれば $1\%$ 有意水準で棄却される．
+% 図\ref{fig:interval_est}に示すように，$95\%$ 信頼区間内に $0$ が含まれなければ棄却，含まれれば棄却されない．
+% \begin{figure}[ht]
+%     \centering
+%     \resizebox{.9\linewidth}{!}{%
+%       \input{assets/behavior_modeling/fig_pdf_ttest.tex}%
+%     }
+%     \caption{信頼区間とt検定の関係．左：$0$ が信頼区間外にあり帰無仮説は棄却される．右：$0$ が信頼区間内にあり棄却されない．}
+%     \label{fig:interval_est}
+% \end{figure}
+
+注意すべき点として，帰無仮説が棄却されなかった場合，それはその説明変数が「効かない」ことを証明しているわけではなく，「効くとは言い切れない」ことを意味するにすぎない．
+標本数が増えれば棄却される可能性もある．
+
+\subsubsection{尤度比検定}\label{sec:likelihood_ratio}
+t検定が個々のパラメータの有意性を問うのに対し，尤度比検定はモデル全体としての適合度を比較する．
+モデル $A$ をモデル $B$ に説明変数・パラメータを追加した上位モデルとするとき，両者の対数尤度の差 $LL(\hat{\bm\beta}_A) - LL(\hat{\bm\beta}_B)$ が十分に大きければ，追加した説明変数がモデルの改善に寄与していると判断できる．
+
+尤度比検定では，次のような帰無仮説を立てる．
+
+\begin{itembox}[l]{尤度比検定での帰無仮説}
+    帰無仮説：モデルAとモデルBの尤度比は $0$ である．
+\end{itembox}
+
+尤度が大きい方がより「もっともらしい」モデルなので，説明変数が多いモデルAの方が尤度が大きくなってほしいところである．この帰無仮説が棄却されればモデルAの方が有意に尤度が大きいということができ，二つのモデルの適合度の差が有意なものであるということができる．
+
+標本が十分に多いとき，$2(LL(\hat{\bm\beta}_A) - LL(\hat{\bm\beta}_B))$ は自由度 $N_A - N_B$（$N_A, N_B$ はそれぞれのパラメータ数）のカイ二乗分布に従うことが知られている．
+この統計量がカイ二乗分布の上側 $5\%$ 点を超えれば，帰無仮説「両モデルの適合度に差はない」を $5\%$ 有意水準で棄却できる．
+特に，全パラメータを $0$ としたモデル（\textbf{Null model}，対数尤度 $LL(\bm{0})$）を基準モデルとすれば，構築したモデルがランダムな予測より有意に優れていることを確認できる．
+なお，尤度比検定ではモデル $A$ がモデル $B$ を包含する入れ子の関係にある必要がある．
+
+\subsubsection{McFaddenの擬似決定係数と自由度調整}
+尤度比検定のカイ二乗統計量は自由度に依存するため，異なるモデル間の適合度を直感的に比較しにくい．
+回帰分析における決定係数に対応する指標として，\textbf{McFaddenの擬似決定係数} $\rho^2$ が広く用いられている．
+\begin{equation}
+    \rho^2 \coloneq 1-\frac{LL(\bm{\hat\beta})}{LL(\bm 0)}
+\end{equation}
+$\rho^2$ は $0$（Null modelと同等）から $1$（完全な予測）の範囲をとり，モデルの適合度を簡潔に示す．
+ただし $\rho^2$ はパラメータ数が増えるほど値が大きくなる傾向があるため，パラメータ数 $N$ によるペナルティを加えた\textbf{自由度調整済み決定係数} $\bar\rho^2$ も併せて用いられる．
+あまり効かないような説明変数であったとしても，ないよりはあったほうがモデルが考慮できる情報は増え，モデルの説明性は向上するのが基本である．
+単純な $\rho^2$ ではこのような過度なパラメタライゼーションを助長する可能性があるため，$\bar\rho^2$ の方がより厳密な適合度の指標として用いられる．
+\begin{equation}
+    \bar\rho^2 \coloneq 1-\frac{LL(\bm{\hat\beta})-N}{LL(\bm 0)}
+\end{equation}
+経験的に $\bar\rho^2$ が $0.2$ 以上であれば十分な適合度，$0.15$ 以上でも概ね良好とされる．
+Logitモデルの推定結果を報告する際には，初期尤度 $LL(\bm{0})$，最終尤度 $LL(\hat{\bm\beta})$ とともに $\rho^2$ や $\bar\rho^2$ を併記するのが一般的である．
+
+
+\subsection{観測の不確実性とモデル推定}\label{sec:observation_uncertainty}
+
+前節までの推定と検定の議論では，暗黙の前提として\textbf{観測データが真の行動を正確に反映している}ことを仮定していた．
+すなわち，個人の選択結果 $y_k$ や経路 $r = [a_1, \ldots, a_T]$ は誤りなく観測されているものとして尤度関数を構成し，パラメータを推定した．
+
+しかし実際の交通行動データ，特にGPSやBLE（Bluetooth Low Energy）などのセンサデータに基づく観測では，計測誤差が不可避的に存在する．
+GPSの測位精度は屋外でも数メートル，屋内やアーケード街ではさらに大きく劣化し，BLEビーコンでは電波減衰・パケットロス・マルチパスなどの影響を受ける．
+このような状況で，観測データから「真の経路」を確定的に同定することは困難であり，同定された経路が誤っていれば，その誤りに基づいて推定されたモデルパラメータもバイアスを持つことになる．
+
+本節では，この観測の不確実性に正面から向き合い，計測モデルと行動モデルを統合的に推定する枠組みを解説する．
+
+\subsubsection{従来の推定における暗黙の仮定}\label{sssec:conventional_assumption}
+
+従来の経路選択モデルの推定では，センサデータからの経路推定（マップマッチング）とモデルパラメータの推定が\textbf{分離された二段階の手続き}として行われてきた（図\ref{fig:estimation_bias}）．
+\begin{enumerate}
+  \item \textbf{前処理（経路推定）:} GPSの位置情報列からマップマッチング等により「真の経路」$\bar{r}$ を確定的に同定する．
+  \item \textbf{パラメータ推定:} 同定された経路 $\bar{r}$ を真の観測として扱い，最尤推定法により行動モデルのパラメータ $\theta$ を推定する．
+\end{enumerate}
+
+\begin{figure}[htb]
+  \centering
+  \begin{tikzpicture}[
+    every node/.style={font=\small},
+    box/.style={draw, rounded corners, minimum width=2.8cm, minimum height=0.7cm, align=center},
+    arr/.style={->, thick}
+  ]
+    % 従来手法
+    \node[box, fill=gray!10] (raw) at (0, 0) {センサデータ\\$\hat{\bm{m}}$};
+    \node[box, fill=blue!10] (mm) at (4, 0) {マップマッチング\\$\bar{r} = \arg\max p(\hat{\bm{m}} | r)$};
+    \node[box, fill=orange!10] (mle) at (9, 0) {パラメータ推定\\$\hat{\theta} = \arg\max LL(\theta; \bar{r})$};
+    \draw[arr] (raw) -- (mm);
+    \draw[arr] (mm) -- (mle);
+    \node[above=0.3cm] at (4.5, 0.5) {\textbf{従来：二段階推定}};
+    % バイアスの注釈
+    \node[text=red, font=\footnotesize] at (6.5, -0.7) {$\bar{r}$ の誤りが $\hat{\theta}$ にバイアスを生む};
+  \end{tikzpicture}
+  \caption{従来の二段階推定の流れ．前処理で経路を確定的に同定するため，マップマッチングの誤りがパラメータ推定のバイアスに直結する．}
+  \label{fig:estimation_bias}
+\end{figure}
+
+この手続きの問題は，Step 1で同定された経路 $\bar{r}$ が真の経路と異なる場合，Step 2の推定結果が系統的にバイアスを持つことである．
+特に歩行者ネットワークのように密なネットワークでは経路候補が多く，計測誤差に対して頑健な経路同定が困難になるため，バイアスはより深刻になる．
+
+\subsubsection{経路計測モデルとリンク固有分散}\label{sssec:route_measurement}
+
+Oyama and Hato (2018) \cite{Oyama2018gpseng} は，マップマッチングとパラメータ推定を分離せず，\textbf{計測モデル}と\textbf{行動モデル}を統合的に扱う枠組みを提案した．
+
+その基本的な着想は，GPSの位置情報 $\hat{\bm{m}}$ と真の経路 $r$ の関係を確率的に記述する\textbf{経路計測モデル}（route measurement model）を導入することである．
+リンク $a$ 上の位置 $x$ で観測されたGPS座標 $\hat{x}$ の計測確率を，リンク固有の分散 $\sigma_a^2$ を持つ正規分布でモデル化する．
+\begin{equation}\label{eq:measurement_prob}
+  p(\hat{x} \mid x, a; \sigma_a) = \frac{\|\hat{x} - x\|}{\sigma_a^2} \exp\!\left(-\frac{\|\hat{x} - x\|^2}{2\sigma_a^2}\right)
+\end{equation}
+ここで $\|\hat{x} - x\|$ は観測位置と真の位置のユークリッド距離であり，レイリー分布の形をとる．
+
+従来の計測モデルではネットワーク全体で一定の分散 $\sigma$ を仮定していたが，実際にはアーケード街や高層ビル近辺では分散が大きく，見通しの良い道路では小さいといった\textbf{空間的な異質性}がある．
+リンク固有の分散 $\sigma_a$ を導入することで，この異質性を明示的にモデルに組み込むことが可能になる．
+
+計測モデルと行動モデルを結合した\textbf{リンク尤度}は，ベイズの定理により以下のように書ける．
+\begin{equation}\label{eq:link_likelihood}
+  p(a_t \mid \hat{\bm{m}}^t, a_{t-1}) = \frac{p(\hat{\bm{m}}^t \mid a_t; \sigma_{a_t}) \, p(a_t \mid a_{t-1}; \theta)}{\sum_{a \in \mathcal{A}(a_{t-1})} p(\hat{\bm{m}}^t \mid a; \sigma_a) \, p(a \mid a_{t-1}; \theta)}
+\end{equation}
+ここで $p(\hat{\bm{m}}^t \mid a_t; \sigma_{a_t})$ は計測モデル，$p(a_t \mid a_{t-1}; \theta)$ は行動モデル（RLモデルの遷移確率）である．
+この式は，各時点で「計測データがどの程度そのリンクと整合的か」（計測尤度）と「行動モデルに基づいてそのリンクがどの程度選ばれやすいか」（事前確率）の積によって，リンクの事後確率を計算する構造になっている．
+
+\subsubsection{構造推定：計測モデルと行動モデルの不動点}\label{sssec:structural_estimation}
+
+上述のリンク尤度は計測パラメータ $\sigma$ と行動パラメータ $\theta$ の双方に依存するため，両者を同時に推定する必要がある．
+Oyama and Hato (2018) \cite{Oyama2018gpseng} はこの問題を，計測モデルと行動モデルの\textbf{不動点}を探索する\textbf{構造推定}（structural estimation）として定式化した．
+
+\begin{enumerate}
+  \item \textbf{初期化:} 行動パラメータの初期値 $\theta^{(0)}$（例：無情報事前分布 $\theta^{(0)} = \bm{0}$）を設定する．
+  \item \textbf{計測モデルの推定:} 行動パラメータ $\theta^{(h)}$ を固定し，計測モデルの分散 $\sigma$ を推定する．同時に推定された経路 $r^{(h)}$ を得る．
+  \item \textbf{行動モデルの推定:} 推定された経路 $r^{(h)}$ を用いて行動パラメータ $\theta^{(h+1)}$ を最尤推定する．
+  \item \textbf{収束判定:} $|\theta^{(h+1)} - \theta^{(h)}| < \xi$ であれば終了．そうでなければStep 2に戻る．
+\end{enumerate}
+
+この反復過程は，情報幾何学におけるEM（Expectation-Maximization）アルゴリズム \cite{Amari1995} と本質的に同じ構造を持つ．
+Step 2は「現在の行動モデル（事前分布）のもとで観測データから経路を推定する」操作（E-step），Step 3は「推定された経路のもとで行動パラメータを更新する」操作（M-step）に対応する．
+
+不動点では $\theta^{(h)} = \theta^{(h+1)}$ が成立し，計測モデルが推定に用いる事前情報（行動モデル）と，推定結果から得られる行動パラメータが\textbf{整合的}（self-consistent）になる．
+初期パラメータ $\theta^{(0)}$ が真値から大きく外れていても，反復によって整合的な不動点に収束することが数値実験で確認されている．
+
+\subsubsection{量子化と観測多様体}\label{sssec:quantization}
+
+前項の構造推定は，各時点で「最も尤もらしい1本のリンク」を逐次的に同定する枠組みであった．
+しかし観測の不確実性が極めて高い場合（例：屋内のBLEビーコン観測），最尤のリンクですら信頼性が低く，逐次的な同定の誤りが後続の推定に波及するという問題が残る．
+
+Matsunaga and Hato (2026) \cite{matsunaga2026trc} は，この問題に対してリンクの確定的な同定を一切回避する\textbf{量子化}（quantization）のアプローチを提案した．
+「量子化」とは，物理学における量子力学のアナロジーであり，従来の確定的な状態同定（古典的な0/1の判定）を，複数の状態に対する確率分布へと緩和する操作を指す．
+
+具体的には，従来の最尤推定における確定的な遷移の指示関数（クロネッカーのデルタ）
+\begin{equation}\label{eq:deterministic_delta}
+  \delta_{S_T | S_{T-1}} = \begin{cases} 1, & \text{if } S_T \text{ が真の状態} \\ 0, & \text{otherwise} \end{cases}
+\end{equation}
+を，観測データに条件づけられた\textbf{遷移尤度}（transition likelihood）$Q_{S_T, S_{T-1}}$ に置き換える．
+\begin{equation}\label{eq:transition_likelihood}
+  Q_{S_T, S_{T-1}}(S^{\mathrm{obs}}) = p(S_T \mid S_{T-1}, S^{\mathrm{obs}}) \propto p(S^{\mathrm{obs}} \mid S_T; \sigma) \, p(S_T \mid S_{T-1}; \theta)
+\end{equation}
+ここで $S^{\mathrm{obs}}$ はBLEビーコンの観測レコード集合，$p(S^{\mathrm{obs}} \mid S_T; \sigma)$ は観測モデル，$p(S_T \mid S_{T-1}; \theta)$ は行動モデルの遷移確率である．
+
+この量子化のもとで，対数尤度は以下の\textbf{一般化対数尤度}（generalized log-likelihood）に拡張される．
+\begin{equation}\label{eq:generalized_ll}
+  \tilde{LL}(\sigma, \theta) = -\sum_i \sum_{T=1}^{T^{\max}} Q_{S_T, S_{T-1}}\!\left(S^{\mathrm{obs}}; \sigma, \theta\right) \ln p(S_T \mid S_{T-1}; \theta)
+\end{equation}
+通常の対数尤度では $\delta_{S_T | S_{T-1}} \in \{0, 1\}$ であった重みが，$Q_{S_T, S_{T-1}} \in [0, 1]$ という連続的な確率分布に置き換わっている．
+この $Q$ の分布は観測データとモデルパラメータの双方に依存し，パラメータの更新に伴って変化する．
+この意味で $Q$ は固定された点ではなく，パラメータ空間上の\textbf{多様体}（manifold）を形成する．
+Matsunaga and Hato (2026) \cite{matsunaga2026trc} はこれを\textbf{観測多様体}（observation manifold）と呼び，EMアルゴリズムと同様に，観測多様体とモデル多様体の間の繰り返し射影によってパラメータを推定する手法を提案した．
+
+量子化の利点は，観測の不確実性が高い状況において顕著に現れる．
+数値実験では，ビーコンの配置が疎でありかつ計測分散が大きい条件下で，量子化ありの推定が量子化なし（確定的同定）の推定に比べてRMSEが大幅に改善されることが報告されている．
+一方で不確実性が低い場合には，量子化なしの確定的手法でも十分な精度が得られ，両手法の差は小さくなる．
+
+\subsubsection{潜在状態モデルとしての統一的理解}\label{sssec:latent_state}
+
+以上で紹介した枠組みは，いずれも「真の経路は直接観測できない\textbf{潜在変数}（latent variable）であり，観測されるのは計測誤差を含んだセンサデータである」という視点に立つ．
+この構造は，\textbf{隠れマルコフモデル}（Hidden Markov Model; HMM）と同型である．
+
+\begin{description}
+  \item[隠れ状態] 真の経路（リンクの系列）$r = [a_1, \ldots, a_T]$．直接は観測できない．
+  \item[観測] センサデータ $\hat{\bm{m}} = [\hat{\bm{m}}^1, \ldots, \hat{\bm{m}}^T]$．隠れ状態に依存して確率的に生成される．
+  \item[遷移モデル] 行動モデル $p(a_t \mid a_{t-1}; \theta)$．RLモデルなどの経路選択モデル．
+  \item[放出モデル] 計測モデル $p(\hat{\bm{m}}^t \mid a_t; \sigma)$．GPS/BLEの計測誤差モデル．
+\end{description}
+
+この対応のもとで，前項の構造推定はHMMにおけるBaum-Welchアルゴリズム（EMアルゴリズムの一種）に，量子化は前向き・後ろ向きアルゴリズムによる状態確率の計算に，それぞれ対応する．
+
+重要な点は，この枠組みにおいて行動モデルと計測モデルが\textbf{相互に依存}していることである．
+行動モデルのパラメータが変われば，各時点でどのリンクが「もっともらしい」かの判断が変わり，結果として推定に用いられるデータ自体が変化する．
+逆に，計測モデルの精度が向上すれば，より正確な経路情報に基づいて行動パラメータを推定できる．
+構造推定や量子化の手法は，この相互依存性を不動点の探索として解決するものであり，「データは真である」という暗黙の仮定から解放された，より頑健な推定を可能にする．
+
+
+\begin{example}[title={クイズ 1：誤差項の解釈}]
+効用関数 $U_a = V_a + \varepsilon_a$ の誤差項 $\varepsilon_a$ が表すものとして最も適切なものはどれか．
+\begin{itemize}
+  \item[(ア)] 個人の非合理的な意思決定による揺らぎ
+  \item[(イ)] 観測データの計測誤差
+  \item[(ウ)] 分析者が観測できない，選択に影響を与える要因
+  \item[(エ)] 個人が選択肢を正確に比較できないことによる揺らぎ
+\end{itemize}
+% \hyperref[ans:q1]{$\rightarrow$ 正解・解説}
+\end{example}
+
+\begin{example}[title={クイズ 2：ログサム変数の直感的意味}]
+NLモデルにおいて，公共交通ネスト（赤バスのみ）に「青バス」が新たに加わったとき，ログサム変数 $V'_{\text{公共交通}}$ はどう変化するか．
+\begin{itemize}
+  \item[(ア)] 変化しない（確定効用が同じ選択肢の追加は影響しない）
+  \item[(イ)] 増加する
+  \item[(ウ)] 減少する
+  \item[(エ)] 青バスの確定効用が赤バスより大きい場合にのみ増加する
+\end{itemize}
+\end{example}
+
+\begin{example}[title={クイズ 3：Mixed Logitの推定結果の解釈}]
+Mixed Logitモデルで交通手段選択を推定した結果，旅行時間パラメータの標準偏差 $\sigma$ が期待値 $\bar{\beta}$ と同程度に大きかった．この結果の解釈として最も適切なのはどれか．
+\begin{itemize}
+  \item[(ア)] 旅行時間は選択行動にほとんど影響していない
+  \item[(イ)] 旅行時間の観測データに大きな計測誤差がある
+  \item[(ウ)] 旅行時間を重視する人としない人が母集団内に混在している
+  \item[(エ)] モデルの当てはまりが悪く，推定が収束していない
+\end{itemize}
+\end{example}
+
+\vspace{1em}
+\hrule
+\vspace{1em}
+
+
+\begin{example}[title={クイズ 1 正解・解説}]
+\phantomsection\label{ans:q1}
+\textbf{正解：(ウ)}
+
+ランダム効用最大化理論（RUT）は\textbf{完全合理性}を前提としている．
+すなわち，個人は自身の効用を完全に把握しており，常にそれを最大化するように選択を行う．
+この前提は誤差項 $\varepsilon_a$ を導入しても崩れない．
+（ア）や（エ）のように個人の意思決定に非合理性や不完全性を認める立場は，限定合理性（bounded rationality）の考え方であり，RUTの枠組みとは異なる．
+
+誤差項 $\varepsilon_a$ が表すのは，選択に影響を与えるが\textbf{分析者が観測できない要因}である．
+例えば「今日は天気がいいから自転車にしよう」という判断は本人にとっては完全に合理的だが，分析者のモデルに天気が説明変数として含まれていなければ，その影響は $\varepsilon$ に吸収され「ランダムに自転車を選んだ」ように見える．
+すなわち ``Random Utility'' の ``Random'' は個人の行動がランダムであることを意味するのではなく，分析者から見て効用がランダムに見えることを意味している．
+\end{example}
+
+
+
+\begin{example}[title={クイズ 2 正解・解説}]
+\phantomsection\label{ans:ch2-q2}
+\textbf{正解：（イ）}
+
+ログサム変数は $V'_d = \frac{1}{\mu}\ln\sum_i \exp\bigl(\mu (V_i + V_{di})\bigr)$ で定義される．
+$\exp$ の和に正の項が追加されるため，新たな選択肢の確定効用の大小によらず $V'_d$ は必ず増加する．
+これがNLモデルにおける赤バス青バス問題の解決の仕組みである．
+青バスの追加により公共交通ネストのログサム変数（すなわちネスト全体の「魅力度」）が上昇し，上位ネストでの公共交通の選択確率が増加する．
+一方でこの増加は上位ネストのMNL構造を通じて調整されるため，MNLモデルのように車の選択確率が $1/2$ から $1/3$ まで極端に低下することはない．
+\end{example}
+
+\begin{example}[title={クイズ 3 正解・解説}]
+\phantomsection\label{ans:ch2-q3}
+\textbf{正解：（ウ）}
+
+Mixed Logitモデルにおけるランダム係数の標準偏差 $\sigma$ は，そのパラメータが母集団内でどれだけばらついているかを表す．
+$\sigma$ が $|\bar{\beta}|$ と同程度に大きいということは，旅行時間を非常に重視する人からほとんど気にしない人まで幅広く混在していることを意味する．
+さらに，正規分布を仮定している場合，$\sigma \approx |\bar{\beta}|$ であればパラメータの符号が反転する個人（旅行時間が長いほうを選好する人）が一定割合存在することも示唆される．
+これはMNLモデルでは表現できない情報であり，Mixed Logitモデルを用いる意義そのものである．
+\end{example}
+
+

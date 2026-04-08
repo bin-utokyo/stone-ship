@@ -9,15 +9,27 @@ See also `src/chapters/sample.tex` for working examples of every rule below.
 
 ## Table of Contents
 
-1. [Heading Structure](#heading-structure)
-2. [Citations](#citations)
-3. [Figures](#figures)
-4. [Tables](#tables)
-5. [Equations](#equations)
-6. [Source Code](#source-code)
-7. [Cross-references](#cross-references)
-8. [Bibliography (BibTeX)](#bibliography-bibtex)
-9. [Japanese Typography](#japanese-typography)
+- [Style Guide](#style-guide)
+  - [Table of Contents](#table-of-contents)
+  - [Heading Structure](#heading-structure)
+  - [Citations](#citations)
+  - [Figures](#figures)
+    - [Rules](#rules)
+  - [Tables](#tables)
+    - [Rules](#rules-1)
+  - [Equations](#equations)
+    - [Inline equations](#inline-equations)
+    - [Display equations (numbered)](#display-equations-numbered)
+    - [Multi-line equations](#multi-line-equations)
+    - [Rules](#rules-2)
+  - [Source Code](#source-code)
+    - [Rules](#rules-3)
+  - [Cross-references](#cross-references)
+  - [Bibliography (BibTeX)](#bibliography-bibtex)
+    - [File management](#file-management)
+    - [BibTeX entry format](#bibtex-entry-format)
+    - [Rules](#rules-4)
+  - [Japanese Typography](#japanese-typography)
 
 ---
 
@@ -178,7 +190,10 @@ def logit_prob(utilities):
 
 | Target | Example label | Reference syntax |
 |---|---|---|
-| Chapter / section | `sec:intro` | `\ref{sec:intro}` |
+| Chapter | `ch:intro` | `Chapter~\ref{ch:intro}` |
+| Section (`\section`) | `sec:intro` | `\sref{sec:intro}` → 第\ref{sec:intro}節 |
+| Subsection (`\subsection`) | `subsec:model` | `\ssref{subsec:model}` → 第\ref{subsec:model}小節 |
+| Subsubsection (`\subsubsection`) | `subsubsec:item` | `\sssref{subsubsec:item}` → 第\ref{subsubsec:item}項 |
 | Figure | `fig:result` | `Figure~\ref{fig:result}` |
 | Table | `tab:data` | `Table~\ref{tab:data}` |
 | Equation | `eq:model` | `Equation~\eqref{eq:model}` |

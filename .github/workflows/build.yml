@@ -1,13 +1,20 @@
-name: Build PDF
+name: Build
 
 on:
   push:
     branches:
       - main
+    tags:
+      - 'v*'
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write   # リリース作成に必要
     steps:
       - uses: actions/checkout@v4
 
@@ -19,8 +26,56 @@ jobs:
             apk add --no-cache zsh
             zsh utility/compile.sh
 
-      - name: Upload PDF
+      - name: Install pandoc and pandoc-crossref
+        run: |
+          set -euo pipefail
+          PANDOC_VERSION="3.9.0.2"
+          CROSSREF_VERSION="v0.3.23a"
+          # pandoc
+          curl -fsSL "https://github.com/jgm/pandoc/releases/download/${PANDOC_VERSION}/pandoc-${PANDOC_VERSION}-1-amd64.deb" -o pandoc.deb
+          sudo dpkg -i pandoc.deb && rm pandoc.deb
+          # pandoc-crossref
+          curl -fsSL "https://github.com/lierdakil/pandoc-crossref/releases/download/${CROSSREF_VERSION}/pandoc-crossref-Linux-X64.tar.xz" -o pandoc-crossref.tar.xz
+          tar -xJf pandoc-crossref.tar.xz pandoc-crossref
+          sudo install -m 755 pandoc-crossref /usr/local/bin/pandoc-crossref
+          rm pandoc-crossref.tar.xz pandoc-crossref
+          # zip（リリースアーカイブ用）
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends zip
+
+      - name: Fix build directory permissions
+        run: sudo chown -R "$(whoami)" build/
+
+      - name: Convert to Markdown
+        run: python3 utility/tex2md.py
+
+      - name: Upload PDF artifact
         uses: actions/upload-artifact@v4
         with:
           name: main.pdf
           path: build/main.pdf
+
+      - name: Upload Markdown artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: main.md
+          path: build/main.md
+
+      - name: Compute version
+        id: version
+        run: |
+          if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
+            echo "tag=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=v$(date +'%Y.%m.%d')-$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create release archive
+        run: zip -j build/release.zip build/main.pdf build/main.md
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          files: build/release.zip
+          generate_release_notes: true

@@ -1,0 +1,271 @@
+%% chapters/assignment/ch1_network.tex
+%% 第1章　交通ネットワークの記述
+
+\section{交通ネットワークの記述}
+\label{sec:ch1-network}
+
+本節では，交通量配分問題を数学的に定式化するための基礎概念を整理する．
+まずネットワークの構成要素（ノード・リンク・セントロイド・ODペア・経路）を定義し，
+次に配分計算で用いる基本変数と関係式を導入する．
+続いて，リンク旅行時間をリンク交通量の関数として表す
+\textbf{リンクパフォーマンス関数}（BPR関数）を説明し，
+最後に本テキストで扱う配分モデルの全体像を概観する．
+
+% ---------------------------------------------------------------
+\subsection{ネットワークの構成要素}
+\label{subsec:network-elements}
+% ---------------------------------------------------------------
+
+交通ネットワークは，交差点やゾーン重心を表す\textbf{ノード}と，
+道路区間を表す\textbf{リンク}からなる\textbf{有向グラフ}として表現される\cite{土木学会1998}．
+この基本構造に，需要情報（ODペア・OD交通量）および経路の概念を加えることで，
+交通量配分問題が定式化される（図\ref{fig:network-example}）．
+
+\begin{figure}[hbtp]
+  \centering
+  \input{assets/assignment/fig_network_example.tex}
+  \caption{交通ネットワークの構成要素（4ノード例）．
+           四角形ノードはセントロイド（$r \in R,\, s \in S$），
+           円形ノードは通常の交差点ノードを表す．
+           ODペア $rs$ の需要 $q_{rs}$ は3本の経路 $K_{rs} = \{k_1, k_2, k_3\}$ に配分される．}
+  \label{fig:network-example}
+\end{figure}
+
+各構成要素は以下のように定義される\cite{土木学会1998,Sheffi1985}．
+
+\begin{description}
+  \item[ノード集合 $N$]
+    ネットワーク上の節点（交差点・ゾーン重心など）の集合．
+    個々のノードを $i, j \in N$ で表す．
+    実際の道路網では交差点や信号機の位置がノードに対応する．
+
+  \item[リンク集合 $A$]
+    ノード間を結ぶ有向辺（道路区間）の集合．
+    リンクは通常，方向を持つ（一方通行，または往復を別々の有向辺として定義する）．
+    個々のリンクを $a \in A$ で表し，始点ノード $i$ と終点ノード $j$ の組
+    $(i, j)$ で特定することもある．
+
+  \item[セントロイドおよびゾーン集合]
+    交通需要の発生・集中地点となる特別なノードを\textbf{セントロイド}（centroid）と呼ぶ．
+    出発地（Origin）の役割を持つセントロイドの集合を $R$，
+    到着地（Destination）の役割を持つセントロイドの集合を $S$ とする．
+    セントロイドは，ゾーン（地区・行政区など）内に分散する起終点を
+    1点に集約した仮想的なノードであり，ゾーン重心とも呼ばれる．
+
+  \item[ODペア集合 $\Omega$]
+    出発地 $r \in R$ と目的地 $s \in S$ の組合せ $(r, s)$ を
+    \textbf{ODペア}（OD pair）と呼ぶ．
+    すべての有効なODペアの集合を $\Omega$ で表す．
+    ODペア $rs$ 間の移動需要（OD交通量）を $q_{rs} \geq 0$ とする．
+
+  \item[経路集合 $K_{rs}$]
+    ODペア $rs$ を結ぶリンク列，すなわち始点が $r$，終点が $s$ となる
+    有向パスの集合を $K_{rs}$ と表す．
+    各経路を $k \in K_{rs}$ で表し，個々の経路 $k$ は通過するリンクの
+    列として識別される．一般に同一ODペアに対して複数の経路が存在しうる．
+\end{description}
+
+% ---------------------------------------------------------------
+\subsection{基本変数と関係式}
+\label{subsec:basic-variables}
+% ---------------------------------------------------------------
+
+交通量配分で中心的に扱う変数を表\ref{tab:notation}にまとめる．
+
+\begin{table}[hbtp]
+  \centering
+  \caption{交通量配分の主要記号}
+  \label{tab:notation}
+  \begin{tabular}{cll}
+    \toprule
+    記号 & 意味 & 単位（例） \\
+    \midrule
+    $x_a$            & リンク $a$ の交通量 & 台/時 \\
+    $t_a(x_a)$       & リンク $a$ の旅行時間（リンクパフォーマンス関数） & 分 \\
+    $t_{a0}$         & リンク $a$ の自由流旅行時間（$x_a=0$ のとき） & 分 \\
+    $C_a$            & リンク $a$ の交通容量（キャパシティ） & 台/時 \\
+    $f_k^{rs}$       & ODペア $rs$ の経路 $k$ の交通量 & 台/時 \\
+    $q_{rs}$         & ODペア $rs$ のOD交通量（需要） & 台/時 \\
+    $c_k^{rs}$       & ODペア $rs$ の経路 $k$ の旅行時間 & 分 \\
+    $u_{rs}$         & ODペア $rs$ の均衡最小旅行時間 & 分 \\
+    $\delta_{a,k}^{rs}$ & リンク $a$ が経路 $k^{rs}$ に含まれるなら $1$，含まれないなら $0$ & — \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+これらの変数の間には以下の基本的な関係式が成り立つ\cite{土木学会1998}．
+
+\subsubsection*{リンク交通量と経路交通量の関係}
+
+リンク $a$ の交通量 $x_a$ は，そのリンクを通過するすべての経路の交通量の和として表される：
+\begin{equation}
+  x_a = \sum_{rs \in \Omega}\, \sum_{k \in K_{rs}} f_k^{rs}\, \delta_{a,k}^{rs}
+  \label{eq:link-flow}
+\end{equation}
+ここで $\delta_{a,k}^{rs}$ は\textbf{リンク–経路付替行列}（link-path incidence matrix）の要素であり，
+経路 $k^{rs}$ がリンク $a$ を通るとき $\delta_{a,k}^{rs}=1$，通らないとき $\delta_{a,k}^{rs}=0$ の値をとる．
+
+\subsubsection*{流量保存条件（非負条件・需要充足条件）}
+
+各ODペア $rs \in \Omega$ に対し，経路交通量は以下の条件を満たす必要がある：
+\begin{equation}
+  \sum_{k \in K_{rs}} f_k^{rs} = q_{rs}, \qquad
+  f_k^{rs} \geq 0 \quad \forall\, k \in K_{rs},\; \forall\, rs \in \Omega
+  \label{eq:flow-conservation}
+\end{equation}
+第1式は，あるODペア間の全需要 $q_{rs}$ が何らかの経路に必ず配分されることを
+要求する（需要充足条件）．
+第2式は交通量の非負性を保証する（負の交通量は物理的に無意味である）．
+
+\subsubsection*{経路旅行時間}
+
+経路 $k^{rs}$ の旅行時間 $c_k^{rs}$ は，その経路上のリンク旅行時間の和として計算される：
+\begin{equation}
+  c_k^{rs} = \sum_{a \in A} t_a(x_a)\, \delta_{a,k}^{rs}
+  \label{eq:path-time}
+\end{equation}
+
+式\eqref{eq:link-flow}〜\eqref{eq:path-time}は，未知変数として
+経路交通量 $\{f_k^{rs}\}$ またはリンク交通量 $\{x_a\}$ を持つ．
+両者は式\eqref{eq:link-flow}によって結ばれており，一方が決まれば他方も定まる．
+実際の配分計算ではリンク交通量 $\{x_a\}$ を主要変数として扱うことが多い
+（\sref{sec:ch3-ue} \ssref{subsec:beckmann}参照）\cite{Beckmann1956}．
+
+% ---------------------------------------------------------------
+\subsection{リンクパフォーマンス関数（BPR関数）}
+\label{subsec:bpr}
+% ---------------------------------------------------------------
+
+リンク旅行時間 $t_a$ がリンク交通量 $x_a$ に依存する場合，
+その関係を表す関数を\textbf{リンクパフォーマンス関数}
+（Link Performance Function, LPF）または\textbf{旅行時間関数}と呼ぶ．
+交通量の増加に伴って旅行時間が長くなる混雑現象を定量的に表現するために用いる．
+
+実務で最も広く使われるのが，
+米国道路局（Bureau of Public Roads, BPR）が提案した\textbf{BPR関数}（BPR function）である\cite{土木学会1998}：
+\begin{equation}
+  t_a(x_a) = t_{a0}\left\{1 + \alpha\left(\frac{x_a}{C_a}\right)^{\beta}\right\}
+  \label{eq:bpr}
+\end{equation}
+ここで $t_{a0}$ は自由流旅行時間（交通量ゼロ時の所要時間），$C_a$ は交通容量，
+$\alpha, \beta$ はパラメータである．
+実務的に広く用いられる標準値は $\alpha = 0.15$，$\beta = 4$ である．
+
+式\eqref{eq:bpr}の主な性質は以下のとおりである（図\ref{fig:bpr-curve}）．
+
+\begin{itemize}
+  \item $x_a = 0$ のとき $t_a(0) = t_{a0}$（自由流速度での走行）．
+  \item $x_a = C_a$ のとき $t_a(C_a) = (1+\alpha)\,t_{a0} = 1.15\,t_{a0}$
+    （標準値では，容量交通量における旅行時間は自由流の 15\% 増し）．
+  \item $x_a > C_a$ でも関数値は有限であり，過飽和状態を連続的に表現できる．
+  \item $\beta > 1$ のとき，$t_a(x_a)$ は $x_a \geq 0$ 上で単調増加かつ狭義凸である．
+    この凸性は，利用者均衡配分の等価最適化問題が一意な解を持つことの
+    十分条件として重要な役割を果たす（\sref{sec:ch3-ue} \ssref{subsec:beckmann}参照）．
+\end{itemize}
+
+\begin{figure}[hbtp]
+  \centering
+  \input{assets/assignment/fig_bpr_curve.tex}
+  \caption{BPR関数のグラフ（$\alpha=0.15$, $\beta=4$）．
+           横軸は交通量 $x_a$ を容量 $C_a$ で正規化した値，
+           縦軸は旅行時間 $t_a(x_a)$ を自由流旅行時間 $t_{a0}$ で正規化した値．
+           $x_a = C_a$（容量到達点）での旅行時間は $1.15\,t_{a0}$ となる（破線）．}
+  \label{fig:bpr-curve}
+\end{figure}
+
+\subsubsection*{非混雑型（フロー非依存）と混雑型（フロー依存）の区別}
+
+旅行時間がリンク交通量に依存しない（$t_a = \text{const}$）配分モデルを
+\textbf{フロー非依存型}（flow-independent）または\textbf{非混雑型}と呼ぶ．
+一方，BPR関数のように旅行時間が交通量に依存するモデルを
+\textbf{フロー依存型}または\textbf{混雑型}と呼ぶ．
+この区別は，\sref{sec:ch2-uncongested}（非混雑型配分）と\sref{sec:ch3-ue}・\sref{sec:ch4-sue}（均衡配分）の節立てに対応する
+（次節参照）．
+
+\begin{example}[title={クイズ 1：首都高3号線，朝ラッシュで何分遅れる？}]
+首都高速3号渋谷線（用賀$\rightarrow$大橋JCT，自由流旅行時間 $t_{a0}=10$ 分，容量 $C_a=2{,}000$ 台/時）でBPR パラメータ $\alpha=0.15$，$\beta=4$ を仮定します．
+交通量が容量ちょうど（$x_a = C_a$）のとき，旅行時間はいくらになるでしょうか？
+\begin{itemize}
+  \item[(ア)] 10.0分（変わらない）
+  \item[(イ)] 11.5分（1.15倍）
+  \item[(ウ)] 17.6分（1.76倍）
+  \item[(エ)] 25.0分（2.5倍）
+\end{itemize}
+\hyperref[ans:q1]{$\rightarrow$ 正解・解説は節末を参照}
+\end{example}
+
+% ---------------------------------------------------------------
+\subsection{配分モデルの全体像}
+\label{subsec:model-overview}
+% ---------------------------------------------------------------
+
+交通量配分モデルは，「フロー依存性」と「経路選択の確定性・確率性」という
+2軸で大きく4種類に分類できる\cite{Sheffi1985}．
+この4象限分類は序章の図\ref{fig:model_overview}に示したとおりであり，
+本テキストの構成の骨格をなす．
+
+\begin{description}
+  \item[\sref{sec:ch2-uncongested} \quad 非混雑型配分（フロー非依存配分）]
+    旅行時間が交通量に依存しない（$t_a = \text{const}$）と仮定する．
+    全利用者が最短経路にすべての交通量を集中させる
+    \textbf{All-or-Nothing 配分}（\ssref{subsec:aon}）と，
+    利用者が経路をロジットモデルに従って確率的に選ぶ
+    \textbf{確率的配分}（\ssref{subsec:stochastic-assignment}・\ssref{subsec:dial-algorithm}）を扱う．
+    後者の効率的な計算法として\textbf{Dial のアルゴリズム}を紹介する\cite{Dial1971}．
+
+  \item[\sref{sec:ch3-ue} \quad 利用者均衡配分（UE）]
+    混雑を考慮する（フロー依存型）かつ利用者が完全情報のもとで
+    確定的に最短経路を選ぶと仮定する．
+    \textbf{Wardropの第1原則}を満たす均衡状態を，
+    Beckmann 変換による等価最適化問題として定式化し，
+    \textbf{Frank-Wolfe 法}で求解する\cite{Beckmann1956,FrankWolfe1956}．
+    また，新規リンクの追加が全利用者の旅行時間を悪化させうる
+    \textbf{Braessのパラドックス}を紹介する\cite{Braess1968}．
+
+  \item[\sref{sec:ch4-sue} \quad 確率的利用者均衡配分（SUE）]
+    混雑を考慮しつつ，利用者が旅行時間の認知に確率的誤差を持つと仮定する．
+    ロジット型SUEの等価最適化問題と各種解法を扱う\cite{Daganzo1977,Fisk1980}．
+
+  \item[\sref{sec:ch5-so}〜\sref{sec:ch9-simulation} \quad 発展的トピック]
+    上記を基礎として，
+    社会全体の総旅行時間を最小化する\textbf{システム最適配分}と
+    \textbf{Pigouvian混雑課金}（\sref{sec:ch5-so}・\sref{sec:ch8-pigou}\cite{Pigou1920}），
+    UEをポテンシャルゲームとして捉え均衡収束過程を記述する
+    \textbf{進化ゲーム理論と Day-to-day ダイナミクス}（\sref{sec:ch7-evogame}\cite{Sandholm2010}），
+    および\textbf{マクロ・ミクロシミュレーション}（\sref{sec:ch9-simulation}\cite{Daganzo2007}）へと
+    議論は展開していく．
+\end{description}
+
+\subsubsection*{本節のまとめ}
+
+本節で整理した主要な概念を振り返る：
+\begin{enumerate}
+  \item 交通ネットワークはノード集合 $N$・リンク集合 $A$・セントロイド・
+        ODペア集合 $\Omega$・経路集合 $K_{rs}$ の5要素で表現される有向グラフであり，
+        交通量配分問題の基本的な解空間を定義する
+        （\ssref{subsec:network-elements}）．
+  \item リンク交通量 $x_a$・経路交通量 $f_k^{rs}$・リンク–経路付替行列
+        $\delta_{a,k}^{rs}$ の3変数に加え，
+        リンク–経路関係式・流量保存条件・経路旅行時間の3式が基本関係式をなし，
+        配分計算ではリンク変数 $\{x_a\}$ を主要変数として扱う
+        （\ssref{subsec:basic-variables}）．
+  \item BPR 関数 $t_a(x_a) = t_{a0}\{1 + \alpha(x_a/C_a)^\beta\}$ は
+        自由流旅行時間・容量・混雑回帰係数を組み込んだ実務的な混雑関数であり，
+        $\beta > 1$ における狭義単調増加・狭義凸の性質が
+        UE 解の一意性の重要な十分条件となる
+        （\ssref{subsec:bpr}）．
+  \item 交通量配分モデルは「フロー依存性」と「経路選択の確定性・確率性」の
+        2軸で4象限に分類され，
+        本テキストの章構成（\sref{sec:ch2-uncongested}〜\sref{sec:ch9-simulation}）の
+        基本的な骨格をなす
+        （\ssref{subsec:model-overview}）．
+\end{enumerate}
+
+\begin{example}[title={クイズ 1 正解・解説}]
+\phantomsection\label{ans:q1}
+\textbf{正解：（イ）}
+
+$t_a=10\times[1+0.15\times 1^4]=11.5$ 分．
+容量ちょうどではわずかな増加にとどまりますが，$x_a/C_a=1.5$ になると 17.6 分に急増します．
+4乗の効果が効くのは容量を大きく超えてからです．
+\end{example}

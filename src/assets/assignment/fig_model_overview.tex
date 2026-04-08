@@ -1,0 +1,49 @@
+%% fig_model_overview.tex
+%% 配分モデルの4象限分類図
+%% Usage: \input{assets/assignment/fig_model_overview.tex}
+\begin{tikzpicture}[
+    every node/.style={font=\small},
+    header/.style={fill=gray!30, align=center, inner sep=0pt, font=\small\bfseries},
+    cell/.style={align=center, inner sep=0pt},
+    cellhi/.style={align=center, inner sep=0pt, fill=gray!12}
+]
+\matrix (m) [
+    matrix of nodes,
+    column sep=-\pgflinewidth,
+    row sep=-\pgflinewidth,
+    nodes={draw, outer sep=0pt},
+] {
+    %% 左上コーナー（空白）
+    |[cell, text width=2.0cm, minimum height=1.00cm,draw=none]|
+        {\parbox[c][1.00cm][c]{2.0cm}{}} &
+    %% 列ヘッダ
+    |[header, text width=4.6cm, minimum height=1.00cm]|
+        {\parbox[c][1.00cm][c]{4.6cm}{\centering
+         フロー\textbf{非}依存型\\（非混雑型）}} &
+    |[header, text width=4.6cm, minimum height=1.00cm]|
+        {\parbox[c][1.00cm][c]{4.6cm}{\centering
+         フロー\textbf{依存}型\\（混雑型）}} \\
+    %% 確定的選択の行
+    |[header, text width=2.0cm, minimum height=2.1cm]|
+        {\parbox[c][2.1cm][c]{2.0cm}{\centering 確定的\\選択}} &
+    |[cell,   text width=4.6cm, minimum height=2.1cm]|
+        {\parbox[c][2.1cm][c]{4.6cm}{\centering
+         \textbf{All-or-Nothing 配分}\\[3pt]
+         全交通量を最短経路に集中配分\\（第2章 \S2.1）}} &
+    |[cellhi, text width=4.6cm, minimum height=2.1cm]|
+        {\parbox[c][2.1cm][c]{4.6cm}{\centering
+         \textbf{利用者均衡配分（UE）}\\[3pt]
+         Wardrop 第1原則に基づく均衡\\（第3章）}} \\
+    %% 確率的選択の行
+    |[header, text width=2.0cm, minimum height=2.1cm]|
+        {\parbox[c][2.1cm][c]{2.0cm}{\centering 確率的\\選択}} &
+    |[cell,   text width=4.6cm, minimum height=2.1cm]|
+        {\parbox[c][2.1cm][c]{4.6cm}{\centering
+         \textbf{確率的配分}\\[3pt]
+         ロジット確率に従う経路選択\\Dial のアルゴリズム等\\（第2章 \S2.3, 2.4）}} &
+    |[cellhi, text width=4.6cm, minimum height=2.1cm]|
+        {\parbox[c][2.1cm][c]{4.6cm}{\centering
+         \textbf{確率的利用者均衡配分（SUE）}\\[3pt]
+         知覚旅行時間に基づく均衡\\（第4章）}} \\
+};
+\end{tikzpicture}
