@@ -1,0 +1,65 @@
+%% fig_aon_example.tex
+%% All-or-Nothing 配分の例：最短経路への集中配分と後退流量集計
+%%
+%% ネットワーク： r(Origin), A, B, s(Destination)
+%% リンクコスト：r→A=2, r→B=5, A→s=3, B→s=2, A→B=4
+%% 最短経路：r→A→s（費用=5），OD交通量 q=10
+%% AoN結果：x_{rA}=10, x_{As}=10，その他=0
+%%
+%% Usage: \input{assets/assignment/fig_aon_example.tex}
+
+\begin{tikzpicture}[
+    every node/.style={font=\small},
+    nd/.style={circle, draw, thick, minimum size=0.75cm,
+               font=\small\bfseries, inner sep=1pt, fill=white},
+    cnd/.style={rectangle, draw, thick, rounded corners=3pt,
+                minimum width=0.80cm, minimum height=0.80cm,
+                font=\small\bfseries, inner sep=4pt, fill=gray!10},
+    arr/.style={->, >=stealth, thick},
+    arred/.style={->, >=stealth, very thick, blue!70!black},
+    arrgray/.style={->, >=stealth, thick, gray!60},
+    lbl/.style={font=\footnotesize, fill=white, inner sep=1.5pt},
+    lblgray/.style={font=\footnotesize, fill=white, inner sep=1.5pt, text=gray!60}
+]
+
+%% ===== ノード =====
+\node[cnd] (r) at (0.0,  0.0) {$r$};
+\node[nd]  (A) at (3.0,  1.5) {$A$};
+\node[nd]  (B) at (3.0, -1.5) {$B$};
+\node[cnd] (s) at (6.0,  0.0) {$s$};
+
+%% ===== リンク（最短経路以外：灰色） =====
+\draw[arrgray] (r) -- node[lblgray, below, sloped] {$t=5$} (B);
+\draw[arrgray] (A) -- node[lblgray, right]          {$t=4$} (B);
+\draw[arrgray] (B) -- node[lblgray, below, sloped]  {$t=2$} (s);
+
+%% ===== リンク（最短経路：青・太線） =====
+\draw[arred]   (r) -- node[lbl, above, sloped] {$t=2$} (A);
+\draw[arred]   (A) -- node[lbl, above, sloped] {$t=3$} (s);
+
+%% ===== 配分後の交通量ラベル =====
+\node[font=\footnotesize, blue!70!black] at (1.3,  1.35)  {$x=10$};
+\node[font=\footnotesize, blue!70!black] at (4.7,  1.35)  {$x=10$};
+\node[font=\footnotesize, gray!60]       at (1.3, -1.35)  {$x=0$};
+\node[font=\footnotesize, gray!60]       at (3.8, -0.28)  {$x=0$};
+\node[font=\footnotesize, gray!60]       at (4.7, -1.35)  {$x=0$};
+
+%% ===== 最短経路費用ラベル（ノード横に $c(i)$） =====
+\node[font=\scriptsize, gray, below right=1pt] at (r.south west) {$c(r)=0$};
+\node[font=\scriptsize, gray, below=12pt, right=-10pt] at (A.south east) {$c(A)=2$};
+\node[font=\scriptsize, gray, below right=1pt] at (B.south west) {$c(B)=5$};
+\node[font=\scriptsize, gray, below right=1pt] at (s.south west) {$c(s)=5$};
+
+%% ===== OD需要アノテーション =====
+\draw[<->, >=stealth, thick, gray, dashed, out=70, in=110]
+    (r) to node[above, font=\footnotesize, gray] {$q_{rs}=10$} (s);
+
+%% ===== 凡例 =====
+\node[draw=gray!50!black, rounded corners=2pt, font=\footnotesize, align=left,
+      inner sep=5pt, fill=white]
+  at (3.0, -3.0) {
+    {\color{blue!70!black}\rule[0.5ex]{6mm}{1.5pt}}\ 最短経路（全交通量を集中配分）\\
+    {\color{gray!50!black}\rule[0.5ex]{6mm}{1.5pt}}\ その他のリンク（交通量 $x=0$）
+  };
+
+\end{tikzpicture}

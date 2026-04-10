@@ -1,0 +1,511 @@
+%% chapters/assignment/ch2_uncongested.tex
+%% 第2章　非混雑型配分（フロー非依存配分）
+
+\section{非混雑型配分（フロー非依存配分）}
+\label{sec:ch2-uncongested}
+
+本節では，リンク旅行時間が交通量に依存しない\textbf{フロー非依存型}の配分モデルを扱う．
+\sref{sec:ch1-network} \ssref{subsec:bpr} で述べたように，非混雑型ではリンク旅行時間 $t_a$ を定数として扱うため，
+経路費用 $c_k^{rs}$ が交通量とは無関係に決まる．
+このシンプルな仮定のもとで，経路選択の「確定性」と「確率性」という観点から
+4種類のモデルを順に紹介する（図\ref{fig:model_overview}，本節部分）．
+
+\begin{description}
+  \item[\ssref{subsec:aon} All-or-Nothing 配分]
+    各ODペアの利用者が唯一の最短経路にすべての交通量を集中させる，
+    最も単純な確定的配分モデルである．
+    混雑を考慮しないため現実の交通分散は再現できないが，
+    後続の均衡配分（\sref{sec:ch3-ue}）のアルゴリズムに繰り返し現れる基本部品でもある．
+
+  \item[\ssref{subsec:markov-assignment} 吸収マルコフ過程配分]
+    ネットワーク上の移動を確率的なランダムウォークとして定式化するモデルである．
+    経路を陽に列挙せずに流量を求められ，循環フローも原理上取り扱える\cite{Akamatsu1996}．
+
+  \item[\ssref{subsec:stochastic-assignment} 確率的配分（ロジット配分）]
+    利用者が経路費用に応じたロジット確率で経路を選択するモデルである\cite{McFadden1974}．
+    パラメータ $\theta$ によって「最短経路への集中」と「均等分散」の間を連続的に制御できる．
+
+  \item[\ssref{subsec:dial-algorithm} Dial のアルゴリズム]
+    経路を陽に列挙せずにロジット配分を実現する効率的な計算手法である\cite{Dial1971}．
+    前進・後退の2パス処理によって計算量を大幅に削減する．
+\end{description}
+
+本節で新たに用いる主要記号を表\ref{tab:ch2-notation}にまとめる（基本記号は表\ref{tab:notation}参照）．
+
+\begin{table}[hbtp]
+  \centering
+  \caption{非混雑型配分の主要記号}
+  \label{tab:ch2-notation}
+  \begin{tabular}{cll}
+    \toprule
+    記号 & 意味 & 単位（例） \\
+    \midrule
+    $c(i)$          & ノード $i$ への最短経路費用（起点からの最小旅行時間） & 分 \\
+    $F_j$           & 先行ポインタ（最短経路ツリー上のノード $j$ の直前ノード） & — \\
+    $y_{ij}$        & AoN 集計補助フロー（起点からリンク $(i,j)$ に集計される交通量） & 台/時 \\
+    $P_{ij}$        & ノード $i$ からノード $j$ への遷移確率（マルコフ配分） & — \\
+    $\mathbf{N}$    & 基本行列 $(I-Q)^{-1}$（一時的状態間の平均通過回数を表す行列） & — \\
+    $v_j^*$         & 目的地までの最短残余費用（目的地考慮型ロジットで事前計算） & 分 \\
+    $\theta$        & ロジットの感度パラメータ（$\theta\to\infty$ で AoN 配分に収束） & 分$^{-1}$ \\
+    $P_k^{rs}$      & ODペア $rs$ の利用者が経路 $k$ を選択するロジット確率 & — \\
+    $L[i\to j]$    & Dial のアルゴリズムにおけるリンク尤度 & — \\
+    $W[i\to j]$    & Dial のアルゴリズムにおけるリンクウェイト & — \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+% ---------------------------------------------------------------
+\subsection{All-or-Nothing 配分}
+\label{subsec:aon}
+% ---------------------------------------------------------------
+
+\subsubsection*{基本的考え方}
+
+\textbf{All-or-Nothing（AoN）配分}は，各利用者がリンク旅行時間を一定と見なした
+うえで最短経路のみを選択するという行動仮定に基づく\cite{土木学会1998}．
+全利用者が同じ経路情報を持ち，各ODペアの最短経路は一意に定まると仮定すると，
+すべての交通量 $q_{rs}$ は1本の最短経路に集中する．
+残りの経路には交通量がまったく流れないという「all or nothing（全か無か）」の
+割り当て方がその名前の由来である（図\ref{fig:aon-example}）．
+
+\begin{figure}[hbtp]
+  \centering
+  \input{assets/assignment/fig_aon_example.tex}
+  \caption{All-or-Nothing 配分の例（4ノードネットワーク，OD交通量 $q_{rs}=10$）．
+           最短経路 $r \to A \to s$（費用5）に全量が配分され，他のリンクには交通量が流れない．
+           ノード横の $c(i)$ は起点 $r$ からの最短経路費用を表す．}
+  \label{fig:aon-example}
+\end{figure}
+
+\begin{table}[hbtp]
+  \centering
+  \caption{図\ref{fig:aon-example} のネットワークにおける最短経路費用と先行ポインタ（起点 $r$，Dijkstra 法の出力）．}
+  \label{tab:aon-dijkstra}
+  \begin{tabular}{ccc}
+    \toprule
+    ノード $j$ & 最短経路費用 $c(j)$ & 先行ポインタ $F_j$ \\
+    \midrule
+    $r$ & $0$ & --- \\
+    $A$ & $2$ & $r$ \\
+    $B$ & $5$ & $r$ \\
+    $s$ & $5$ & $A$ \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\subsubsection*{アルゴリズム}
+
+AoN 配分は以下の手順で実施する\cite{土木学会1998,Sheffi1985}．
+
+\begin{description}
+  \item[\textsf{Step 1}（初期化）]
+    全リンクの交通量をゼロに初期化：$x_{ij}^{(0)} = 0$，$n \leftarrow 1$．
+
+  \item[\textsf{Step 2}（最短経路計算）]
+    起点 $o \in \mathcal{R}$ を選択する．Dijkstra 法などで起点 $o$ から全ノードへの最短経路費用
+    $\{c(j)\}$ および先行ポインタ $\{F_j\}$ を計算する．
+
+  \item[\textsf{Step 3}（ツリー順走査・集計）]
+    最短経路ツリーを $c(j)$ の降順（起点から遠い順）にたどりながら，
+    各ノード $j \in \mathcal{N} \setminus \{o\}$ に対し $i \coloneqq F_j$（先行ポインタ）とおくと，
+    リンク $(i,j)$ の上流フロー $y_{ij}$ を以下の式で集計する：
+    \begin{equation}
+      y_{ij} = q_{oj} + \sum_{m \in \mathcal{O}_j^{(o)}} y_{jm}
+      \label{eq:aon-flow-agg}
+    \end{equation}
+    ここで $q_{oj}$ は起点 $o$・目的地 $j$ のOD交通量，
+    $\mathcal{O}_j^{(o)}$ は最短経路ツリー上でノード $j$ から流出するリンクの終点集合である．
+    式\eqref{eq:aon-flow-agg}の直感的意味は「ノード $j$ を通過する交通量は，
+    $j$ 自身を目的地とするOD需要と，$j$ 以降のノードへ向かう流量の合計」である．
+    リンク交通量を $x_{ij}^{(n)} = x_{ij}^{(n-1)} + y_{ij}$ で更新する．
+
+  \item[\textsf{Step 4}（終了判定）]
+    $n < |\mathcal{R}|$ ならば $n \leftarrow n+1$ として Step 2 へ戻る．全起点を処理したら終了．
+\end{description}
+
+Step 3 では，最短経路ツリーが\textbf{木構造（ツリー）}をなすことを利用する．
+各起点$o$の最短経路ツリーは無閉路で，宛先に向かう唯一の経路が定まっているため，
+葉ノード（目的地に相当するノード）から根ノード（起点 $o$）に向かって
+流量を逆算的に集計できる（式\eqref{eq:aon-flow-agg}）．
+経路を陽に列挙・保存する必要がないため，計算量は $O(|\mathcal{N}|)$ と効率的である
+（詳細は\sref{sec:appendix-B}参照）．
+
+\subsubsection*{問題点}
+
+AoN 配分は単純で計算コストが低い反面，以下の問題点を持つ．
+
+\begin{itemize}
+  \item 混雑を考慮しないため，最短経路に交通量が集中し，現実の分散を再現できない．
+  \item ODペアごとに最短経路が1本しか選ばれないため，並行リンクへの配分が過小になりやすい．
+  \item 旅行時間が更新されないので，配分後の旅行時間と配分の根拠（定数旅行時間）が矛盾する．
+\end{itemize}
+
+混雑を考慮した均衡を求める Frank-Wolfe 法（\sref{sec:ch3-ue} \ssref{subsec:frank-wolfe}）では，
+各反復で現在の旅行時間に基づくAoN配分を繰り返す「補助解問題」にこのアルゴリズムが用いられる．
+すなわち，AoN 配分は均衡配分の部品として重要な役割を果たす．
+
+\begin{example}[title={クイズ 2：カーナビが全員に同じ「最短ルート」を案内したら？}]
+1000 人のドライバー全員がカーナビやルート案内アプリを使い，同じ「最短ルート」に誘導されました．その後，何が起きるでしょうか？
+\begin{itemize}
+  \item[(ア)] 全員が最短経路を走れるので，全体の旅行時間が最短になる
+  \item[(イ)] 最短経路に交通量が集中し，かえって渋滞が悪化する
+  \item[(ウ)] 混雑が嫌で他のルートに移る人が出るため，自然に分散する
+\end{itemize}
+\hyperref[ans:q2]{$\rightarrow$ 正解・解説は節末を参照}
+\end{example}
+
+% ---------------------------------------------------------------
+\subsection{吸収マルコフ過程配分}
+\label{subsec:markov-assignment}
+% ---------------------------------------------------------------
+
+\subsubsection*{基本的考え方}
+
+AoN 配分では，各利用者が決定論的に最短経路を選ぶと仮定した．
+これに対して\textbf{吸収マルコフ過程配分}は，
+ネットワーク上の移動を確率的なプロセスとして定式化するモデルである\cite{Akamatsu1996}．
+利用者は各ノードを訪問するたびに次のリンクを確率的に選択し，
+目的地ノードに到達した時点でそのODトリップが完了する（吸収される）．
+
+この定式化は次の利点を持つ．
+\begin{enumerate}
+  \item 経路を陽に列挙することなく，リンクあたりの期待通過回数として流量を解析的に求められる．
+  \item 一般的な遷移確率行列を用いるため，循環フロー（同一リンクを複数回通過するルート）を原理上取り扱える\cite{Akamatsu1996}．
+  \item ロジット型確率を遷移確率として採用することで，確率的な経路選択を表現できる．
+\end{enumerate}
+
+\subsubsection*{定式化}
+
+ノード集合を\textbf{吸収状態}（目的地の集合 $\mathcal{D} \subset \mathcal{N}$）と
+\textbf{一時的状態}（それ以外のノード $\mathcal{T} = \mathcal{N} \setminus \mathcal{D}$）に分割する．
+ODペア $rs$ に対して，ノード間の遷移確率行列 $P$ を次のように整理する：
+
+\begin{equation}
+  P = \begin{pmatrix} Q & R \\ O & I \end{pmatrix}
+  \label{eq:markov-transition}
+\end{equation}
+
+ここで，$Q$（$|\mathcal{T}| \times |\mathcal{T}|$行列）は一時的状態間の遷移確率，
+$R$（$|\mathcal{T}| \times |\mathcal{D}|$行列）は一時的状態から吸収状態への遷移確率，
+$O$ はゼロ行列，$I$ は単位行列である．
+遷移確率の行和は1，すなわち $Q\mathbf{1} + R\mathbf{1} = \mathbf{1}$（ただし $\mathbf{1}$は全成分1のベクトル）が成立する．
+
+ランダムウォークが最終的に吸収状態へ到達することを保証するため，
+$Q$ がすべての固有値が絶対値1未満であることを仮定する．
+このとき\textbf{基本行列}（fundamental matrix）
+
+\begin{equation}
+  \mathbf{N} = (I - Q)^{-1} = I + Q + Q^2 + \cdots
+  \label{eq:fundamental-matrix}
+\end{equation}
+
+が存在する．$\mathbf{N}_{ij}$（$\mathbf{N}$ の $(i,j)$ 成分）は，起点 $i$ から出発したウォーカーが
+一時的状態 $j$ を平均何回通過するかを表す．
+
+ODペア $rs$（$r \in \mathcal{T}, s \in \mathcal{D}$）に対して，リンク $a = (i, j)$（$i \in \mathcal{T}$）の
+期待フローは以下のように求められる：
+
+\begin{equation}
+  x_a^{rs} = q_{rs} \cdot \mathbf{N}_{ri} \cdot P_{ij}
+  \label{eq:markov-flow}
+\end{equation}
+
+\begin{equation}
+  x_a = \sum_{rs \in \Omega} x_a^{rs}
+  \label{eq:markov-total-flow}
+\end{equation}
+
+式\eqref{eq:markov-flow}の直感的意味は「ODペア $rs$ の $q_{rs}$ 人のうち，
+ノード $i$ を通過するのは平均 $\mathbf{N}_{ri}$ 人で，そのうちリンク $(i,j)$ を選ぶ割合が $P_{ij}$」である．
+
+\subsubsection*{遷移確率の設定}
+
+遷移確率 $P_{ij}$ の設定方法はモデルの仮定に依存する．
+最も単純な\textbf{ローカルロジット型}では，リンク旅行時間のみで選択確率を定める：
+
+\begin{equation}
+  P_{ij}^{\mathrm{local}} = \frac{\exp(-\theta t_{ij})}{\displaystyle\sum_{k \in \mathcal{A}(i)} \exp(-\theta t_{ik})}
+  \label{eq:markov-logit-local}
+\end{equation}
+
+ただしこの設定は目的地の方向を考慮しないため，ランダムウォークが循環フローを生じやすい（後述）．
+Akamatsu（1996）が提案する\textbf{目的地考慮型ロジット}では，
+リンク旅行時間に目的地 $s$ までの最適残余費用 $v^*_j$（後退Dijkstra法により事前計算）を
+加えた有効費用 $t_{ij} + v^*_j$ に基づいて遷移確率を定める：
+
+\begin{equation}
+  P_{ij} = \frac{\exp\bigl(-\theta(t_{ij} + v^*_j)\bigr)}{\displaystyle\sum_{k \in \mathcal{A}(i)} \exp\bigl(-\theta(t_{ik} + v^*_k)\bigr)}
+  \label{eq:markov-logit}
+\end{equation}
+
+ここで $\mathcal{A}(i)$ はノード $i$ から出るリンクの端点集合である．
+$v^*_j$ が小さい（目的地に近い）ノードほど高確率で選ばれるため，
+経路は自然に目的地方向へ誘導される．$\theta \to \infty$ のとき
+最短経路リンクのみ $P_{ij} \to 1$ となり，AoN 配分に収束する．
+
+\subsubsection*{リスク回避型利用者均衡（RAUE）への展開}
+
+Bell \& Cassir（2002）は，旅行時間に不確実性がある場合に
+各利用者が期待費用 $\mu_p$ だけでなく標準偏差 $\sigma_p$ も考慮して経路選択を行うと仮定し，
+\textbf{リスク回避型利用者均衡（Risk-Averse User Equilibrium, RAUE）}を定式化した\cite{Bell2002}．
+一般化知覚費用 $\mu_p + \lambda\sigma_p$（$\lambda \geq 0$：リスク回避度パラメータ）の
+最小化を各交差点でのゲーム理論的（ミニマックス）逐次意思決定として定式化し，
+マルコフ連鎖によって解を求めている．
+RAUE は通常のロジット型SUE とは異なる経路分担を与えるとともに，
+利用者均衡（\sref{sec:ch3-ue}参照）の枠組みを前提としている点で，
+本節が扱うフロー非依存・非均衡配分の単純な拡張とは性格が異なることに注意する．
+
+\subsubsection*{注意点}
+
+マルコフ過程配分のうちローカルロジット型（式\eqref{eq:markov-logit-local}）を用いた場合，
+目的地方向が考慮されないため同一リンクを複数回通過する循環フローが生じやすく，
+交通量が過大推計される可能性がある．
+この問題は，目的地考慮型ロジット（式\eqref{eq:markov-logit}）を用いることで大幅に緩和でき，
+\ssref{subsec:dial-algorithm}のDial アルゴリズムのように前進方向のリンクのみを
+許容する効率的リンク制限（$c(i) < c(j)$ のリンクのみ使用）を課すことで
+完全に解消できる\cite{Akamatsu1996,Dial1971}．
+
+% ---------------------------------------------------------------
+\subsection{確率的配分（ロジット配分）}
+\label{subsec:stochastic-assignment}
+% ---------------------------------------------------------------
+
+\subsubsection*{基本的考え方}
+
+AoN 配分において利用者は最短経路のみを選択すると仮定したが，
+現実の利用者は旅行時間の認知に誤差を持つため，
+より長い経路が選ばれる場合も観察される．
+\textbf{確率的配分}は，経路選択をランダム効用理論に基づいて確率的に定式化するモデルである\cite{McFadden1974,Daganzo1977}．
+
+ランダム効用モデルでは，利用者が経路 $k^{rs}$ を選択したときの\textbf{知覚経路費用}を
+
+\begin{equation}
+  \tilde{c}_k^{rs} = c_k^{rs} + \varepsilon_k
+  \label{eq:perceived-cost}
+\end{equation}
+
+と表す（$c_k^{rs}$：実際の経路費用，$\varepsilon_k$：ランダム誤差項）．
+誤差項 $\varepsilon_k$ がそれぞれ独立に\textbf{ガンベル分布}
+$\mathrm{Gumbel}(0, \theta^{-1})$ に従うと仮定すると，
+利用者が知覚費用を最小化する条件から，経路 $k^{rs}$ の\textbf{選択確率}が閉形式で得られる\cite{McFadden1974}：
+
+\begin{equation}
+  P_k^{rs} = \frac{\exp(-\theta c_k^{rs})}{\displaystyle\sum_{k' \in \mathcal{K}_{rs}} \exp(-\theta c_{k'}^{rs})}
+  \label{eq:logit-prob-fi}
+\end{equation}
+
+この式を\textbf{多項ロジット（MNL）モデル}と呼ぶ．
+ODペア $rs$ の経路 $k$ への期待配分交通量は
+
+\begin{equation}
+  E[f_k^{rs}] = q_{rs} \cdot P_k^{rs}
+  \label{eq:logit-flow}
+\end{equation}
+
+で与えられる．
+
+\subsubsection*{パラメータ $\theta$ の解釈}
+
+パラメータ $\theta > 0$ は経路選択の\textbf{感度}（逆分散）を制御する：
+
+\begin{itemize}
+  \item $\theta \to \infty$：誤差が小さくなり，全利用者が最短経路を選択する（AoN 配分に収束）．
+  \item $\theta \to 0$：誤差が大きくなり，経路費用によらず全経路が等確率で選択される（均等配分）．
+  \item 中間の $\theta$：費用が低い経路ほど高確率で選ばれるが，費用の高い経路にも一定割合が流れる．
+\end{itemize}
+
+式\eqref{eq:logit-prob-fi}において，短経路と長経路の費用差が大きくなるほど，
+また $\theta$ が大きいほど，確率比 $P_k^{rs}/P_{k'}^{rs}$ が指数的に拡大し，
+短経路に交通量が集中する様子が確認できる．
+
+\subsubsection*{ロジットモデルの性質：IIA 特性}
+
+式\eqref{eq:logit-prob-fi}は，任意の2経路 $k, k'$ の選択確率比が
+
+\begin{equation}
+  \frac{P_k^{rs}}{P_{k'}^{rs}} = \exp\!\left(-\theta(c_k^{rs} - c_{k'}^{rs})\right)
+  \label{eq:iia}
+\end{equation}
+
+と他の経路の費用に依存しないという性質を持つ．
+これを\textbf{無関係な選択肢からの独立性}（Independence of Irrelevant Alternatives, IIA）という\cite{McFadden1974}．
+IIA 特性はモデルを扱いやすくする一方，
+経路が重複部分を多く共有する場合（例：高速道路の複数のインターチェンジを経由する経路）に
+選択確率を過大評価するという問題（経路重複問題）を引き起こす．
+この問題への対応として，Nested Logit モデルやプロビットモデルが用いられることがある\cite{Daganzo1977}．
+
+\subsubsection*{経路の列挙問題}
+
+式\eqref{eq:logit-prob-fi}を直接適用するには，全経路集合 $\mathcal{K}_{rs}$ を陽に列挙する必要がある．
+しかし実際のネットワークでは経路数が指数的に多く，列挙が現実的でない場合が多い．
+次節では，経路を列挙せずにロジット配分を実現するDial のアルゴリズムを紹介する．
+
+\begin{example}[title={クイズ 3：あなたの $\theta$ はいくつですか？}]
+感度パラメータ $\theta$ が大きいほど，コスト差に対して鋭敏に反応し最短経路を厳格に選ぶドライバーを表します．
+次の 3 人のうち，$\theta$ が最も大きいのは誰でしょうか？
+\begin{itemize}
+  \item[(ア)] 東京 23 区内を 10 年以上走り続けているタクシードライバー
+  \item[(イ)] 地方から上京したばかりで土地勘のない大学生（ナビなし）
+  \item[(ウ)] リアルタイム渋滞データを見ながら走るカーナビ搭載のトラック
+\end{itemize}
+\hyperref[ans:q3]{$\rightarrow$ 正解・解説は節末を参照}
+\end{example}
+
+% ---------------------------------------------------------------
+\subsection{Dial のアルゴリズム}
+\label{subsec:dial-algorithm}
+% ---------------------------------------------------------------
+
+\subsubsection*{基本的考え方}
+
+Dial（1971）が提案したアルゴリズムは，\ssref{subsec:stochastic-assignment} の
+ロジット確率を経路列挙なしに計算する効率的な方法である\cite{Dial1971}．
+AoN 配分と同様に，起点からの最短経路ツリーを構築したうえで，
+\textbf{合理的リンク}（efficient link，最短経路方向に進むリンク）のみを対象に
+ロジット確率の計算を行う．
+
+各リンク $(i,j)$ の\textbf{リンク尤度}（link likelihood）$L[i \to j]$ を
+
+\begin{equation}
+  L[i \to j] =
+  \begin{cases}
+    \exp\!\bigl[\theta\{c(j) - c(i) - t_{ij}\}\bigr] & \text{if } c(i) < c(j) \\[4pt]
+    0 & \text{otherwise}
+  \end{cases}
+  \label{eq:link-likelihood}
+\end{equation}
+
+と定義する（$c(i)$：起点からノード $i$ への最短経路費用）．
+分子の指数部の直感的解釈：$c(j) - c(i)$ は「最短経路上でリンク $(i,j)$ が貢献する費用増分」，
+$t_{ij}$ は実際のリンク費用であり，最短経路上のリンクでは両者が一致して $L=1$，
+迂回するリンクでは $t_{ij} > c(j) - c(i)$ となり $L<1$ となる
+（後退リンク $c(i) \geq c(j)$ は $L=0$）\cite{Dial1971}．
+
+図\ref{fig:dial-example} に数値例を示す（$\theta = 1$）．
+
+\begin{figure}[hbtp]
+  \centering
+  \input{assets/assignment/fig_dial_example.tex}
+  \caption{Dial のアルゴリズムにおけるリンク尤度の計算例．
+           ネットワーク：リンク費用 $t_{rA}=1$, $t_{rB}=3$, $t_{As}=2$, $t_{AB}=1$, $t_{Bs}=1$，
+           最短経路費用 $c(r)=0$, $c(A)=1$, $c(B)=2$, $c(s)=3$，$\theta=1$．
+           合理的リンク（$c(i)<c(j)$）には $L \geq 0$ が付与される．
+           $r \to B$ は最短経路方向ではあるが，最短ではない（$L = e^{-1} \approx 0.37$）．}
+  \label{fig:dial-example}
+\end{figure}
+
+\subsubsection*{アルゴリズムの詳細}
+
+Dial のアルゴリズムは以下の4ステップからなる\cite{Dial1971}．
+以下では，$\mathcal{O}_i = \{j \in \mathcal{N} : (i,j) \in \mathcal{A}\}$（ノード $i$ の後継ノード集合），
+$\mathcal{I}_i = \{j \in \mathcal{N} : (j,i) \in \mathcal{A}\}$（ノード $i$ の先行ノード集合）と記す．
+
+\begin{description}
+  \item[\textsf{Step 1}（最短経路）]
+    起点 $r$ から全ノードへの最短経路費用 $\{c(i)\}$ を Dijkstra 法で計算する．
+    全リンクの配分交通量を初期化 $y_{ij} = 0$．
+
+  \item[\textsf{Step 2}（リンク尤度）]
+    式\eqref{eq:link-likelihood} により全リンクのリンク尤度 $L[i \to j]$ を計算する．
+    最短経路上のリンクは $L=1$，後退リンクは $L=0$，迂回リンクは $0 < L < 1$ となる．
+
+  \item[\textsf{Step 3}（前進処理）]
+    $c(i)$ の昇順（起点 $r$ に近い順）にノードを処理し，
+    各リンク $(i \to j)$ のリンクウェイト $W[i \to j]$ を以下で計算する：
+    \begin{equation}
+      W[i \to j] =
+      \begin{cases}
+        L[i \to j] & \text{if } i = r \\[4pt]
+        L[i \to j] \displaystyle\sum_{m \in \mathcal{I}_i} W[m \to i] & \text{otherwise}
+      \end{cases}
+      \label{eq:dial-weight}
+    \end{equation}
+    $W[i \to j]$ は「起点 $r$ からリンク $(i \to j)$ を通る全経路の尤度の総和」であり，
+    確率的な経路選択のウェイトとして機能する．
+
+  \item[\textsf{Step 4}（後退処理）]
+    $c(i)$ の降順（起点 $r$ から遠い順）にノードを処理し，
+    リンク交通量 $y_{ij}$ および累積交通量 $x_{ij}$ を以下で計算する：
+    \begin{equation}
+      y_{ij} = \left(q_{rj} + \sum_{m \in \mathcal{O}_j} y_{jm}\right)
+                \frac{W[i \to j]}{\displaystyle\sum_{m \in \mathcal{I}_j} W[m \to j]}
+      \label{eq:dial-flow}
+    \end{equation}
+    \begin{equation}
+      x_{ij}^{(n)} = x_{ij}^{(n-1)} + y_{ij}
+      \label{eq:dial-cumflow}
+    \end{equation}
+    式\eqref{eq:dial-flow}の括弧内は「ノード $j$ を通過すべき総流量」
+    （目的地 $j$ へのOD需要 $q_{rj}$ とノード $j$ 以降へ向かう流量 $y_{jm}$ の合計），
+    右辺の分数はリンクウェイト $W$ の比率に基づく配分比率を表す．
+\end{description}
+
+全起点 $r \in \mathcal{R}$ について Step 1〜4 を繰り返し，すべてのリンク交通量 $x_{ij}$ を累積することで
+ロジット確率に基づく非混雑型配分が完成する．
+
+\subsubsection*{AoN 配分との関係}
+
+Dial のアルゴリズムは $\theta \to \infty$ の特殊例として AoN 配分を包含する．
+$\theta \to \infty$ では最短経路上のリンクのみ $L = 1$（その他 $L \to 0$）となるため，
+ウェイト $W$ は最短経路ツリー上のリンクにのみ集中し，
+後退処理での配分比率がAoN配分の流量集計（式\eqref{eq:aon-flow-agg}）と一致する．
+逆に $\theta \to 0$ では全リンクの $L \to 1$ となり，交通量が均等に分散する．
+
+\subsubsection*{計算効率}
+
+経路を陽に列挙する場合の計算量はODペア数と経路数の積に比例するが，
+Dial のアルゴリズムは前進・後退の2パス処理で $O(|\mathcal{N}| + |\mathcal{A}|)$ の計算量で完了する\cite{Dial1971}．
+ただし，式\eqref{eq:link-likelihood}において「後退リンク（$c(i) \geq c(j)$）を無視する」
+合理的経路の仮定が必要である点に注意する．
+この仮定により循環フローは排除され，有向非巡回グラフ（DAG）上の分析と等価になる．
+循環フローを考慮すべき状況では，\ssref{subsec:markov-assignment} の
+マルコフ過程配分が適切である\cite{Akamatsu1996}．
+
+\subsubsection*{本節のまとめ}
+
+本節で示した主要な結果を整理する：
+\begin{enumerate}
+  \item \textbf{AoN 配分}は，すべての交通量を最短経路1本に集中させる
+        最も単純な確定的配分モデルであり，
+        混雑を考慮した均衡配分（Frank-Wolfe 法）の補助解問題において
+        基本的な構成要素として繰り返し利用される
+        （\ssref{subsec:aon}）．
+  \item \textbf{吸収マルコフ過程配分}は，ネットワーク上の移動を
+        確率的ランダムウォークとして定式化し，
+        基本行列 $(I-Q)^{-1}$ によって経路を陽に列挙せずに
+        リンク流量を解析的に求める手法であり，
+        目的地考慮型ロジットを遷移確率として採用することで
+        循環フロー問題を緩和できる
+        （\ssref{subsec:markov-assignment}）．
+  \item \textbf{ロジット配分}は，知覚費用の誤差項がガンベル分布に従う仮定から
+        多項ロジット（MNL）モデルを導き，
+        パラメータ $\theta$ によって AoN 配分（$\theta \to \infty$）と
+        均等配分（$\theta \to 0$）の間を連続的に制御する；
+        IIA 特性が計算を容易にする一方，経路重複問題に注意が必要である
+        （\ssref{subsec:stochastic-assignment}）．
+  \item \textbf{Dial のアルゴリズム}は，
+        リンク尤度に基づく前進・後退の2パス処理によって，
+        経路を陽に列挙せず $O(|\mathcal{N}|+|\mathcal{A}|)$ の計算量で
+        ロジット配分を実現し，$\theta \to \infty$ の特殊例として
+        AoN 配分を包含する
+        （\ssref{subsec:dial-algorithm}）．
+\end{enumerate}
+
+\begin{example}[title={クイズ 2 正解・解説}]
+\phantomsection\label{ans:q2}
+\textbf{正解：（イ）}
+
+カーナビが全員に「同じ 1 つの最短経路」を返すとき，
+リンク旅行時間が交通量に依存しない仮定のもとでは全量が集中します——それが AoN 配分の挙動です．
+（ウ）の「反応して分散が起きる」プロセスこそが，均衡配分の核心です．
+\end{example}
+
+\begin{example}[title={クイズ 3 正解・解説}]
+\phantomsection\label{ans:q3}
+\textbf{正解：（ア）または（ウ）}
+
+経験・情報が豊富なほど $\theta$ は大きくなります．
+（イ）のような不確実性の高い利用者が，第 4 章の SUE で扱う「知覚誤差の大きな利用者」の典型です．
+現実のネットワークには（ア）〜（ウ）が混在しており，均一の $\theta$ を仮定する UE より
+SUE が現実に近い理由がここにあります．
+\end{example}

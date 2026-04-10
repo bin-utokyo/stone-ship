@@ -1,0 +1,403 @@
+%% chapters/assignment/ch4_sue.tex
+%% 第4章　確率的利用者均衡配分（SUE）
+
+\section{確率的利用者均衡配分（SUE）}
+\label{sec:ch4-sue}
+
+\sref{sec:ch3-ue}で扱った利用者均衡配分（UE）は，すべての利用者がネットワーク上の
+旅行時間情報を完全に把握したうえで，最短経路を確定的に選択すると仮定した．
+しかし現実には，利用者が得られる旅行時間情報は不完全であり，
+同じ経路でも個人の経験や好みの違いにより旅行時間の認知は異なる．
+本節では，この\textbf{完全情報仮定}を緩和し，
+利用者の旅行時間認知に確率的な誤差が存在することを明示的に取り込んだ
+\textbf{確率的利用者均衡配分}（Stochastic User Equilibrium, \textbf{SUE}）を扱う．
+
+まず，ランダム効用理論の枠組みからSUEの動機づけを述べ（\ssref{subsec:sue-relaxation}），
+次にロジット型SUEの等価最適化問題を導出し（\ssref{subsec:sue-optimization}），
+最後に代表的な解法を比較する（\ssref{subsec:sue-algorithms}）．
+
+% ---------------------------------------------------------------
+\subsection{完全情報仮定の緩和}
+\label{subsec:sue-relaxation}
+% ---------------------------------------------------------------
+
+\subsubsection*{UEモデルの仮定とその限界}
+
+Wardrop の第1原則に基づくUEは，
+「すべての利用者がネットワーク上のすべての経路の旅行時間を正確に知り，
+最も短い経路を確定的に選択する」という\textbf{完全情報仮定}を前提とする
+（\sref{sec:ch3-ue} \ssref{subsec:wardrop}）．
+この仮定のもとで，均衡状態では使用されているすべての経路の旅行時間が
+等しくなることが保証される．
+
+しかし，この仮定は現実の利用者行動を単純化しすぎている．
+実際の利用者が直接知ることのできる旅行時間は，
+過去に自ら経験した経路に限られており，
+標識・カーナビ・渋滞情報サービスなどから得られる情報の精度にも個人差がある．
+さらに，同じ経路での旅行時間は日によっても変動する．
+こうした情報の不完全性や認知の個人差を無視した場合，
+UEが予測する配分パターンと現実の交通量観測値が乖離することがある\cite{Daganzo1977,Sheffi1985}．
+
+\subsubsection*{ランダム効用理論}
+
+SUEは\textbf{ランダム効用理論}（Random Utility Theory, RUT）の
+枠組みに基づく\cite{McFadden1974}．
+RUT では，利用者 $n$ が経路 $k$ に対して知覚する効用（負の旅行時間）を
+\begin{equation}
+  U_k^n = -c_k + \varepsilon_k^n
+  \label{eq:rum}
+\end{equation}
+と表す．
+ここで $c_k$ は経路 $k$ の（客観的な）旅行時間，
+$\varepsilon_k^n$ は利用者 $n$ の知覚誤差を表すランダム変数である．
+各利用者は $U_k^n$ を最大化する，
+すなわち主観的な旅行時間を最小に見込む経路を選択する．
+
+誤差項 $\varepsilon_k^n$ に仮定する確率分布により，
+以下の2種類のモデルが導かれる\cite{Daganzo1977,Sheffi1985}．
+
+\begin{description}
+  \item[ロジットモデル（Multinomial Logit, MNL）]
+    各経路の誤差項が独立かつ同一の\textbf{ガンベル（Gumbel）分布}に従うと仮定する：
+    $\varepsilon_k \overset{\mathrm{i.i.d.}}{\sim} \mathrm{Gumbel}(0,\, 1/\theta)$．
+    このとき，経路 $k^{rs}$ の選択確率は閉形式で
+    \begin{equation}
+      P(k \mid rs) = \frac{\exp(-\theta\, c_k^{rs})}
+                         {\displaystyle\sum_{k' \in K_{rs}} \exp(-\theta\, c_{k'}^{rs})}
+      \label{eq:logit-prob}
+    \end{equation}
+    と表される\cite{McFadden1974}．
+    ここで $\theta > 0$ は\textbf{感度パラメータ}（精度パラメータ）であり，
+    $\theta \to \infty$ のとき選択確率は最短経路に集中し（UE への収束），
+    $\theta \to 0$ のとき全経路が均等に選ばれるランダム配分に近づく．
+    閉形式で選択確率が得られるため数理的に扱いやすい．
+    一方，\textbf{IIA 特性}（Independence of Irrelevant Alternatives：
+    2経路間の選択確率の比が第三の経路の有無に依存しない）を持つため，
+    経路間に区間の重複がある場合に非現実的な挙動を示すことがある．
+
+  \item[プロビットモデル（Probit）]
+    各経路の誤差項が多変量\textbf{正規分布}に従うと仮定する：
+    $\boldsymbol{\varepsilon} \sim \mathcal{N}(\boldsymbol{0},\, \boldsymbol{\Sigma})$．
+    分散共分散行列 $\boldsymbol{\Sigma}$ を通じて経路間の相関を表現できるため，
+    経路重複に起因するIIA 問題を原理的に回避できる．
+    ただし選択確率の閉形式は一般に存在せず，
+    モンテカルロ法（シミュレーション）による数値積分が必要となる\cite{Daganzo1977}．
+\end{description}
+
+以降の定式化ではロジットモデルを採用する
+（プロビット型SUEの解法については \ssref{subsec:sue-algorithms} で簡単に触れる）．
+
+\subsubsection*{SUE の不動点条件}
+
+ロジットモデルを用いた場合，ODペア $rs$ の経路 $k$ への期待交通量は
+\begin{equation}
+  E\!\left[f_k^{rs}\right]
+    = q_{rs}\, P(k \mid rs)
+    = q_{rs}\,
+      \frac{\exp\!\bigl(-\theta\, c_k^{rs}(\boldsymbol{f})\bigr)}
+           {\displaystyle\sum_{k' \in K_{rs}}
+            \exp\!\bigl(-\theta\, c_{k'}^{rs}(\boldsymbol{f})\bigr)}
+  \label{eq:sue-expected-flow}
+\end{equation}
+となる．
+ここで経路費用 $c_k^{rs}(\boldsymbol{f})$ が経路交通量 $\boldsymbol{f}$ に依存する点が，
+フロー非依存の確率的配分（\sref{sec:ch2-uncongested} \ssref{subsec:stochastic-assignment}）と根本的に異なる．
+
+配分の\textbf{自己整合性}（均衡条件）を要求すると，
+経路交通量は次の\textbf{不動点条件}（fixed-point condition）を満たさなければならない\cite{Daganzo1977}：
+\begin{equation}
+  \boldsymbol{f}^* = \boldsymbol{\Lambda}\!\left(\boldsymbol{c}(\boldsymbol{f}^*)\right)
+  \label{eq:sue-fixed-point}
+\end{equation}
+ここで，$\boldsymbol{\Lambda}(\cdot)$ は経路費用ベクトル $\boldsymbol{c}$ を与えたときの
+ロジット選択確率に基づく配分写像である．
+この不動点として定まる均衡が\textbf{確率的利用者均衡}（SUE）である．
+Daganzo \& Sheffi~\cite{Daganzo1977} は，
+Brouwer の不動点定理を用いてSUE 解の存在を保証している．
+
+% ---------------------------------------------------------------
+\subsection{ロジット型SUEの等価最適化問題}
+\label{subsec:sue-optimization}
+% ---------------------------------------------------------------
+
+\subsubsection*{Fisk の等価最適化問題}
+
+不動点条件\eqref{eq:sue-fixed-point}を直接解くことは一般に困難である．
+Fisk~\cite{Fisk1980} は，
+ロジット型SUE の解が以下の\textbf{等価最適化問題}（SUE/FD-path）の
+最適解と一致することを示した：
+\begin{equation}
+  \min_{\boldsymbol{f} \in \mathcal{F}}\;
+    Z(\boldsymbol{f})
+    = \underbrace{\sum_{a \in A} \int_0^{x_a} t_a(w)\,dw}_{\text{ポテンシャル項（UEと同一）}}
+    + \underbrace{\frac{1}{\theta}
+      \sum_{rs \in \Omega}\sum_{k \in K_{rs}}
+      f_k^{rs} \ln f_k^{rs}}_{\text{エントロピー項}}
+  \label{eq:sue-opt}
+\end{equation}
+ここで $\mathcal{F}$ は式\eqref{eq:flow-conservation}の
+流量保存条件と非負条件を満たす実行可能経路交通量の集合，
+$x_a = \sum_{rs}\sum_k f_k^{rs} \delta_{a,k}^{rs}$（式\eqref{eq:link-flow}）である．
+
+\subsubsection*{エントロピー項の解釈}
+
+Shannon エントロピー
+\begin{equation}
+  H_{rs}(\boldsymbol{f}^{rs})
+    = -\sum_{k \in K_{rs}} \frac{f_k^{rs}}{q_{rs}}
+        \ln \frac{f_k^{rs}}{q_{rs}}
+      \geq 0
+  \label{eq:entropy}
+\end{equation}
+は経路交通量の多様性（分散度）を表す量であり，
+すべての経路が均等に選ばれるときに最大となる．
+これを用いると，エントロピー項は定数差を除いて
+$-\dfrac{1}{\theta}\sum_{rs} q_{rs} H_{rs}(\boldsymbol{f}^{rs})$
+と書き直せる（定数項は最適解を変えない）．
+
+目的関数\eqref{eq:sue-opt}は，
+UEのBeckmann変換（ポテンシャル項）に加えてエントロピー項を最小化する問題である．
+ポテンシャル項は混雑コストの低い配分を促し，
+エントロピー項は経路交通量の均等な分散を促す方向に働く．
+この2項のバランスが感度パラメータ $\theta$ によって調整される．
+
+\subsubsection*{KKT 条件によるロジット確率の導出}
+
+ポテンシャル項とエントロピー項はともに凸であるため，
+目的関数\eqref{eq:sue-opt}は全体として\textbf{狭義凸}であり，
+流量保存制約は線形であることから，最適解は唯一存在する\cite{Fisk1980}．
+
+流量保存制約 $\sum_k f_k^{rs} = q_{rs}$ に対するLagrange 乗数を $\mu_{rs}$ とすると，
+$f_k^{rs} > 0$ の場合の KKT 条件は
+
+\begin{equation}
+  \frac{\partial Z}{\partial f_k^{rs}}
+    = c_k^{rs}(\boldsymbol{f})
+      + \frac{1}{\theta}\bigl(1 + \ln f_k^{rs}\bigr)
+      - \mu_{rs}
+    = 0
+  \label{eq:sue-kkt}
+\end{equation}
+となる．
+これを $f_k^{rs}$ について解くと
+\[
+  \ln f_k^{rs}
+    = \theta \mu_{rs} - 1 - \theta\, c_k^{rs}
+  \quad \Longrightarrow \quad
+  f_k^{rs} \propto \exp\!\bigl(-\theta\, c_k^{rs}\bigr)
+\]
+であり，流量保存条件 $\sum_{k'} f_{k'}^{rs} = q_{rs}$ を用いて正規化すると，
+\begin{equation}
+  f_k^{rs} = q_{rs}\,
+    \frac{\exp\!\bigl(-\theta\, c_k^{rs}\bigr)}
+         {\displaystyle
+          \sum_{k' \in K_{rs}} \exp\!\bigl(-\theta\, c_{k'}^{rs}\bigr)}
+  \label{eq:sue-kkt-result}
+\end{equation}
+が得られる．
+これは式\eqref{eq:sue-expected-flow}のロジット選択確率に基づく期待交通量に
+完全に一致し，最適化問題\eqref{eq:sue-opt}の最適解がSUE 条件を
+満たすことが示される．
+
+\subsubsection*{パラメータ $\theta$ の役割と極限ケース}
+
+感度パラメータ $\theta$ は，UEとランダム配分を連続的につなぐ橋渡しの役割を果たす．
+
+\begin{description}
+  \item[$\theta \to \infty$（UEへの収束）]
+    エントロピー項の係数 $1/\theta \to 0$ となり，
+    目的関数\eqref{eq:sue-opt}はBeckmann 変換と等しくなる．
+    KKT 条件\eqref{eq:sue-kkt}は Wardrop の UE 条件に収束し，
+    使用される経路は最短経路のみとなる（\sref{sec:ch3-ue} \ssref{subsec:wardrop}参照）．
+
+  \item[$\theta \to 0$（ランダム配分への収束）]
+    エントロピー最大化が支配的になり，
+    すべての経路が一定割合ずつOD交通量を担うランダム配分に近づく．
+
+  \item[有限の $\theta$（現実的な状況）]
+    利用者は概ね短い経路を選ぶ傾向があるが，
+    ランダムな誤差の影響で最短でない経路にも正の交通量が流れる．
+    パラメータ $\theta$ の推定は，
+    観測された経路選択データや SP 調査（Stated Preference）から行われる\cite{Sheffi1985}．
+\end{description}
+
+% ---------------------------------------------------------------
+\subsection{SUEの解法}
+\label{subsec:sue-algorithms}
+% ---------------------------------------------------------------
+
+SUE 解の計算アルゴリズムは，
+不動点条件\eqref{eq:sue-fixed-point}を反復的に解く手法と，
+等価最適化問題\eqref{eq:sue-opt}を直接最小化する手法に大別される
+（表\ref{tab:sue-methods}）．
+
+\begin{table}[hbtp]
+  \centering
+  \caption{ロジット型SUEの代表的な解法の比較}
+  \label{tab:sue-methods}
+  \begin{tabular}{llll}
+    \toprule
+    解法 & 補助問題 & ステップサイズ & 収束速度 \\
+    \midrule
+    逐次平均法（MSA）         & ロジット配分 & $1/n$（固定漸減） & 遅い  \\
+    部分線形化法              & ロジット配分 & ラインサーチ      & 中程度 \\
+    Simplicial Decomposition  & ロジット配分 & 制限凸最適化      & 速い  \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\subsubsection*{逐次平均法（Method of Successive Averages, MSA）}
+
+逐次平均法はSUEの最も単純な解法であり\cite{Daganzo1977}，
+UEの Frank-Wolfe 法（\sref{sec:ch3-ue} \ssref{subsec:frank-wolfe}）からラインサーチを除いた
+構造に対応する．
+
+\begin{table}[hbtp]
+  \centering
+  \caption{逐次平均法（MSA）のアルゴリズム}
+  \label{tab:msa-algorithm}
+  \begin{tabular}{cp{0.82\linewidth}}
+    \toprule
+    Step & 内容 \\
+    \midrule
+    0 & \textbf{初期化}：任意の実行可能解 $\boldsymbol{f}^{(0)} \in \mathcal{F}$ を設定する
+        （例：$\theta = 0$ のランダム配分）．反復回数 $n = 1$．
+        \\[4pt]
+    1 & \textbf{補助解の計算}：現在のリンク旅行時間 $t_a(x_a^{(n-1)})$ を固定し，
+        ロジット配分（フロー非依存）を実施して補助解 $\hat{\boldsymbol{f}}$ を求める：\\
+      & \quad $\displaystyle\hat{f}_k^{rs} = q_{rs}\,
+          \frac{\exp\!\bigl(-\theta\, c_k^{rs}(\boldsymbol{f}^{(n-1)})\bigr)}
+               {\displaystyle\sum_{k'} \exp\!\bigl(-\theta\, c_{k'}^{rs}(\boldsymbol{f}^{(n-1)})\bigr)}$
+        \\[4pt]
+    2 & \textbf{更新}：ステップサイズ $1/n$ を用いた荷重平均で経路交通量を更新する：\\
+      & \quad $\displaystyle\boldsymbol{f}^{(n)}
+          = \boldsymbol{f}^{(n-1)}
+            + \frac{1}{n}\Bigl[\hat{\boldsymbol{f}} - \boldsymbol{f}^{(n-1)}\Bigr]$
+        \\[4pt]
+    3 & \textbf{収束判定}：
+        $\|\boldsymbol{f}^{(n)} - \boldsymbol{f}^{(n-1)}\|\,/\,\|\boldsymbol{f}^{(n-1)}\| \leq \epsilon$
+        であれば収束として終了；
+        そうでなければ $n \leftarrow n+1$ として Step~1 へ戻る．
+        \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+MSA はステップサイズの探索を必要とせず実装が容易である．
+一方，$1/n \to 0$ のペースで縮小するステップサイズは
+解の近傍で十分に小さくならないため収束が遅く，
+大規模ネットワークでは実用上の問題となる\cite{Daganzo1977}．
+
+\subsubsection*{部分線形化法（Partial Linearization）}
+
+Fisk~\cite{Fisk1980} が提案した部分線形化法では，
+目的関数\eqref{eq:sue-opt}の\textbf{ポテンシャル項のみ}を現在点 $\boldsymbol{f}^{(n-1)}$ の
+まわりで線形近似し，エントロピー項はそのまま保持した補助問題を解く．
+
+反復 $n$ における補助問題は
+\[
+  \min_{\boldsymbol{f} \in \mathcal{F}}\;
+    \sum_{a \in A} t_a\!\bigl(x_a^{(n-1)}\bigr)\, x_a
+    + \frac{1}{\theta}
+      \sum_{rs}\sum_k f_k^{rs} \ln f_k^{rs}
+\]
+の形をとる（$x_a^{(n-1)} = \sum_{rs}\sum_k f_k^{rs,(n-1)} \delta_{a,k}^{rs}$）．
+これは現在のリンク旅行時間 $t_a(x_a^{(n-1)})$ を固定コストとみなした
+フロー非依存のロジット配分問題に帰着するため，
+Dial のアルゴリズム（\sref{sec:ch2-uncongested} \ssref{subsec:dial-algorithm}）などで効率的に解くことができる\cite{Fisk1980}．
+
+得られた補助解 $\hat{\boldsymbol{f}}$ を用いてラインサーチでステップサイズ $\alpha^*$ を決定し，
+\[
+  \boldsymbol{f}^{(n)}
+    = (1 - \alpha^*)\,\boldsymbol{f}^{(n-1)}
+      + \alpha^*\,\hat{\boldsymbol{f}}
+\]
+と更新する．
+最適ステップサイズの採用により，
+MSA より目的関数値を効率的に減少させることができる\cite{Fisk1980,Sheffi1985}．
+
+\subsubsection*{Simplicial Decomposition 法}
+
+Simplicial Decomposition 法では，
+均衡解 $\boldsymbol{f}^*$ を過去のロジット補助解（\textbf{極点解}）の
+凸結合として表現し，その結合重みを反復的に最適化する\cite{Sheffi1985}．
+
+各反復は次の2段階で構成される（表\ref{tab:sd-algorithm}）．
+
+\begin{table}[hbtp]
+  \centering
+  \caption{Simplicial Decomposition 法の各反復における手順}
+  \label{tab:sd-algorithm}
+  \begin{tabular}{cp{0.82\linewidth}}
+    \toprule
+    Step & 内容 \\
+    \midrule
+    1 & \textbf{外側反復}（極点の追加）：現在のリンク旅行時間に基づくロジット補助解
+        $\hat{\boldsymbol{f}}^{(n)}$ を新たな極点として保持集合 $\mathcal{S}^{(n)}$ に追加する．
+        \\[4pt]
+    2 & \textbf{内側反復}（制限最短化）：$\mathcal{S}^{(n)}$ に含まれる極点解の凸包上で
+        目的関数\eqref{eq:sue-opt}を最小化する制限凸最適化問題を解き，結合重みを更新する．
+        \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+内側反復は低次元の凸最適化問題であるため効率的に解ける．
+この方法の長所は，少数の極点解で均衡解をよく近似できる点と，
+各外側反復後に目的関数値が単調減少することが保証される点にある\cite{Sheffi1985}．
+
+\subsubsection*{プロビット型SUEの解法}
+
+確率論的な積分の閉形式を持たないプロビット型SUEでは，
+次の手順による\textbf{モンテカルロ法}が標準的に用いられる\cite{Daganzo1977}：
+各反復において，(i) 誤差項 $\boldsymbol{\varepsilon} \sim \mathcal{N}(\mathbf{0}, \boldsymbol{\Sigma})$
+を多数回サンプリングし，(ii) 各サンプルに対してAoN 配分を実施し，
+(iii) 得られた配分をサンプル平均してロジット配分の代わりに使用する．
+その後はMSAや部分線形化法と同様の更新ステップを適用する．
+計算コストはロジット型より大幅に増大するが，
+経路重複問題への対応が求められるネットワークで有効である\cite{Daganzo1977,Sheffi1985}．
+
+\begin{example}[title={クイズ 6：ナビが全員に「今すぐ迂回せよ」と告げたら，翌日はどうなる？}]
+2019 年 10 月，台風 19 号接近時に首都圈の高速道路が相次いで通行止めになり，
+複数のルート案内アプリが一斉に特定の一般道を代替ルートとして案内しました．
+その数分後，案内された道路は大渋滞になりました．翌日の同じ時間帯，今度はその道路はどうなっていたでしょうか？
+\begin{itemize}
+  \item[(ア)] 引き続き混雑している——一度定着したルートは変わらない
+  \item[(イ)] 今度は空いている——昨日の渋滞を見て全員が別のルートへ移動する．
+             しかしそちらが混雑し，翌々日はまた戻ってくる……
+  \item[(ウ)] 完全に均等分散している——完全情報があれば瞬時に均衡に達する
+\end{itemize}
+\hyperref[ans:q6]{$\rightarrow$ 正解・解説は節末を参照}
+\end{example}
+
+\subsubsection*{本節のまとめ}
+
+本節で示した主要な結果を整理する：
+\begin{enumerate}
+  \item \textbf{SUE} はランダム効用理論
+        （知覚旅行時間 $=$ 客観的旅行時間 $+$ 誤差項）の枠組みで
+        完全情報仮定を緩和した配分モデルであり，
+        誤差分布としてガンベル分布を仮定するとロジット型（MNL），
+        正規分布を仮定するとプロビット型が導かれる
+        （\ssref{subsec:sue-relaxation}）．
+  \item ロジット型SUE の均衡条件は \textbf{Fisk の等価最適化問題}
+        （Beckmann 目的関数からエントロピー項 $-\theta^{-1}\sum_k f_k \log f_k$
+        を引いた凸問題）として定式化でき，
+        その KKT 条件からロジット選択確率が直接導出される
+        （\ssref{subsec:sue-optimization}）．
+  \item SUE の実用的な解法として，\textbf{逐次平均法}（MSA），
+        \textbf{部分線形化法}，および \textbf{Simplicial Decomposition 法}の
+        3手法があり，それぞれ実装容易性・収束速度・大規模化の観点で
+        トレードオフを持つ；
+        プロビット型 SUE にはモンテカルロ法が標準的に用いられる
+        （\ssref{subsec:sue-algorithms}）．
+\end{enumerate}
+
+\begin{example}[title={クイズ 6 正解・解説}]
+\phantomsection\label{ans:q6}
+\textbf{正解：（イ）}
+
+「全員が同じ完全情報で一斉に動く」とき，日々振動が続く不安定なダイナミクスが生まれます．
+SUE が記述する「不完全情報による確率的分散」は，この振動を自然に緩和する機能を持ちます——完全情報化が必ずしも望ましくないというパラドックスです．
+このダイナミクスは第 6 章で理論化されます．
+\end{example}

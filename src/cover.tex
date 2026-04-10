@@ -1,5 +1,5 @@
-\definecolor{coveryellow}{RGB}{242,230,0}
-\definecolor{lineorange}{RGB}{210,105,29}
+\definecolor{coveryellow}{RGB}{252,197,59}
+\definecolor{lineorange}{RGB}{233,103,22}
 \definecolor{lineblack}{RGB}{0,0,0}
 \definecolor{scriptorange}{RGB}{243,169,40}
 
@@ -25,16 +25,26 @@
   \fill[lineorange] ($(current page.north east)+(-20mm,-20mm)$) rectangle ++(-8mm,6mm);
   \fill[lineorange] ($(current page.north east)+(-20mm,-20mm)$) rectangle ++(6mm,-18mm);
 
+  \fill[lineblack] ($(current page.north west)+(22mm,-95mm)$) rectangle ++(188mm,-8.5mm);
+
   \node[anchor=north west,text=lineorange,font=\mcfamily\fontsize{20}{20}\selectfont]
     at ($(current page.north west)+(12mm,-10mm)$) {BinN Studies シリーズ};
 
-  \node[anchor=north west,text=black,font=\bfseries\mcfamily\fontsize{52}{52}\selectfont]
-    at ($(current page.north west)+(16mm,-55mm)$) {タイトルTitle};
+  \node[anchor=north west,text=coveryellow,font=\bfseries\gtfamily\fontsize{18}{18}\selectfont,align=left]
+    at ($(current page.north west)+(24mm,-95mm)$) {%
+      現代行動理論の基礎と応用
+      };
 
-  \node[anchor=north west,text=black,font=\fontsize{16}{24}\selectfont,align=left]
-    at ($(current page.north west)+(20mm,-85mm)$) {%
-      羽藤英二\\
-      小川大智 \hspace{.3em} 須賀理帆 \hspace{.3em} 古橋郁一 \hspace{.3em} 松永隆宏 \hspace{.3em} 今村啓太 \hspace{.5em} 篇
+  \node[anchor=north west,text=black,font=\bfseries\mcfamily\fontsize{50}{50}\selectfont,align=left]
+    at ($(current page.north west)+(20mm,-56mm)$) {%
+    マルコフ連鎖から\\
+    大規模言語モデルへ
+    };
+
+  \node[anchor=north west,text=black,font=\bfseries\fontsize{18}{26}\selectfont,align=left]
+    at ($(current page.north west)+(20mm,-112mm)$) {%
+      羽藤英二 \hspace{.5em} 編著\\
+      小川大智 \hspace{.3em} 須賀理帆 \hspace{.3em} 古橋郁一 \hspace{.3em} 松永隆宏 \hspace{.3em} 今村啓太 \hspace{.5em} 著
       };
 
   \node[anchor=north east,text=scriptorange!100,font=\ttfamily\fontsize{7}{11}\selectfont,align=right]

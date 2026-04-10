@@ -1,0 +1,420 @@
+%% chapters/assignment/ch5_so.tex
+%% 第5章　システム最適配分（SO）と混雑課金
+
+\section{システム最適配分（SO）と混雑課金}
+\label{sec:ch5-so}
+
+\sref{sec:ch3-ue}で扱った利用者均衡配分（UE）では，各利用者が自己の旅行時間を最小化するように
+経路選択を行う結果として均衡が成立することを示した（\ssref{subsec:beckmann}）．
+しかし，\sref{sec:ch3-ue}の Braess のパラドックス（\ssref{subsec:braess}）が示すように，
+個人の合理的行動の集積が必ずしも社会全体にとって望ましい結果をもたらすとは限らない．
+個々の利用者は道路に参入するとき，自分の旅行時間しか考慮しないが，
+実際には他の利用者の旅行時間も増大させている．これが\textbf{混雑の外部性}である．
+
+本節では，この外部性を明示的に扱い，ネットワーク全体の\textbf{総旅行時間を最小化する}
+配分として定義される\textbf{システム最適配分}（System Optimal, SO）を導入する（\ssref{subsec:wardrop2}）．
+続いて UE と SO の相違を比較し（\ssref{subsec:ue-so-comparison}），
+混雑課金（Pigouvian Tax）によって UE を SO と一致させる
+\textbf{限界費用課金}の考え方を説明する（\ssref{subsec:congestion-toll}）．
+最後に，余剰分析の手法を用いて，
+UE における死荷重損失と混雑課金の効果を定量的に整理する（\ssref{subsec:surplus-analysis}）\cite{Pigou1920,Beckmann1956}．
+
+本節で新たに用いる主要記号を表\ref{tab:ch5-notation}にまとめる（基本記号は表\ref{tab:notation}参照）．
+
+\begin{table}[hbtp]
+  \centering
+  \caption{システム最適配分・混雑課金の主要記号}
+  \label{tab:ch5-notation}
+  \begin{tabular}{cll}
+    \toprule
+    記号 & 意味 & 単位（例） \\
+    \midrule
+    $Z_{SO}(\boldsymbol{x})$   & SO の目的関数（ネットワーク全体の総旅行時間） & 台・分 \\
+    $\mathrm{PMC}_a$           & 私的限界費用 $= t_a(x_a)$（ドライバー自身の旅行時間） & 分 \\
+    $\mathrm{SMC}_a$           & 社会的限界費用 $= t_a(x_a) + x_a\, t_a'(x_a)$ & 分 \\
+    $\mathrm{MEC}_a$           & 限界外部費用 $= x_a\, t_a'(x_a) = \mathrm{SMC}_a - \mathrm{PMC}_a$ & 分 \\
+    $\tau_a^*$                 & 最適混雑課金額（ピグー税；$\tau_a^* = x_a^{SO}\, t_a'(x_a^{SO})$） & 分 \\
+    $D(x_a)$                   & 需要曲線（交通量 $x_a$ 台目の移動への支払意思額） & 分 \\
+    $W(x_a)$                   & 社会的余剰（総便益 $-$ 総社会的費用） & 台・分 \\
+    $\Delta W$                 & 死荷重損失（UE 配分による社会的余剰の損失） & 台・分 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+% ---------------------------------------------------------------
+\subsection{Wardropの第2原則と定式化}
+\label{subsec:wardrop2}
+% ---------------------------------------------------------------
+
+利用者均衡配分の根拠となる Wardrop の第1原則に対応して，
+\textbf{Wardrop の第2原則}（Wardrop's Second Principle）は次のように述べる\cite{Wardrop1952}．
+
+\begin{quotation}
+  \noindent
+  「ネットワーク全体の総旅行時間（旅行費用）が最小となるように交通量が配分される．」
+\end{quotation}
+
+この原則を実現する配分が\textbf{システム最適配分}（SO）である．
+SO は，中央調整者（交通管理機関など）がすべての利用者の経路を
+社会的観点から最適に割り当てることができる場合の理想的な配分に対応する．
+
+\subsubsection*{SO-Primal 問題の定式化}
+
+SO は，制約条件を UE/FD-Primal（\ssref{subsec:beckmann}参照）と共有しつつ，
+\textbf{目的関数だけが異なる}最適化問題として定式化される\cite{Beckmann1956}．
+
+\begin{description}
+  \item[SO-Primal]
+    \begin{equation}
+      \min_{\boldsymbol{x},\,\boldsymbol{f}}\;
+      Z_{SO}(\boldsymbol{x})
+      = \sum_{a \in A} x_a\, t_a(x_a)
+      \label{eq:so-primal}
+    \end{equation}
+    \begin{align*}
+      \text{s.t.} \quad
+      & x_a = \sum_{rs \in \Omega}\sum_{k \in K_{rs}} f_k^{rs}\,\delta_{a,k}^{rs}
+        \qquad \forall a \in A \\
+      & \sum_{k \in K_{rs}} f_k^{rs} = q_{rs}
+        \qquad \forall rs \in \Omega \\
+      & f_k^{rs} \geq 0
+        \qquad \forall k \in K_{rs},\; \forall rs \in \Omega
+    \end{align*}
+\end{description}
+
+目的関数 $Z_{SO}(\boldsymbol{x}) = \sum_{a} x_a t_a(x_a)$ は
+ネットワーク全体の\textbf{総旅行時間}（各リンクの旅行時間 $t_a$ と交通量 $x_a$ の積の和）を表す．
+リンクパフォーマンス関数 $t_a(x_a)$ が単調非減少かつ凸であれば
+$Z_{SO}$ も凸関数となり，大域最適解が一意に定まる．
+
+\subsubsection*{Frank-Wolfe 法の適用}
+
+SO を解く方法は UE の場合（\ssref{subsec:frank-wolfe}参照）と同様に
+Frank-Wolfe 法をそのまま適用できる\cite{FrankWolfe1956}．
+ただし，線形化ステップ（All-or-Nothing 配分）で用いるリンクコストが異なる点に注意する．
+
+UE-Frank-Wolfe では各リンクの旅行時間 $t_a(x_a^{(n)})$（私的限界費用）を
+最短経路探索のコストとして用いる\cite{土木学会1998}．
+一方，SO-Frank-Wolfe では目的関数の勾配，すなわち
+\begin{equation}
+  \frac{\partial Z_{SO}}{\partial x_a}
+  = \frac{d}{dx_a}\bigl[x_a\, t_a(x_a)\bigr]
+  = t_a(x_a) + x_a\, t_a'(x_a)
+  \label{eq:smc-gradient}
+\end{equation}
+を各リンクのコストとして用いる．
+式\eqref{eq:smc-gradient}の右辺は後述の\textbf{社会的限界費用}（SMC）に一致しており，
+SO の KKT 条件は「全使用経路の社会的限界費用の和が等しい」という
+Wardrop の第2原則に対応する．
+
+\subsubsection*{アルゴリズムの手順}
+
+アルゴリズムの各ステップを表\ref{tab:so-fw-algorithm}に示す．
+UE の場合（表\ref{tab:fw-algorithm}）と Step 2 の費用計算のみが異なる．
+
+\begin{table}[hbtp]
+  \centering
+  \caption{SO を解く Frank-Wolfe 法のアルゴリズム}
+  \label{tab:so-fw-algorithm}
+  \begin{tabular}{cp{0.82\linewidth}}
+    \toprule
+    Step & 内容 \\
+    \midrule
+    1 & \textbf{初期化}：すべてのリンク交通量を $x_a^{(0)}=0$ とし，
+        自由流社会的限界費用 $\mathrm{SMC}_a(0)=t_{a0}$ に基づいて
+        All-or-Nothing 配分を実行し，初期解 $\boldsymbol{x}^{(1)}$ を得る．$n \leftarrow 1$．
+        \\[4pt]
+    2 & \textbf{社会的限界費用の更新}：現在の解 $\boldsymbol{x}^{(n)}$ の各リンクで
+        社会的限界費用
+        $\mathrm{SMC}_a\!\left(x_a^{(n)}\right)
+         = t_a\!\left(x_a^{(n)}\right) + x_a^{(n)}\,t_a'\!\left(x_a^{(n)}\right)$
+        を計算する（式\eqref{eq:smc-gradient}）．
+        \\[4pt]
+    3 & \textbf{補助解の計算}（Frank-Wolfe ステップ）：\\
+      & 更新された社会的限界費用のもとで All-or-Nothing 配分を実行し，
+        補助解 $\boldsymbol{y}^{(n)}$ を得る．
+        \\[4pt]
+    4 & \textbf{ステップサイズ探索}（線探索）：\\
+      & \quad $\alpha^* = \arg\min_{0 \leq \alpha \leq 1}
+        Z_{SO}\!\left(\boldsymbol{x}^{(n)} + \alpha
+        \bigl(\boldsymbol{y}^{(n)} - \boldsymbol{x}^{(n)}\bigr)\right)$\\[2pt]
+      & 黄金分割法などの1次元最小化を用いる．
+        \\[4pt]
+    5 & \textbf{解の更新}：
+        $\boldsymbol{x}^{(n+1)} = (1-\alpha^*)\boldsymbol{x}^{(n)}
+        + \alpha^* \boldsymbol{y}^{(n)}$．
+        \\[4pt]
+    6 & \textbf{収束判定}：
+        相対ギャップ（式\eqref{eq:relative-gap}）が閾値 $\varepsilon$ 以下なら終了．
+        そうでなければ $n \leftarrow n+1$ として Step 2 へ．
+        \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+% ---------------------------------------------------------------
+\subsection{UEとSOの比較}
+\label{subsec:ue-so-comparison}
+% ---------------------------------------------------------------
+
+UE と SO の本質的な違いを一言で表せば，
+「個人の最適化」対「全体の最適化」である．
+
+UE では各利用者が\textbf{私的限界費用}（PMC），すなわち自分が経験する旅行時間 $t_a(x_a)$，
+のみを考慮して経路を選択するため，
+自分が道路に加わることで他の利用者に与える追加的な旅行時間遅延（外部コスト）は無視される．
+この外部性の無視が，UE 配分を社会的に非効率にする根本原因である．
+
+SO では，すべての利用者の旅行時間を考慮することで，
+外部コストを含む\textbf{社会的限界費用}（SMC）が等化される均衡が実現し，
+ネットワークが全体として最も効率的に利用される．
+
+\begin{table}[hbtp]
+  \centering
+  \caption{利用者均衡配分（UE）とシステム最適配分（SO）の比較}
+  \label{tab:ue-so-comparison}
+  \begin{tabular}{lll}
+    \toprule
+    比較項目 & UE & SO \\
+    \midrule
+    原則 & Wardrop の第1原則 & Wardrop の第2原則 \\
+    目的 & 個人の旅行時間最小化 & 社会全体の総旅行時間最小化 \\
+    目的関数 &
+      $\displaystyle\sum_{a}\int_0^{x_a} t_a(w)\,dw$ &
+      $\displaystyle\sum_{a} x_a\, t_a(x_a)$ \\[4pt]
+    最短経路コスト & $t_a(x_a)$（PMC） & $t_a(x_a)+x_a t_a'(x_a)$（SMC） \\
+    均衡交通量 & $x_{UE}$（大） & $x_{SO}$（小） \\
+    均衡旅行時間 & $t_{UE} = t_a(x_{UE})$（長） & $t_{SO} = t_a(x_{SO})$（短） \\
+    外部コスト & 無視 & 内部化 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+一般に $x_{SO} \leq x_{UE}$ および $t_{SO} \leq t_{UE}$ が成り立つ
+（需要が価格に反応する場合は厳密不等号）．
+UE では各利用者が外部コストを負担しないまま道路を利用するため，
+社会的に最適な水準 $x_{SO}$ を超えた「過剰な交通量」が発生する．
+
+\subsubsection*{Braess のパラドックスとの関係}
+
+\sref{sec:ch3-ue}（\ssref{subsec:braess}）で示した Braess のパラドックスは，
+UE の非効率性の顕著な例でもある．
+道路を追加したとき，UE 配分では総旅行時間がかえって悪化するにもかかわらず，
+SO 配分においてこのような逆説は生じない：最適化が社会全体の視点から行われるため，
+新設リンクが実際に有益な場合にのみそれが積極的に利用される\cite{Braess1968}．
+
+\begin{example}[title={クイズ 7：日本の渋滞損失——年間いくら？}]
+国土交通省の推計（H27 年道路交通センサスベース）によると，
+日本全国の渋滞による時間損失は年間約 \textbf{38 億人時間}，
+経済損失換算で年間約 \textbf{12 兆円}に相当します．
+UE 配分の総旅行費用が SO 配分より大きい理由として最も正確なものはどれでしょうか？
+\begin{itemize}
+  \item[(ア)] UE では交通量が多すぎるので，単純に $x \times t$ が大きくなる
+  \item[(イ)] UE では各ドライバーが他者への影響（限界外部費用
+             $\mathrm{MEC}=x_a t_a'(x_a)$）を無視して参入するため，社会的に過剰な交通量が発生する
+  \item[(ウ)] SO はコンピュータが最適化するので，当然 UE より良い
+\end{itemize}
+\hyperref[ans:q7]{$\rightarrow$ 正解・解説は節末を参照}
+\end{example}
+
+% ---------------------------------------------------------------
+\subsection{混雑課金（限界費用課金）}
+\label{subsec:congestion-toll}
+% ---------------------------------------------------------------
+
+UE を SO に一致させるための政策的手段が\textbf{混雑課金}（Congestion Toll），
+あるいは\textbf{限界費用課金}（Marginal Cost Pricing）である．
+この考えは Pigou（1920）に遡り，外部性を価格メカニズムを通じて内部化する
+\textbf{ピグー税}（Pigouvian Tax）の交通版に相当する\cite{Pigou1920}．
+
+\subsubsection*{社会的限界費用の分解}
+
+1 台の車両が混雑したリンク $a$ に追加されるとき，
+ネットワーク全体（リンク $a$ のみを考える単純な場合）に与えるコスト変化は次のように分解される：
+\begin{align}
+  \text{SMC}_a(x_a)
+  &= \frac{d}{dx_a}\bigl[x_a\, t_a(x_a)\bigr]
+   = t_a(x_a)
+     + x_a\, \frac{d\, t_a(x_a)}{dx_a}  \notag \\
+  &= \underbrace{t_a(x_a)}_{\text{私的限界費用（PMC）}}
+     + \underbrace{x_a\, t_a'(x_a)}_{\text{外部コスト}}
+  \label{eq:smcdecomp}
+\end{align}
+第1項の私的限界費用（PMC）は，利用者自身が経験する旅行時間である．
+第2項の外部コストは，1 台が追加されることで既存の $x_a$ 台すべての旅行時間が
+$t_a'(x_a)$ だけ増加することによる社会的損失を表す．
+
+UE では利用者が外部コスト $x_a t_a'(x_a)$ を無視して意思決定するため，
+個人均衡（UE）において過剰な交通量が発生する．
+
+\subsubsection*{最適課金額の導出}
+
+各リンク $a$ に課金額 $\tau_a$ を設定すると，利用者が直面するコストは
+$t_a(x_a) + \tau_a$ となる．
+このとき，利用者の私的最適化が社会的最適解 $\boldsymbol{x}^{SO}$ を実現するためには，
+SO 解における社会的限界費用を課金後の私的限界費用と一致させればよい\cite{Beckmann1956}：
+\begin{equation}
+  \tau_a^* = x_a^{SO}\, t_a'\bigl(x_a^{SO}\bigr)
+  \label{eq:optimal-toll}
+\end{equation}
+この最適料金 $\tau_a^*$ を各リンクに設定したとき，
+修正後の私的費用に基づく UE 解は SO 解と一致する．
+すなわち，$x_{UE}^{\text{toll}} = x_{SO}$ が成立する．
+
+\subsubsection*{BPR 関数への適用}
+
+BPR 関数 $t_a(x_a) = t_{a0}\left\{1 + \alpha(x_a/C_a)^\beta\right\}$（\ssref{subsec:bpr}）
+に対しては：
+\begin{equation}
+  t_a'(x_a) = t_{a0}\,\alpha\,\beta\,\frac{x_a^{\beta-1}}{C_a^{\beta}}
+  \label{eq:bpr-deriv}
+\end{equation}
+したがって最適課金額は：
+\begin{equation}
+  \tau_a^* = x_a^{SO} \cdot t_{a0}\,\alpha\,\beta\,
+               \frac{(x_a^{SO})^{\beta-1}}{C_a^{\beta}}
+           = t_{a0}\,\alpha\,\beta\,\frac{(x_a^{SO})^{\beta}}{C_a^{\beta}}
+  \label{eq:bpr-toll}
+\end{equation}
+となる．混雑が激しく $x_a^{SO}/C_a$ が大きいリンクほど高い料金が設定されることがわかる．
+
+\begin{example}[title={クイズ 8：首都高の「深夜割引」は混雑課金の考え方か？}]
+首都高速道路は 2022 年 4 月から，深夜 0～4 時に入口を通過する ETC 車を対象に
+通行料金を一律 \textbf{20\% 割引}する深夜割引を導入しました．
+余剰分析の数値例（$\mathrm{PMC}(2)=2$，$\mathrm{SMC}(2)=3$）から最適課金額 $\tau^*$ はいくらで，深夜割引の方向性は理論と同じでしょうか？
+\begin{itemize}
+  \item[(ア)] $\tau^*=0.5$，深夜割引は理論と逆方向（値下げなので）
+  \item[(イ)] $\tau^*=1$，深夜割引は理論と同方向（需要の少ない時間帯を安くして，
+             ピーク需要を平準化する）
+  \item[(ウ)] $\tau^*=2$，深夜割引は理論とは無関係
+\end{itemize}
+\hyperref[ans:q8]{$\rightarrow$ 正解・解説は節末を参照}
+\end{example}
+
+% ---------------------------------------------------------------
+\subsection{余剰分析}
+\label{subsec:surplus-analysis}
+% ---------------------------------------------------------------
+
+混雑課金の効果を定量的に評価するために，
+ミクロ経済学の\textbf{余剰分析}（Welfare Analysis）の枠組みを用いる\cite{土木学会1998}．
+ここでは，交通量の変化に伴う社会的厚生の変化を，
+需要曲線・PMC 曲線・SMC 曲線の関係として図示する（図\ref{fig:surplus-analysis}）．
+
+\begin{figure}[hbtp]
+  \centering
+  \input{assets/assignment/fig_surplus_analysis.tex}
+  \caption{余剰分析：UE と SO の比較．
+           横軸は交通量 $x_a$，縦軸は費用（旅行時間・支払意思額）．
+           $D$ は需要曲線（支払意思額），PMC は私的限界費用（旅行時間 $t_a(x_a)$），
+           SMC は社会的限界費用 $\dfrac{d(x_a t_a)}{dx_a}$．
+           SO 点（$x_{SO}$）では $D = \text{SMC}$；UE 点（$x_{UE}$）では $D = \text{PMC}$．
+           紫の三角形（死荷重損失）は UE 配分によって生じる社会的余剰の損失を表す．
+           $\tau^*$ は最適混雑課金額（外部コスト）．}
+  \label{fig:surplus-analysis}
+\end{figure}
+
+\subsubsection*{社会的余剰の定義と最大化}
+
+需要曲線 $D(x_a)$ は，交通量 $x_a$ 台目の移動がもたらす社会的便益（\textbf{支払意思額}）を表す．
+社会的余剰は，総便益から総社会的費用を差し引いた量として定義される：
+\begin{equation}
+  W(x_a)
+  = \int_0^{x_a} D(v)\,dv
+    - \int_0^{x_a} \text{SMC}(v)\,dv
+  = \int_0^{x_a} \bigl[D(v) - \text{SMC}(v)\bigr]\,dv
+  \label{eq:social-welfare}
+\end{equation}
+この $W$ を最大化する条件は：
+\begin{equation}
+  \frac{d W}{d x_a} = D(x_a) - \text{SMC}(x_a) = 0
+  \quad \Longleftrightarrow \quad
+  D(x_a) = \text{SMC}(x_a)
+  \label{eq:so-condition}
+\end{equation}
+すなわち，需要曲線と SMC 曲線が交わる点が社会的余剰を最大化する配分であり，
+これが SO 配分 $x_{SO}$ にほかならない（図\ref{fig:surplus-analysis} の「SO 点」）．
+
+\subsubsection*{UE 配分における死荷重損失}
+
+UE では各利用者が PMC のみを参照するため，
+$D(x_a) = \text{PMC}(x_a)$ となる点 $x_{UE}$ で均衡する．
+$x_{SO} < x_{UE}$ であるため，交通量は社会的最適水準を超えて過剰に供給される．
+
+この過剰供給によって生じる社会的余剰の損失（\textbf{死荷重損失}，Deadweight Loss）は：
+\begin{equation}
+  \Delta W
+  = \int_{x_{SO}}^{x_{UE}} \bigl[\text{SMC}(x) - D(x)\bigr]\,dx
+  \quad > 0
+  \label{eq:dwl}
+\end{equation}
+すなわち，$x_{SO}$ から $x_{UE}$ の範囲で SMC が $D$ を上回る部分の面積（図\ref{fig:surplus-analysis} の
+紫の三角形）に等しい．
+
+\subsubsection*{混雑課金による死荷重損失の解消}
+
+最適課金 $\tau_a^* = x_a^{SO}\, t_a'(x_a^{SO})$（式\eqref{eq:optimal-toll}）を
+各リンクに設定すると，利用者が直面する一般化費用が PMC から SMC へシフトし，
+UE 点が $x_{UE}$ から $x_{SO}$ に移動する．
+このとき：
+
+\begin{itemize}
+  \item 死荷重損失 $\Delta W$（紫の三角形）が解消される．
+  \item 課金収入 $\tau_a^* \times x_a^{SO}$ は政府が徴収する．
+        この収入を利用者に一括再配分（lump-sum transfer）することで，
+        パレート改善（全員の厚生が改善）が原理的に可能である．
+  \item 実際の旅行時間 $t_{SO} = t_a(x_a^{SO})$ は，
+        課金前の UE における旅行時間 $t_{UE} = t_a(x_a^{UE})$ より短くなる
+        （$x_{SO} < x_{UE}$ かつ $t_a$ 単調増加より）．
+\end{itemize}
+
+\subsubsection*{本節のまとめ}
+
+本節で示した主要な結果を整理する：
+\begin{enumerate}
+  \item \textbf{システム最適配分}（SO）は Wardrop の第2原則に基づき，
+        社会的限界費用 $\mathrm{SMC}_a = t_a + x_a t_a'$ を経路費用として扱った
+        均衡として定式化され，ネットワーク全体の総旅行時間を最小化する
+        中央集権的配分に対応する
+        （\ssref{subsec:wardrop2}）．
+  \item UE と SO を比較すると，UE では私的限界費用（PMC）のみを参照するため
+        過剰交通量と死荷重損失が生じる一方，SO は社会的余剰を最大化する；
+        また Braess のパラドックスは UE では生じるが SO では生じない
+        （\ssref{subsec:ue-so-comparison}）．
+  \item \textbf{限界費用課金}（混雑課金）$\tau_a^* = x_a^{SO} t_a'(x_a^{SO})$
+        を各リンクに設定することで，
+        利用者が直面する費用が PMC から SMC へシフトし，
+        UE 解を SO 解に一致させて外部費用を内部化できる
+        （\ssref{subsec:congestion-toll}）．
+  \item 余剰分析により，UE における死荷重損失（紫の三角形）が
+        混雑課金によって回収される社会的便益に対応することが示され，
+        課金収入の一括再配分によるパレート改善が原理的に可能である
+        （\ssref{subsec:surplus-analysis}）．
+\end{enumerate}
+
+\begin{example}[title={クイズ 7 正解・解説}]
+\phantomsection\label{ans:q7}
+\textbf{正解：（イ）}
+
+（ア）は事実ですが「なぜ過剰になるのか」を答えていません．
+ドライバーは自分の旅行時間（PMC）だけを見て行動し，
+参入によって他全員に上乗せされる MEC を無視します——
+この「見えない費用の無視」が年間 38 億人時間・12 兆円の損失の根本原因です．
+
+\noindent\small\textbf{参考：}
+\href{https://www.mlit.go.jp/road/ir/ir-data/ir-data.html}{国土交通省 道路関係データ（渋滞損失時間）}；
+\href{https://www.mlit.go.jp/report/press/road01_hh_000848.html}{H27全国道路交通情勢調査プレスリリース（PDF）}
+\end{example}
+
+\begin{example}[title={クイズ 8 正解・解説}]
+\phantomsection\label{ans:q8}
+\textbf{正解：（イ）}
+
+$\tau^*=\mathrm{SMC}-\mathrm{PMC}=3-2=1$．
+混雑課金の本義は「ピーク帯に上乗せする」ことですが，「混雑しない時間帯を安くしてピークを分散させる」も同じ効果をねらいます．
+深夜割引は政治的受容性を優先した「次善の一手」と解釈できます．
+
+\noindent\small\textbf{参考：}
+\href{https://www.shutoko.jp/fee/discount/plan_12}{首都高速 深夜割引}；
+\href{https://www.shutoko.co.jp/company/press/2021/data/12/10_2022fee/}{首都高プレスリリース（2021年12月）}
+\end{example}

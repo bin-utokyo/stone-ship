@@ -1,0 +1,65 @@
+\begin{tikzpicture}[x=1.3cm,y=-1.3cm, line width=0.8pt]
+
+% =========================
+% n = 2
+% =========================
+\begin{scope}[shift={(0,0)}]
+  % label
+  \node[font=\large] at (1,-0.7) {$n=2$};
+
+  % horizontal edges
+  \draw (0,0) -- (1,0) -- (2,0);
+  \draw (0,1) -- (1,1) -- (2,1);
+  \draw (0,2) -- (1,2) -- (2,2);
+
+  % vertical edges
+  \draw (0,0) -- (0,1) -- (0,2);
+  \draw (1,0) -- (1,1) -- (1,2);
+  \draw (2,0) -- (2,1) -- (2,2);
+
+  % black nodes
+  \fill (1,0) circle (2.2pt);
+  \fill (2,0) circle (2.2pt);
+  \fill (0,1) circle (2.2pt);
+  \fill (1,1) circle (2.2pt);
+  \fill (2,1) circle (2.2pt);
+  \fill (0,2) circle (2.2pt);
+  \fill (1,2) circle (2.2pt);
+
+  % O and D
+  \draw[fill=white] (0,0) circle (0.12);
+  \node at (0,0) {\scriptsize O};
+
+  \draw[fill=white] (2,2) circle (0.12);
+  \node at (2,2) {\scriptsize D};
+
+  % |C|
+  \node[font=\Large] at (3.7,1) {$|C|=12$};
+\end{scope}
+
+% =========================
+% n = 1
+% =========================
+\begin{scope}[shift={(0,3.2)}]
+  % label
+  \node[font=\large] at (0.5,-0.7) {$n=1$};
+
+  % square
+  \draw (0,0) -- (1,0) -- (1,1) -- (0,1) -- (0,0);
+
+  % black nodes
+  \fill (1,0) circle (2.2pt);
+  \fill (0,1) circle (2.2pt);
+
+  % O and D
+  \draw[fill=white] (0,0) circle (0.12);
+  \node at (0,0) {\scriptsize O};
+
+  \draw[fill=white] (1,1) circle (0.12);
+  \node at (1,1) {\scriptsize D};
+
+  % |C|
+  \node[font=\Large] at (3.1,0.5) {$|C|=2$};
+\end{scope}
+
+\end{tikzpicture}
