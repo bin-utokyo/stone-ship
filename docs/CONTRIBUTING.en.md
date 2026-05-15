@@ -73,12 +73,37 @@ Multiple authors contribute independent chapters, and `main.tex` compiles them i
 
 ## Repository Setup
 
+Choose one of the two patterns below based on your level of access to the repository.
+
+### Pattern A — Clone (for collaborators)
+
+Members with write access can clone the repository directly.
+
 ```bash
 # 1. Clone the repository
 git clone https://github.com/bin-utokyo/stone-ship.git
 cd stone-ship
 
 # 2. Create a working branch (direct commits to main are not allowed)
+git checkout -b chapter/demand
+```
+
+### Pattern B — Fork (for external contributors)
+
+Contributors without write access should work via a fork.
+
+```bash
+# 1. Fork the repository on GitHub
+#    Open https://github.com/bin-utokyo/stone-ship and click the "Fork" button in the top-right corner
+
+# 2. Clone your fork
+git clone https://github.com/<your-username>/stone-ship.git
+cd stone-ship
+
+# 3. Register the upstream (the original repository)
+git remote add upstream https://github.com/bin-utokyo/stone-ship.git
+
+# 4. Create a working branch (direct commits to main are not allowed)
 git checkout -b chapter/demand
 ```
 
@@ -274,6 +299,8 @@ On success, `build/main.pdf` is generated.
 
 The following commands work the same on macOS / Linux (bash/zsh) and Windows (PowerShell or Git Bash).
 
+### Pattern A — Clone (for collaborators)
+
 ```bash
 # Stage and commit changes
 git add src/chapters/demand.tex src/bibliography/demand.bib src/main.tex
@@ -283,7 +310,31 @@ git commit -m "Add chapter demand: Fundamentals of Demand Analysis"
 git push origin chapter/demand
 ```
 
-Open a pull request on GitHub and request a review.
+Open a pull request on GitHub from the `chapter/demand` branch to the `main` branch, and request a review.
+
+### Pattern B — Fork (for external contributors)
+
+```bash
+# Sync with the latest upstream before opening a PR
+git fetch upstream
+git checkout main
+git merge upstream/main
+git push origin main
+
+# Return to your branch and rebase onto main if needed
+git checkout chapter/demand
+git rebase main
+
+# Stage and commit changes
+git add src/chapters/demand.tex src/bibliography/demand.bib src/main.tex
+git commit -m "Add chapter demand: Fundamentals of Demand Analysis"
+
+# Push to your fork (origin)
+git push origin chapter/demand
+```
+
+Open a pull request on GitHub from the `chapter/demand` branch of your fork
+to the `main` branch of `bin-utokyo/stone-ship`, and request a review.
 
 > **Branch protection rules**: The `main` branch is protected.
 > - Merging into `main` requires a pull request — direct pushes are not allowed.

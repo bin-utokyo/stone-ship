@@ -1,6 +1,8 @@
 name: Build
 
 on:
+  pull_request:
+  merge_group:
   push:
     branches:
       - main
@@ -74,6 +76,7 @@ jobs:
         run: zip -j build/release.zip build/main.pdf build/main.md
 
       - name: Create GitHub Release
+        if: github.event_name != 'pull_request'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.version.outputs.tag }}

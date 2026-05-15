@@ -1,5 +1,133 @@
 \clearpage
 \begin{column}{コラム}
-（ここに内容を記入してください）
+
+
+
+発表時間内で紹介しきれなかったログサム分布の導出について記載する．
+最大値の分布もまたガンベル分布で記述できるため，閉じた形で計算できることが大きなメリットである．
+
+
+\section{ログサム分布の導出}
+
+\subsection{最大効用の分布関数}
+
+各選択肢 $j$ に対して効用を
+\[
+U_j = v_j + \tilde{\varepsilon}_j
+\]
+とし、最大効用を
+\[
+M = \max_j U_j
+\]
+とする。
+
+任意の $x$ に対して、
+\[
+\Pr(M \le x)
+=
+\Pr(v_j + \tilde{\varepsilon}_j \le x, \ \forall j)
+\]
+
+誤差項が独立であることから、
+\[
+\Pr(M \le x)
+=
+\prod_j \Pr(\tilde{\varepsilon}_j \le x - v_j)
+=
+\prod_j F_j(x - v_j)
+\]
+
+ここで $\tilde{\varepsilon}_j$ が Gumbel 分布に従うとすると、その累積分布関数は
+\[
+F_j(z)
+=
+\exp\left[
+-\exp\{-\alpha(z - \beta)\}
+\right]
+\]
+である。
+
+したがって、
+\[
+\Pr(M \le x)
+=
+\prod_j
+\exp\left[
+-\exp\{-\alpha(x - v_j - \beta)\}
+\right]
+\]
+
+\[
+=
+\exp\left[
+-\sum_j \exp\{-\alpha x + \alpha v_j + \alpha \beta\}
+\right]
+\]
+
+ここで
+\[
+\omega(V) := \sum_j e^{\alpha v_j}
+\]
+とおくと、
+\[
+\Pr(M \le x)
+=
+\exp\left[
+-\exp\{-\alpha x + \alpha \beta + \ln \omega(V)\}
+\right]
+\]
+
+
+\subsection{位置母数へのログサムの出現}
+
+上式は次のように書き直せる：
+\[
+\Pr(M \le x)
+=
+\exp\left[
+-\exp\left\{
+-\alpha \left(
+x - \beta - \frac{1}{\alpha} \ln \omega(V)
+\right)
+\right\}
+\right]
+\]
+
+したがって、$M$ は再び Gumbel 分布に従い、その位置母数は
+\[
+\beta^\ast
+=
+\beta + \frac{1}{\alpha} \ln \omega(V)
+=
+\beta + \frac{1}{\alpha} \ln \sum_j e^{\alpha v_j}
+\]
+となる。
+
+すなわち、ログサムは最大効用の分布における位置母数として現れる。
+
+\subsection{期待値としてのログサム}
+
+Gumbel 分布
+\[
+\exp\left[
+-\exp\{-\alpha(x - \beta^\ast)\}
+\right]
+\]
+の期待値は
+\[
+E[M] = \beta^\ast + \frac{\gamma}{\alpha}
+\]
+である。ただし $\gamma$ はオイラー定数である。
+
+よって、
+\[
+E\left[\max_j (v_j + \tilde{\varepsilon}_j)\right]
+=
+\beta + \frac{\gamma}{\alpha}
++
+\frac{1}{\alpha} \ln \sum_j e^{\alpha v_j}
+\]
+を得る。
+
 \end{column}
 \clearpage

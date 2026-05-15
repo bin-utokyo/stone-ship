@@ -1,5 +1,50 @@
 \clearpage
-\begin{column}{コラム}
-（ここに内容を記入してください）
+\begin{column}{ミニ研究のすすめ}
+    {\small 石河万衣}
+    
+　行動モデルは政策議論等の基盤となるが、本稿ではその構築過程における試行錯誤に着目する。
+具体的には、松山市のPT調査データを用い、以下の効用関数を設定して交通手段選択モデル（自動車、鉄道、バス）を推定した。
+\begin{align*}
+U_{train} &= \beta_{time} x_{time} / 10 + \beta_{fare} x_{fare} / 100 + \beta_{train}\\
+U_{bus} &= \beta_{time} x_{time} / 10 + \beta_{fare} x_{fare} / 100 + \beta_{bus}\\
+U_{car} &= \beta_{time} x_{time} / 10 + \beta_{fare} x_{fare} / 100
+\end{align*}
+
+　以下の結果から、初期のMNLモデルでは運賃パラメータが正となり、運賃上昇が効用を増加させるという実態に反する結果を示した。
+
+　そこで運賃に対数変換を施し再推定したところ、尤度が改善し全パラメータの符号が整合した。
+これにより、低価格帯では運賃変動の影響が大きく、高価格帯では相対的に小さいという非線形の性質を適切に捉えることができた。
+
+　さらに、まず「自動車」か「公共交通」を選び、後者の場合に「鉄道」か「バス」を選ぶ階層的プロセスを想定し、NLモデルを推定した。
+MNLモデルより尤度がさらに向上し、スケールパラメータ$\lambda$も有意となった。これにより誤差項間の無相関仮説が棄却され、
+本対象におけるネスト構造導入の妥当性が統計的に実証された。
+
+\begin{center}
+    \captionof{交通手段選択モデル（$N$=1,902）}
+    \label{tab:integrated_model}
+      
+    \small
+    \setlength{\tabcolsep}{3pt}
+
+    \begin{tabular}{l c r@{\,}l c r@{\,}l c r@{\,}l}
+    \toprule
+       & \multicolumn{3}{c}{MNL} & \multicolumn{3}{c}{MNL（運賃対数）} & \multicolumn{3}{c}{NL（運賃対数）} \\
+       & パラメータ & \multicolumn{2}{c}{t値} & パラメータ & \multicolumn{2}{c}{t値} & パラメータ & \multicolumn{2}{c}{t値} \\
+    \midrule
+    $\beta_{train}$ & 0.161 & 0.958 & & 0.809 & 2.882 & ** & 0.478 & 1.710 & \\
+    $\beta_{bus}$   & -0.980 & -5.609 & *** & -0.310 & -1.059 & & -0.258 & -1.130 & \\
+    $\beta_{time}$  & -0.431 & -7.546 & *** & -0.393 & -7.509 & *** & -0.361 & -7.543 & *** \\
+    $\beta_{fare}$  & 0.071 & 1.530 & & -0.672 & -2.764 & ** & -0.364 & -1.657 & \\
+    $\lambda$       & - & \multicolumn{2}{c}{-} & - & \multicolumn{2}{c}{-} & 0.551 & 4.687 & *** \\
+    \midrule
+    初期対数尤度 $L(0)$ & \multicolumn{3}{c}{-1599.214} & \multicolumn{3}{c}{-1599.214} & \multicolumn{3}{c}{-1599.214} \\
+    最終対数尤度 $L(\beta)$ & \multicolumn{3}{c}{-1080.426} & \multicolumn{3}{c}{-1077.551} & \multicolumn{3}{c}{-1072.256} \\
+    決定係数 $\rho^2$ & \multicolumn{3}{c}{0.324} & \multicolumn{3}{c}{0.326} & \multicolumn{3}{c}{0.330} \\
+    修正済み決定係数 $\bar{\rho}^2$ & \multicolumn{3}{c}{0.322} & \multicolumn{3}{c}{0.324} & \multicolumn{3}{c}{0.326} \\
+    \bottomrule
+    \multicolumn{10}{l}{\footnotesize ***: $p < 0.001$, **: $p < 0.01$, *: $p < 0.05$} \\
+    \end{tabular}
+\end{center}
+
 \end{column}
 \clearpage

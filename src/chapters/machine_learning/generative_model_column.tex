@@ -1,5 +1,267 @@
 \clearpage
-\begin{column}{コラム}
-（ここに内容を記入してください）
+\begin{column}{Persona駆動型LLMによる災害後居住地選択モデル}
+本章では，生成モデルを「観測データの背後にある構造を仮定し，その構造から観測が生じる」と捉えた．この考え方は，画像や文章の生成だけでなく，人間の選択行動のモデル化にも応用できる．ここでは，津波避難後の居住地選択を，personaを潜在表現として用いるLLMモデルで記述した例を紹介する．焦点は，LLMを単に分類器として使うのではなく，世帯ごとの見えにくい選好や判断基準をpersonaとして表現し，それをloading関数で選択する点にある．
+
+\medskip
+\noindent
+\textbf{研究背景}
+
+戦争，紛争，巨大災害の後には，被災者の避難，移住，再定住といった長期的な人口移動が発生する．とくに人口減少傾向にある地域では，災害後に誰がどこへ移るかが，その後の地域の人口構成，復興事業の進み方，公共住宅の需要，生活圏の再編に大きく影響する．したがって，災害後の居住地選択を理解することは，復興計画や住宅供給のマネジメントにとって重要である．
+
+一方で，この現象は通常の交通行動モデルより扱いにくい．既存の交通計画理論では，通勤や買物，避難時の移動のように，比較的短期の選択を扱うことが多い．しかし，災害後の移住や定住は数年から数十年単位で進む長期現象であり，次のような難しさがある．
+
+\begin{itemize}
+\item 長期的な定量データを得にくい．
+\item 世帯ごとの居住履歴が不完全になりやすい．
+\item 復興制度，住宅供給，地域条件，家族事情が絡み合う．
+\item 観測属性だけでは，帰還意向や再建意欲などの判断基準を捉えにくい．
+\end{itemize}
+
+このような背景から，表形式の変数だけでなく，世帯の履歴や地域文脈を文章として扱えるモデルが必要になる．大規模言語モデル（large language model; LLM）は，人間の判断過程を文脈依存的に表現しうるため，従来の離散選択モデルでは表しにくい半構造的な意思決定文脈を入力できる．
+
+\medskip
+\noindent
+\textbf{使用データ}
+
+使用したデータは，2026年3月に実施された被災者アンケートである．対象は，災害時の居住地域が宮城県・岩手県・福島県のいずれかであった世帯であり，個人属性，世帯属性，居住地選択履歴，住宅類型などの情報を含む．データの規模は次の通りである．
+
+\begin{center}
+\scriptsize
+\begin{tabular}{lr}
+\toprule
+項目 & 件数 \\
+\midrule
+世帯数 & 5,002 \\
+各世帯の状態数 & 11,662 \\
+居住地移動サンプル数 & 6,660 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+学習・評価の分割は世帯単位で行った．これは，同一世帯の履歴が訓練データとテストデータにまたがると，履歴情報を通じた情報漏洩が起こりうるためである．LLMによる評価は計算コストが大きいため，テストデータのうち先頭200件を用いた．
+
+\begin{center}
+\scriptsize
+\begin{tabular}{lrr}
+\toprule
+分割 & 移動サンプル数 & 世帯サンプル数 \\
+\midrule
+訓練データ & 4,691 & 3,542 \\
+バリデーション & 982 & 709 \\
+テスト & 987 & 751 \\
+LLM評価 & 200 & 151 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\medskip
+\noindent
+\textbf{予測タスク}
+
+予測タスクは，各世帯の時点 \(t\) までの情報から，次時点 \(t+1\) の居住状態変化を予測する問題である．
+\begin{equation}
+x_{i,t}=\phi(s_{i,0:t}), \qquad
+y_{i,t}=g(s_{i,t},s_{i,t+1}) \in \mathcal{Y}.
+\end{equation}
+ここで \(x_{i,t}\) は世帯 \(i\) について時点 \(t\) までに観測可能な属性・履歴から作る特徴量，\(s_{i,t}\) は地域，住宅類型，復興段階，時点などを含む居住状態，\(y_{i,t}\) は次状態への遷移を分類したラベルである．将来情報など，予測時点 \(t\) で本来分からない情報は入力から除外した．符号化前の推論時特徴量数は31である．
+
+選択肢集合 \(\mathcal{Y}\) は次の6種類である．
+
+\begin{center}
+\scriptsize
+\begin{tabular}{lrr}
+\toprule
+選択肢 & サンプル数 & 比率 \\
+\midrule
+現在地にとどまる & 519 & 7.8\% \\
+被災地域内の仮住まいへ移る & 241 & 3.6\% \\
+被災地域外の仮住まいへ移る & 1,676 & 25.2\% \\
+災害公営住宅に移る & 340 & 5.1\% \\
+自力再建先に移る & 3,286 & 49.3\% \\
+帰還する & 598 & 9.0\% \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+この分布から分かるように，「自力再建先に移る」がほぼ半数を占める．したがって，単純に多数派を選ぶモデルでも一定の正解率は出るが，少数クラスを識別できるか，また全体の移動分布を再現できるかが重要になる．
+
+\medskip
+\noindent
+\textbf{LLMを使う動機}
+
+多項ロジットモデルやニューラルネットワークは，表形式に整理された特徴量を入力として扱う．これに対して，災害後の居住地選択では，「なぜ帰還できないのか」「なぜ仮住まいを継続するのか」「自力再建を選ぶ条件は何か」といった説明的な文脈が重要である．これらは，単純な数値変数だけでは表しきれない．
+
+そこで，LLMへのプロンプトには，世帯属性，居住履歴の文章要約，災害後の地域文脈，仮住まい・帰還・自力再建などの候補説明を含める．さらに，その世帯がどのような判断傾向を持ちそうかを表すpersonaを与える．LLMは，これらの文脈を読んだ上で，6つの選択肢の中から次の居住地選択を出力する．
+
+\medskip
+\noindent
+\textbf{personaを潜在変数として見る}
+
+personaとは，個票データから直接観測される変数ではなく，世帯の行動傾向や判断基準を文章で要約した潜在表現である．たとえば，同じ「仮住まい中」という状態でも，早期帰還を望む世帯，自力再建を目指す世帯，災害公営住宅を待つ世帯では，次の選択が異なる可能性がある．この差は，年齢や世帯人数のような観測属性だけでなく，生活再建の方針や地域へのこだわりによっても生じる．
+
+生成モデルの記法でいえば，観測された特徴量 \(x\) と選択 \(y\) の背後に，直接観測されないpersona \(m\) があるとみなせる．
+\begin{equation}
+p(y\mid x)
+=
+\sum_m p(y\mid x,m)\,p(m\mid x).
+\end{equation}
+ここで \(p(m\mid x)\) は対象世帯にどのpersonaを割り当てるかを表すloadingであり，\(p(y\mid x,m)\) は，そのpersonaを文脈として与えたLLMが各選択肢を選ぶ分布に対応する．これは，潜在変数モデル
+\begin{equation}
+p_\theta(x)=\int p_\theta(x\mid z)p(z)\,dz
+\end{equation}
+において，観測されない \(z\) を周辺化する考え方と対応している．本研究では，personaがこの \(z\) に相当する役割を持つ．
+
+\medskip
+\noindent
+\textbf{persona bankを用いた推論の流れ}
+
+personaを使った推論は，次の手順で行う．
+
+\begin{enumerate}
+\item 訓練データの世帯属性・居住履歴をLLMに与え，世帯の行動傾向を説明するpersonaを作成する．
+\item 作成したpersonaをpersona bankとして保存する．
+\item 予測対象世帯の属性・履歴から，近いpersonaをloading関数で選ぶ．
+\item 現在状態，居住履歴，選択肢説明，選ばれたpersonaをLLMへのプロンプトに入れる．
+\item LLMが6つの候補から次の居住地選択を出力する．
+\end{enumerate}
+
+重要なのは，personaそのものが最終予測ではない点である．personaは，LLMが文脈依存的な判断を行うための補助的な潜在表現である．したがって，同じpersonaが選ばれても，現在地，履歴，選択肢説明が異なれば，異なるchoiceが出ることが望ましい．
+
+\medskip
+\noindent
+\textbf{コサイン類似度によるloading}
+
+もっとも単純なloadingは，予測対象世帯とpersona bank内の各personaをベクトル化し，類似度が最大のpersonaを選ぶ方法である．世帯属性や履歴要約をベクトル化する関数を \(\psi(\cdot)\)，persona \(m\) の表現を \(p_m\) とすると，
+\begin{equation}
+m^*(x)
+=
+\argmax_m
+\operatorname{sim}\{\psi(x),\psi(p_m)\}
+\end{equation}
+と書ける．コサイン類似度を使う場合，
+\begin{equation}
+\operatorname{sim}\{\psi(x),\psi(p_m)\}
+=
+\frac{\psi(x)^\top \psi(p_m)}
+{\|\psi(x)\|\|\psi(p_m)\|}
+\end{equation}
+である．
+
+この方法は直感的で実装しやすい．しかし，属性や履歴が近いpersonaが，選択行動の予測に最も有効とは限らない．たとえば，年齢や家族構成は似ていても，住宅再建への意向や元居住地へのこだわりが異なれば，次の居住地選択は変わりうる．したがって，単純な類似度だけでは，choiceに効くpersonaを選びきれない可能性がある．
+
+\medskip
+\noindent
+\textbf{EMアルゴリズム的なlearned loading}
+
+そこで，persona割当そのものを観測されない潜在変数の推論問題とみなし，loading関数を学習する．真の「この世帯にはどのpersonaが対応するか」はデータに含まれていない．一方で，各世帯が実際にどの居住地選択をしたかは観測されている．したがって，personaの割当を，観測されたchoiceをよく説明するように更新することが考えられる．
+
+この発想は，EMアルゴリズムに似ている．EMでは，観測されない潜在変数 \(z\) の事後分布をE-stepで推定し，その推定結果を使ってM-stepでモデルパラメータを更新する．ここでは，persona \(m\) が潜在変数に相当し，loading関数が \(p_\alpha(m\mid x)\) を与えると考える．\(\alpha\) はloading関数のパラメータである．
+
+まず，現在のloading関数に基づいて，世帯 \(i\) がpersona \(m\) に対応する重みを計算する．
+\begin{equation}
+r_{im}
+=
+p_\alpha(m\mid x_i)
+=
+\frac{\exp\{\operatorname{sim}_\alpha(x_i,p_m)\}}
+{\sum_{m'}\exp\{\operatorname{sim}_\alpha(x_i,p_{m'})\}}.
+\end{equation}
+これは，各personaに対するsoft assignmentであり，GMMのEMにおける責務 \(\gamma_{nk}\) と似た役割を持つ．これがE-step的な部分である．
+
+次に，LLMまたは選択モデルが，persona \(m\) を与えたときに観測choice \(y_i\) をどれだけ説明できるかを評価する．理想的には，
+\begin{equation}
+\sum_i \sum_m r_{im}\log p_\theta(y_i\mid x_i,m)
+\end{equation}
+が大きくなるように，loading関数のパラメータ \(\alpha\) を更新する．これがM-step的な部分である．実装上は，LLMの内部パラメータを直接更新するのではなく，どのpersonaを選ぶと観測choiceへの適合が高くなるかを用いて，類似度関数 \(\operatorname{sim}_\alpha(\cdot,\cdot)\) を調整する．
+
+このlearned loadingは，単に「属性が近いpersona」を選ぶのではなく，「choiceの予測に効くpersona」を選ぼうとする点に特徴がある．生成モデルの言葉でいえば，personaの事後分布 \(p(m\mid x,y)\) を完全には計算できないため，観測choiceを手がかりに近似的にloadingを改善していると解釈できる．
+
+\medskip
+\noindent
+\textbf{評価指標と比較モデル}
+
+評価には，個票単位の正解率だけでなく，少数クラスや移動分布の再現性を見る指標を用いた．Accuracyは直感的だが，多数派クラスに引っ張られやすい．Macro F1は各選択肢を同じ重みで評価するため，少数クラスを拾えているかを見やすい．また，Share MAEとJSDは，観測された選択肢シェアと予測シェアのずれを見る指標であり，人口移動分布の再現性を評価するために用いた．
+
+\begin{align}
+\mathrm{Acc}
+&=
+\frac{1}{N}\sum_i \mathbf{1}(\hat{y}_i=y_i),\\
+\mathrm{MacroF1}
+&=
+\frac{1}{|\mathcal{Y}|}\sum_{c\in\mathcal{Y}}\mathrm{F1}_c,\\
+\mathrm{ShareMAE}
+&=
+\frac{1}{|\mathcal{Y}|}\sum_{c\in\mathcal{Y}}|\pi_c-\hat{\pi}_c|,\\
+\mathrm{JSD}
+&=
+\frac{1}{2}D_{\mathrm{KL}}(\pi\|m)
++
+\frac{1}{2}D_{\mathrm{KL}}(\hat{\pi}\|m),
+\qquad
+m=\frac{1}{2}(\pi+\hat{\pi}).
+\end{align}
+ここで \(N\) は評価サンプル数，\(\hat{y}_i\) は予測ラベル，\(\pi_c\) と \(\hat{\pi}_c\) はそれぞれ選択肢 \(c\) の観測シェアと予測シェアである．また，\(\pi\) と \(\hat{\pi}\) は全選択肢にわたる分布，\(m\) はその平均分布であり，JSDは二つの選択肢分布の形のずれを測る．
+
+比較モデルとして，最頻クラスを選ぶMost Frequent，現在地ごとの多数派を選ぶCurrent Area Majority，直近期の遷移シェアを使うRolling Average，ルールベースのDomain Heuristic，多項ロジットモデル（MNL），多層パーセプトロン（NN），そしてpersonaを用いるLLMモデルを用いた．LLMにはQwen2.5-3B-InstructとQwen2.5-7B-Instructを用いた．
+
+\medskip
+\noindent
+\textbf{実験結果}
+
+まず3Bモデルでは，personaを与えてもchoiceが十分に多様化しなかった．No-Persona LLMではself rebuiltが98\%を占め，Cosine Persona LLMやLearned Persona LLMでもself rebuiltとtemporary withinに強く偏った．この段階では，LLMが文脈を読んで推論しているというより，personaのあてはめや多数派選択に近い挙動になっていた．
+
+一方，7Bモデルでは選択が多様化し，外部一時避難や帰還も出力されるようになった．LLM評価と同じ200件で比較した結果を次に示す．
+
+\begin{center}
+\scriptsize
+\begin{tabular}{lccccc}
+\toprule
+モデル & Acc. & F1 & Bal. & MAE & JSD \\
+\midrule
+7B Learned & 0.755 & 0.442 & 0.443 & 0.024 & 0.005 \\
+7B Cosine & 0.735 & 0.316 & 0.385 & 0.022 & 0.008 \\
+Area majority & 0.785 & 0.426 & 0.461 & 0.048 & 0.044 \\
+MNL & 0.790 & 0.311 & 0.392 & 0.050 & 0.045 \\
+NN & 0.725 & 0.317 & 0.388 & 0.050 & 0.047 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Accuracyだけを見ると，MNLやArea majorityが高い．しかし，Macro F1では7B Learned loadingが0.442となり，比較モデルの中で最も高かった．また，JSDは0.005であり，選択肢シェアの分布再現性も高かった．これは，learned loadingが少数クラスを含む選択傾向を捉える上で有効であったことを示している．
+
+choice shareを見ると，observedではself rebuiltが0.590，temporary outsideが0.235であったのに対し，learned loadingではself rebuiltが0.635，temporary outsideが0.250となり，全体の分布形状を比較的よく再現していた．LLM評価データには「現在地にとどまる」が含まれていなかったため5択分布での比較になったが，小さいシェアの選択肢も完全には潰れずに残った．
+
+\begin{center}
+\scriptsize
+\begin{tabular}{lccc}
+\toprule
+choice & observed & learned & cosine \\
+\midrule
+public housing & 0.095 & 0.045 & 0.035 \\
+self rebuilt & 0.590 & 0.635 & 0.640 \\
+temporary outside & 0.235 & 0.250 & 0.245 \\
+temporary within & 0.025 & 0.025 & 0.030 \\
+return origin & 0.055 & 0.045 & 0.050 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\medskip
+\noindent
+\textbf{persona使用の集中と解釈}
+
+loading方法ごとのpersona使用を見ると，Cosine-onlyでは4種類のpersonaしか使われず，最上位personaが150件（75.0\%）を占めた．Learned loadingでは使用persona数は5種類，最上位personaは114件（57.0\%）であった．数値上はcosineよりやや分散しているが，依然として少数のpersonaに強く集中しており，loading関数によってpersona集中の課題が解決されたとは言い難い．
+
+一方で，learned loadingでは，同一personaでもchoiceが完全には固定されなかった．これは重要である．もし同じpersonaが常に同じchoiceを出すなら，personaは単なるラベルであり，LLMは文脈を読んでいないことになる．しかし，7B learned loadingでは，personaは選択を一意に決めるものではなく，選択傾向の事前分布として働いていた．最終的なchoiceは，personaに加えて，現在状態，居住履歴，元居住地との関係，選択肢説明によって変化した．
+
+\medskip
+\noindent
+\textbf{考察と課題}
+
+この実験から，LLMを用いた居住地選択モデルには三つの示唆がある．第一に，災害後の居住地選択のような複雑な意思決定では，モデルサイズが結果に大きく影響する．3Bでは選択肢が多数派に偏りやすかったが，7Bでは選択が多様化した．第二に，personaはLLMに文脈依存的な推論を行わせるための潜在表現として有効である．第三に，観測choiceを用いたlearned loadingは予測分布の再現には寄与したが，personaの使用が少数に集中する問題までは十分に解消できなかった．
+
+一方で，課題も多い．プロンプトを少し変えただけで結果が大きく変わるため，prompt設計の頑健性を検証する必要がある．また，learned loadingでもpersona使用はまだ少数に集中しており，十分に多様な潜在表現を使えているとは言い切れない．さらに，LLMがなぜその選択をしたのか，personaのどの記述が判断に効いたのかを検証する解釈性の分析も必要である．
+
+今後は，復興制度，災害公営住宅の供給量，地域の復旧状況などを政策シナリオとして入力し，居住地選択分布がどのように変わるかを調べることが考えられる．その意味で，persona駆動型LLMモデルは，単なる分類器ではなく，潜在表現を介して災害復興の意思決定支援へ接続しうる生成モデル的な枠組みである．
 \end{column}
 \clearpage
