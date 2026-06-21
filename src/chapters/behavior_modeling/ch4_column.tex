@@ -175,42 +175,47 @@ MDCEVモデルで推定された$\gamma_k$から求まる期待時間と，RLモ
 観測モデルが異なるため直接比較することはできないが，パラメータの符号と各活動の相対的な魅力度の傾向（$\gamma_k$，$\alpha_k$）は一致する．
 
 \begin{center}
-  \renewcommand{\arraystretch}{1.3}
-  \setlength{\tabcolsep}{6pt}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.25}
+  \setlength{\tabcolsep}{4pt}
 
-  \begin{minipage}{0.48\linewidth}
+  \begin{minipage}{0.49\linewidth}
     \centering
-    \begin{tabular}{clrrr}
-      \toprule
-      & \textbf{param} & \textbf{estimate} & \textbf{std\_err} & \textbf{t\_value} \\
-      \midrule
-      0 & psi\_S           & -0.7392 & 0.0506 & -14.62 \\
-      1 & psi\_W           &  0.0295 & 0.0465 &   0.63 \\
-      2 & psi\_W2          & -1.7580 & 0.0701 & -25.09 \\
-      3 & psi\_O           & -1.9597 & 0.0758 & -25.86 \\
-      4 & log\_gamma\_S    &  1.1533 & 0.0736 &  15.67 \\
-      5 & log\_gamma\_W    &  2.2314 & 0.0722 &  30.91 \\
-      6 & log\_gamma\_W2   &  1.8356 & 0.1202 &  15.27 \\
-      7 & log\_gamma\_O    &  1.3246 & 0.1281 &  10.34 \\
-      \bottomrule
-    \end{tabular}
+    \resizebox{\linewidth}{!}{%
+      \begin{tabular}{clrrr}
+        \toprule
+        & \textbf{param} & \textbf{estimate} & \textbf{std\_err} & \textbf{t\_value} \\
+        \midrule
+        0 & psi\_S           & -0.7392 & 0.0506 & -14.62 \\
+        1 & psi\_W           &  0.0295 & 0.0465 &   0.63 \\
+        2 & psi\_W2          & -1.7580 & 0.0701 & -25.09 \\
+        3 & psi\_O           & -1.9597 & 0.0758 & -25.86 \\
+        4 & log\_gamma\_S    &  1.1533 & 0.0736 &  15.67 \\
+        5 & log\_gamma\_W    &  2.2314 & 0.0722 &  30.91 \\
+        6 & log\_gamma\_W2   &  1.8356 & 0.1202 &  15.27 \\
+        7 & log\_gamma\_O    &  1.3246 & 0.1281 &  10.34 \\
+        \bottomrule
+      \end{tabular}
+    }
   \end{minipage}
   \hfill
-  \begin{minipage}{0.48\linewidth}
+  \begin{minipage}{0.49\linewidth}
     \centering
-    \begin{tabular}{clrrr}
-      \toprule
-      & \textbf{param} & \textbf{estimate} & \textbf{std\_err} & \textbf{t\_value} \\
-      \midrule
-      0 & alpha\_S      & -0.2119 & 0.0102 & -20.79 \\
-      1 & alpha\_W      & -0.0341 & 0.0062 &  -5.49 \\
-      2 & alpha\_W2     & -0.3249 & 0.0141 & -22.97 \\
-      3 & alpha\_O      & -0.4137 & 0.0182 & -22.79 \\
-      4 & delta\_stay   &  3.6363 & 0.0251 & 145.12 \\
-      5 & delta\_morn   &  2.3296 & 0.0608 &  38.35 \\
-      6 & delta\_eve    &  2.3148 & 0.0592 &  39.08 \\
-      \bottomrule
-    \end{tabular}
+    \resizebox{\linewidth}{!}{%
+      \begin{tabular}{clrrr}
+        \toprule
+        & \textbf{param} & \textbf{estimate} & \textbf{std\_err} & \textbf{t\_value} \\
+        \midrule
+        0 & alpha\_S      & -0.2119 & 0.0102 & -20.79 \\
+        1 & alpha\_W      & -0.0341 & 0.0062 &  -5.49 \\
+        2 & alpha\_W2     & -0.3249 & 0.0141 & -22.97 \\
+        3 & alpha\_O      & -0.4137 & 0.0182 & -22.79 \\
+        4 & delta\_stay   &  3.6363 & 0.0251 & 145.12 \\
+        5 & delta\_morn   &  2.3296 & 0.0608 &  38.35 \\
+        6 & delta\_eve    &  2.3148 & 0.0592 &  39.08 \\
+        \bottomrule
+      \end{tabular}
+    }
   \end{minipage}
 
   \captionof{table}{MDCEVモデルとRLモデルの推定結果の比較}
@@ -359,75 +364,84 @@ MDCEVモデルで推定された$\gamma_k$から求まる期待時間と，RLモ
 ・S買い物，W2業務，Oその他については極めて高い精度で予測できていた．
 
 \begin{center}
-  \renewcommand{\arraystretch}{1.4}
-  \setlength{\tabcolsep}{10pt}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.25}
+  \setlength{\tabcolsep}{4pt}
 
   % ===== 上段 =====
-  \begin{minipage}{0.48\linewidth}
+  \begin{minipage}{0.49\linewidth}
     \centering
     \textbf{時期1}\\[0.3em]
-    \begin{tabular}{lrr}
-      \toprule
-      & \textbf{observed [h]} & \textbf{RL simulated [h]} \\
-      \midrule
-      H (home)         & 14.23 & 14.69 \\
-      S (shop/dine)    &  1.65 &  1.67 \\
-      W (commute/work) &  6.61 &  6.13 \\
-      W2 (business)    &  0.92 &  0.93 \\
-      O (other)        &  0.59 &  0.59 \\
-      \bottomrule
-    \end{tabular}
+    \resizebox{\linewidth}{!}{%
+      \begin{tabular}{lrr}
+        \toprule
+        & \textbf{observed [h]} & \textbf{RL simulated [h]} \\
+        \midrule
+        H (home)         & 14.23 & 14.69 \\
+        S (shop/dine)    &  1.65 &  1.67 \\
+        W (commute/work) &  6.61 &  6.13 \\
+        W2 (business)    &  0.92 &  0.93 \\
+        O (other)        &  0.59 &  0.59 \\
+        \bottomrule
+      \end{tabular}
+    }
   \end{minipage}
   \hfill
-  \begin{minipage}{0.48\linewidth}
+  \begin{minipage}{0.49\linewidth}
     \centering
     \textbf{時期2}\\[0.3em]
-    \begin{tabular}{lrr}
-      \toprule
-      & \textbf{observed [h]} & \textbf{RL simulated [h]} \\
-      \midrule
-      H (home)         & 14.77 & 15.25 \\
-      S (shop/dine)    &  1.84 &  1.83 \\
-      W (commute/work) &  6.54 &  6.10 \\
-      W2 (business)    &  0.42 &  0.38 \\
-      O (other)        &  0.44 &  0.44 \\
-      \bottomrule
-    \end{tabular}
+    \resizebox{\linewidth}{!}{%
+      \begin{tabular}{lrr}
+        \toprule
+        & \textbf{observed [h]} & \textbf{RL simulated [h]} \\
+        \midrule
+        H (home)         & 14.77 & 15.25 \\
+        S (shop/dine)    &  1.84 &  1.83 \\
+        W (commute/work) &  6.54 &  6.10 \\
+        W2 (business)    &  0.42 &  0.38 \\
+        O (other)        &  0.44 &  0.44 \\
+        \bottomrule
+      \end{tabular}
+    }
   \end{minipage}
 
   \vspace{1em}
 
   % ===== 下段 =====
-  \begin{minipage}{0.48\linewidth}
+  \begin{minipage}{0.49\linewidth}
     \centering
     \textbf{時期3}\\[0.3em]
-    \begin{tabular}{lrr}
-      \toprule
-      & \textbf{observed [h]} & \textbf{RL simulated [h]} \\
-      \midrule
-      H (home)         & 15.49 & 15.88 \\
-      S (shop/dine)    &  1.77 &  1.78 \\
-      W (commute/work) &  5.56 &  5.19 \\
-      W2 (business)    &  0.43 &  0.41 \\
-      O (other)        &  0.74 &  0.74 \\
-      \bottomrule
-    \end{tabular}
+    \resizebox{\linewidth}{!}{%
+      \begin{tabular}{lrr}
+        \toprule
+        & \textbf{observed [h]} & \textbf{RL simulated [h]} \\
+        \midrule
+        H (home)         & 15.49 & 15.88 \\
+        S (shop/dine)    &  1.77 &  1.78 \\
+        W (commute/work) &  5.56 &  5.19 \\
+        W2 (business)    &  0.43 &  0.41 \\
+        O (other)        &  0.74 &  0.74 \\
+        \bottomrule
+      \end{tabular}
+    }
   \end{minipage}
   \hfill
-  \begin{minipage}{0.48\linewidth}
+  \begin{minipage}{0.49\linewidth}
     \centering
     \textbf{時期4}\\[0.3em]
-    \begin{tabular}{lrr}
-      \toprule
-      & \textbf{observed [h]} & \textbf{RL simulated [h]} \\
-      \midrule
-      H (home)         & 15.45 & 15.84 \\
-      S (shop/dine)    &  2.19 &  2.26 \\
-      W (commute/work) &  4.73 &  4.29 \\
-      W2 (business)    &  0.99 &  1.00 \\
-      O (other)        &  0.63 &  0.60 \\
-      \bottomrule
-    \end{tabular}
+    \resizebox{\linewidth}{!}{%
+      \begin{tabular}{lrr}
+        \toprule
+        & \textbf{observed [h]} & \textbf{RL simulated [h]} \\
+        \midrule
+        H (home)         & 15.45 & 15.84 \\
+        S (shop/dine)    &  2.19 &  2.26 \\
+        W (commute/work) &  4.73 &  4.29 \\
+        W2 (business)    &  0.99 &  1.00 \\
+        O (other)        &  0.63 &  0.60 \\
+        \bottomrule
+      \end{tabular}
+    }
   \end{minipage}
 
   \captionof{table}{RLモデルによる時期別活動時間の比較}
