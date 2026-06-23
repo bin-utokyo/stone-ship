@@ -72,9 +72,25 @@ U_t(i \to j) =
 \textbf{MDCEVモデル}
 
 \begin{center}
-  \includegraphics[width=\linewidth]{assets/behavior_modeling/column3/ABMS02.png}
-  \captionof{figure}{MDCEVモデル preコロナ\_MDCEVモデル推定表}
-  \label{fig:mdcev-pre-covid}
+  \renewcommand{\arraystretch}{1.5}
+  \setlength{\tabcolsep}{14pt}
+
+  \begin{tabular}{clrrr}
+    \toprule
+    & \textbf{param} & \textbf{estimate} & \textbf{std\_err} & \textbf{t\_value} \\
+    \midrule
+    0 & psi\_S           & -0.7392 & 0.0506 & -14.62 \\
+    1 & psi\_W           &  0.0295 & 0.0465 &   0.63 \\
+    2 & psi\_W2          & -1.7580 & 0.0701 & -25.09 \\
+    3 & psi\_O           & -1.9597 & 0.0758 & -25.86 \\
+    4 & log\_gamma\_S    &  1.1533 & 0.0736 &  15.67 \\
+    5 & log\_gamma\_W    &  2.2314 & 0.0722 &  30.91 \\
+    6 & log\_gamma\_W2   &  1.8356 & 0.1202 &  15.27 \\
+    7 & log\_gamma\_O    &  1.3246 & 0.1281 &  10.34 \\
+    \bottomrule
+  \end{tabular}
+  \captionof{table}{MDCEVモデル pre コロナ\_MDCEVモデル推定表}
+  \label{tab:mdcev-pre-covid}
 \end{center}
 
 ベース効用：Hは基準で0であり，ほとんどの活動で0以下なので何もしなければ選ばれにくいことがわかる．
@@ -90,9 +106,24 @@ $t$値：絶対値が1.96を越えていればそのパラメータは5％有意
 \textbf{Recursive Logit Model}
 
 \begin{center}
-  \includegraphics[width=\linewidth]{assets/behavior_modeling/column3/ABMS03.png}
-  \captionof{figure}{RecursiveLogitModel\_推定表}
-  \label{fig:recursive-logit-estimation}
+  \renewcommand{\arraystretch}{1.5}
+  \setlength{\tabcolsep}{14pt}
+
+  \begin{tabular}{clrrr}
+    \toprule
+    & \textbf{param} & \textbf{estimate} & \textbf{std\_err} & \textbf{t\_value} \\
+    \midrule
+    0 & alpha\_S      & -0.2119 & 0.0102 & -20.79 \\
+    1 & alpha\_W      & -0.0341 & 0.0062 &  -5.49 \\
+    2 & alpha\_W2     & -0.3249 & 0.0141 & -22.97 \\
+    3 & alpha\_O      & -0.4137 & 0.0182 & -22.79 \\
+    4 & delta\_stay   &  3.6363 & 0.0251 & 145.12 \\
+    5 & delta\_morn   &  2.3296 & 0.0608 &  38.35 \\
+    6 & delta\_eve    &  2.3148 & 0.0592 &  39.08 \\
+    \bottomrule
+  \end{tabular}
+  \captionof{table}{MDCEVモデルの推定結果}
+  \label{tab:mdcev-alpha-delta}
 \end{center}
 
 ベース効用：Hが基準で0以下なので何もしなければ選ばれにくい．
@@ -113,9 +144,22 @@ $\delta_{\text{stay}}$の$t$値が突出して高く，一度始めた活動は�
 朝の外出項などが時間制約の学習に役立っていることがわかる．
 
 \begin{center}
-  \includegraphics[width=\linewidth]{assets/behavior_modeling/column3/ABMS04_RL.png}
-  \captionof{figure}{RLモデル推定表}
-  \label{fig:rl-estimation}
+  \renewcommand{\arraystretch}{1.5}
+  \setlength{\tabcolsep}{14pt}
+
+  \begin{tabular}{lrr}
+    \toprule
+    & \textbf{observed [h]} & \textbf{RL simulated [h]} \\
+    \midrule
+    H (home)            & 14.23 & 14.69 \\
+    S (shop/dine)       &  1.65 &  1.67 \\
+    W (commute/work)    &  6.61 &  6.13 \\
+    W2 (business)       &  0.92 &  0.93 \\
+    O (other)           &  0.59 &  0.59 \\
+    \bottomrule
+  \end{tabular}
+  \captionof{table}{RLモデルによる活動時間の再現結果}
+  \label{tab:rl-simulated-observed}
 \end{center}
 
 \begin{center}
@@ -131,9 +175,51 @@ MDCEVモデルで推定された$\gamma_k$から求まる期待時間と，RLモ
 観測モデルが異なるため直接比較することはできないが，パラメータの符号と各活動の相対的な魅力度の傾向（$\gamma_k$，$\alpha_k$）は一致する．
 
 \begin{center}
-  \includegraphics[width=\linewidth]{assets/behavior_modeling/column3/ABMS06.png}
-  \captionof{figure}{MDCEVとRL推定表の比較}
-  \label{fig:mdcev-rl-comparison}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.25}
+  \setlength{\tabcolsep}{4pt}
+
+  \begin{minipage}{0.49\linewidth}
+    \centering
+    \resizebox{\linewidth}{!}{%
+      \begin{tabular}{clrrr}
+        \toprule
+        & \textbf{param} & \textbf{estimate} & \textbf{std\_err} & \textbf{t\_value} \\
+        \midrule
+        0 & psi\_S           & -0.7392 & 0.0506 & -14.62 \\
+        1 & psi\_W           &  0.0295 & 0.0465 &   0.63 \\
+        2 & psi\_W2          & -1.7580 & 0.0701 & -25.09 \\
+        3 & psi\_O           & -1.9597 & 0.0758 & -25.86 \\
+        4 & log\_gamma\_S    &  1.1533 & 0.0736 &  15.67 \\
+        5 & log\_gamma\_W    &  2.2314 & 0.0722 &  30.91 \\
+        6 & log\_gamma\_W2   &  1.8356 & 0.1202 &  15.27 \\
+        7 & log\_gamma\_O    &  1.3246 & 0.1281 &  10.34 \\
+        \bottomrule
+      \end{tabular}
+    }
+  \end{minipage}
+  \hfill
+  \begin{minipage}{0.49\linewidth}
+    \centering
+    \resizebox{\linewidth}{!}{%
+      \begin{tabular}{clrrr}
+        \toprule
+        & \textbf{param} & \textbf{estimate} & \textbf{std\_err} & \textbf{t\_value} \\
+        \midrule
+        0 & alpha\_S      & -0.2119 & 0.0102 & -20.79 \\
+        1 & alpha\_W      & -0.0341 & 0.0062 &  -5.49 \\
+        2 & alpha\_W2     & -0.3249 & 0.0141 & -22.97 \\
+        3 & alpha\_O      & -0.4137 & 0.0182 & -22.79 \\
+        4 & delta\_stay   &  3.6363 & 0.0251 & 145.12 \\
+        5 & delta\_morn   &  2.3296 & 0.0608 &  38.35 \\
+        6 & delta\_eve    &  2.3148 & 0.0592 &  39.08 \\
+        \bottomrule
+      \end{tabular}
+    }
+  \end{minipage}
+
+  \captionof{table}{MDCEVモデルとRLモデルの推定結果の比較}
+  \label{tab:mdcev-rl-comparison}
 \end{center}
 
 \subsubsection{時期による比較}
@@ -188,9 +274,92 @@ MDCEVモデルで推定された$\gamma_k$から求まる期待時間と，RLモ
 ・パラメータで見てもShoppingの$\alpha_k$の値は少し大きくなっている．
 
 \begin{center}
-  \includegraphics[width=\linewidth]{assets/behavior_modeling/column3/ABMS07.png}
-  \captionof{figure}{RLモデルによる時期の比較}
-  \label{fig:rl-period-comparison}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.25}
+  \setlength{\tabcolsep}{4pt}
+
+  % ===== 1段目 =====
+  \begin{minipage}{0.49\linewidth}
+    \centering
+    \resizebox{\linewidth}{!}{%
+      \begin{tabular}{clrrr}
+        \toprule
+        & \textbf{param} & \textbf{estimate} & \textbf{std\_err} & \textbf{t\_value} \\
+        \midrule
+        0 & alpha\_S    & -0.2119 & 0.0102 & -20.79 \\
+        1 & alpha\_W    & -0.0341 & 0.0062 &  -5.49 \\
+        2 & alpha\_W2   & -0.3249 & 0.0141 & -22.97 \\
+        3 & alpha\_O    & -0.4137 & 0.0182 & -22.79 \\
+        4 & delta\_stay &  3.6363 & 0.0251 & 145.12 \\
+        5 & delta\_morn &  2.3296 & 0.0608 &  38.35 \\
+        6 & delta\_eve  &  2.3148 & 0.0592 &  39.08 \\
+        \bottomrule
+      \end{tabular}
+    }
+  \end{minipage}
+  \hfill
+  \begin{minipage}{0.49\linewidth}
+    \centering
+    \resizebox{\linewidth}{!}{%
+      \begin{tabular}{clrrr}
+        \toprule
+        & \textbf{param} & \textbf{estimate} & \textbf{std\_err} & \textbf{t\_value} \\
+        \midrule
+        0 & alpha\_S    & -0.2225 & 0.0097 & -22.91 \\
+        1 & alpha\_W    & -0.0580 & 0.0061 &  -9.47 \\
+        2 & alpha\_W2   & -0.5551 & 0.0237 & -23.42 \\
+        3 & alpha\_O    & -0.5360 & 0.0227 & -23.57 \\
+        4 & delta\_stay &  3.5142 & 0.0251 & 140.11 \\
+        5 & delta\_morn &  2.3911 & 0.0611 &  39.12 \\
+        6 & delta\_eve  &  2.0468 & 0.0593 &  34.52 \\
+        \bottomrule
+      \end{tabular}
+    }
+  \end{minipage}
+
+  \vspace{1em}
+
+  % ===== 2段目 =====
+  \begin{minipage}{0.49\linewidth}
+    \centering
+    \resizebox{\linewidth}{!}{%
+      \begin{tabular}{clrrr}
+        \toprule
+        & \textbf{param} & \textbf{estimate} & \textbf{std\_err} & \textbf{t\_value} \\
+        \midrule
+        0 & alpha\_S    & -0.2339 & 0.0102 & -22.85 \\
+        1 & alpha\_W    & -0.0825 & 0.0066 & -12.46 \\
+        2 & alpha\_W2   & -0.5482 & 0.0238 & -23.03 \\
+        3 & alpha\_O    & -0.4069 & 0.0167 & -24.29 \\
+        4 & delta\_stay &  3.5265 & 0.0257 & 137.35 \\
+        5 & delta\_morn &  2.2846 & 0.0630 &  36.25 \\
+        6 & delta\_eve  &  2.1253 & 0.0618 &  34.41 \\
+        \bottomrule
+      \end{tabular}
+    }
+  \end{minipage}
+  \hfill
+  \begin{minipage}{0.49\linewidth}
+    \centering
+    \resizebox{\linewidth}{!}{%
+      \begin{tabular}{clrrr}
+        \toprule
+        & \textbf{param} & \textbf{estimate} & \textbf{std\_err} & \textbf{t\_value} \\
+        \midrule
+        0 & alpha\_S    & -0.1874 & 0.0089 & -21.09 \\
+        1 & alpha\_W    & -0.0906 & 0.0067 & -13.59 \\
+        2 & alpha\_W2   & -0.3376 & 0.0137 & -24.62 \\
+        3 & alpha\_O    & -0.4351 & 0.0179 & -24.24 \\
+        4 & delta\_stay &  3.5514 & 0.0240 & 148.00 \\
+        5 & delta\_morn &  2.0919 & 0.0598 &  34.99 \\
+        6 & delta\_eve  &  2.1750 & 0.0592 &  36.76 \\
+        \bottomrule
+      \end{tabular}
+    }
+  \end{minipage}
+
+  \captionof{table}{RLモデルによる時期別推定結果の比較}
+  \label{tab:rl-period-comparison}
 \end{center}
 
 \textbf{実データとRLモデルの整合性}
@@ -204,9 +373,88 @@ MDCEVモデルで推定された$\gamma_k$から求まる期待時間と，RLモ
 ・S買い物，W2業務，Oその他については極めて高い精度で予測できていた．
 
 \begin{center}
-  \includegraphics[width=\linewidth]{assets/behavior_modeling/column3/ABMS08.png}
-  \captionof{figure}{RLモデルによる時期の比較}
-  \label{fig:rl-period-comparison-2}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.25}
+  \setlength{\tabcolsep}{4pt}
+
+  % ===== 上段 =====
+  \begin{minipage}{0.49\linewidth}
+    \centering
+    \textbf{時期1}\\[0.3em]
+    \resizebox{\linewidth}{!}{%
+      \begin{tabular}{lrr}
+        \toprule
+        & \textbf{observed [h]} & \textbf{RL simulated [h]} \\
+        \midrule
+        H (home)         & 14.23 & 14.69 \\
+        S (shop/dine)    &  1.65 &  1.67 \\
+        W (commute/work) &  6.61 &  6.13 \\
+        W2 (business)    &  0.92 &  0.93 \\
+        O (other)        &  0.59 &  0.59 \\
+        \bottomrule
+      \end{tabular}
+    }
+  \end{minipage}
+  \hfill
+  \begin{minipage}{0.49\linewidth}
+    \centering
+    \textbf{時期2}\\[0.3em]
+    \resizebox{\linewidth}{!}{%
+      \begin{tabular}{lrr}
+        \toprule
+        & \textbf{observed [h]} & \textbf{RL simulated [h]} \\
+        \midrule
+        H (home)         & 14.77 & 15.25 \\
+        S (shop/dine)    &  1.84 &  1.83 \\
+        W (commute/work) &  6.54 &  6.10 \\
+        W2 (business)    &  0.42 &  0.38 \\
+        O (other)        &  0.44 &  0.44 \\
+        \bottomrule
+      \end{tabular}
+    }
+  \end{minipage}
+
+  \vspace{1em}
+
+  % ===== 下段 =====
+  \begin{minipage}{0.49\linewidth}
+    \centering
+    \textbf{時期3}\\[0.3em]
+    \resizebox{\linewidth}{!}{%
+      \begin{tabular}{lrr}
+        \toprule
+        & \textbf{observed [h]} & \textbf{RL simulated [h]} \\
+        \midrule
+        H (home)         & 15.49 & 15.88 \\
+        S (shop/dine)    &  1.77 &  1.78 \\
+        W (commute/work) &  5.56 &  5.19 \\
+        W2 (business)    &  0.43 &  0.41 \\
+        O (other)        &  0.74 &  0.74 \\
+        \bottomrule
+      \end{tabular}
+    }
+  \end{minipage}
+  \hfill
+  \begin{minipage}{0.49\linewidth}
+    \centering
+    \textbf{時期4}\\[0.3em]
+    \resizebox{\linewidth}{!}{%
+      \begin{tabular}{lrr}
+        \toprule
+        & \textbf{observed [h]} & \textbf{RL simulated [h]} \\
+        \midrule
+        H (home)         & 15.45 & 15.84 \\
+        S (shop/dine)    &  2.19 &  2.26 \\
+        W (commute/work) &  4.73 &  4.29 \\
+        W2 (business)    &  0.99 &  1.00 \\
+        O (other)        &  0.63 &  0.60 \\
+        \bottomrule
+      \end{tabular}
+    }
+  \end{minipage}
+
+  \captionof{table}{RLモデルによる時期別活動時間の比較}
+  \label{tab:rl-time-comparison-periods}
 \end{center}
 
 \subsubsection{MDCEVモデルのforecast}
@@ -218,9 +466,22 @@ Bhat(2008)のForecasting Algorithm（決定論的最適配分）を用いる．
 ・RLモデルの方がS，W2，Oの活動時間を正確に見積もることができている．
 
 \begin{center}
-  \includegraphics[width=\linewidth]{assets/behavior_modeling/column3/ABMS09.png}
-  \captionof{figure}{実データとRLデータの整合性}
-  \label{fig:observed-rl-consistency-1}
+  \renewcommand{\arraystretch}{1.5}
+  \setlength{\tabcolsep}{14pt}
+
+  \begin{tabular}{lrrr}
+    \toprule
+    & \textbf{observed [h]} & \textbf{MDCEV pred (obs active set) [h]} & \textbf{diff} \\
+    \midrule
+    H  & 14.229 & -0.000 & -14.229 \\
+    S  &  1.648 &  1.440 &  -0.208 \\
+    W  &  6.615 &  7.621 &   1.007 \\
+    W2 &  0.918 &  0.337 &  -0.581 \\
+    O  &  0.590 &  0.372 &  -0.218 \\
+    \bottomrule
+  \end{tabular}
+  \captionof{table}{MDCEVモデルによる活動時間の予測結果}
+  \label{tab:mdcev-pred-obs-active-set}
 \end{center}
 
 \begin{center}
@@ -240,9 +501,25 @@ U_t(i \to j) = [\text{baseline}] + \theta_{\text{rec}} \cdot \text{recency}_u(a(
 \end{equation}
 
 \begin{center}
-  \includegraphics[width=\linewidth]{assets/behavior_modeling/column3/ABMS11.png}
-  \captionof{figure}{キャプション}
-  \label{fig:recency-common-parameter}
+  \renewcommand{\arraystretch}{1.5}
+  \setlength{\tabcolsep}{14pt}
+
+  \begin{tabular}{clrrr}
+    \toprule
+    & \textbf{param} & \textbf{estimate} & \textbf{std\_err} & \textbf{t\_value} \\
+    \midrule
+    0 & alpha\_S        & -0.1449 & 0.0109 & -13.27 \\
+    1 & alpha\_W        &  0.0065 & 0.0068 &   0.96 \\
+    2 & alpha\_W2       & -0.2210 & 0.0156 & -14.13 \\
+    3 & alpha\_O        & -0.3076 & 0.0194 & -15.89 \\
+    4 & delta\_stay     &  3.6110 & 0.0251 & 144.14 \\
+    5 & delta\_morn     &  2.3335 & 0.0606 &  38.52 \\
+    6 & delta\_eve      &  2.3115 & 0.0592 &  39.04 \\
+    7 & theta\_recency  & -0.0387 & 0.0028 & -13.84 \\
+    \bottomrule
+  \end{tabular}
+  \captionof{table}{Day-to-Day Dynamics}
+  \label{tab:day-to-day-dynamics}
 \end{center}
 
 $\theta_{\text{rec}} < 0$より，普段やらない活動は将来も選ばれにくい傾向にあるといえる．
